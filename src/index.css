@@ -92,12 +92,6 @@ h1 {
         padding: 200px 0px 200px 15%;
     }
 
-    .section-heading {
-        padding: 200px 0px 200px 15%;
-        overflow: auto; 
-        max-height: 100vh;
-    }
-
     .section-text{
         padding: 0px 0px 100px 15%;
         font-size: 14px;
@@ -122,9 +116,7 @@ h1 {
     }
 
     .section-heading {
-        padding: 200px 0px 200px 25%;
-        overflow: auto; 
-        max-height: 100vh;
+        padding: 100px 0px 200px 25%;
     }
 
     .section-text{

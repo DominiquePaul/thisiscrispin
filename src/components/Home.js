@@ -26,6 +26,7 @@ const Home = () => {
                         </div> 
 
                         <div className="d-flex logos col justify-content-lg-end justify-content-sm-between">
+                            <a href="https://thisiscrispin.substack.com"  onClick={gaEventTracker("Clicked", "substack-link")}><img alt="substack icon" src="./assets/logos/grey/substack.png"></img></a>
                             <a href="https://github.com/dominiquePaul"  onClick={gaEventTracker("Clicked", "github-link")}><img alt="github icon" src="./assets/logos/grey/github.png"></img></a>
                             <a href="https://www.linkedin.com/in/dominique-paul/"  onClick={gaEventTracker("Clicked", "linkedin-link")}><img alt="linkedin icon" src="./assets/logos/grey/linkedin.png"></img></a>
                             <a href="https://twitter.com/dominiquecapaul"  onClick={gaEventTracker("Clicked", "twitter-link")}><img alt="twitter icon" src="./assets/logos/grey/twitter.png"></img></a>
