@@ -1,8 +1,6 @@
 
 import React from 'react';
 import "./Home.css"
-import Projects from "./Projects"
-import Writing from "./Writing"
 
 const Home = () => {
 
@@ -28,10 +26,10 @@ const Home = () => {
                         </div> 
 
                         <div className="d-flex logos col justify-content-lg-end justify-content-sm-between">
-                            <a href="https://github.com/dominiquePaul"><img src="./assets/logos/grey/github.png"></img></a>
-                            <a href="https://www.linkedin.com/in/dominique-paul/"><img src="./assets/logos/grey/linkedin.png"></img></a>
-                            <a href="https://twitter.com/dominiquecapaul"><img src="./assets/logos/grey/twitter.png"></img></a>
-                            <a href="https://www.strava.com/athletes/36221013"><img src="./assets/logos/grey/strava.png"></img></a>
+                            <a href="https://github.com/dominiquePaul"><img alt="github icon" src="./assets/logos/grey/github.png"></img></a>
+                            <a href="https://www.linkedin.com/in/dominique-paul/"><img alt="linkedin icon" src="./assets/logos/grey/linkedin.png"></img></a>
+                            <a href="https://twitter.com/dominiquecapaul"><img alt="twitter icon" src="./assets/logos/grey/twitter.png"></img></a>
+                            <a href="https://www.strava.com/athletes/36221013"><img alt="strava icon" src="./assets/logos/grey/strava.png"></img></a>
                         </div>
 
                     </div>

@@ -2,15 +2,11 @@
 import React from 'react';
 import Home from "./components/Home"
 import Navbar from "./components/Navbar"
-import { Footer, Footer2 } from "./components/Footer"
+import Footer from "./components/Footer"
 import About from "./components/About"
 import Freelance from "./components/Freelance"
 import Posts from "./components/Posts"
-// import { BrowserRouter as Router, Route, Switch} from "react-router-dom";
-// import Layout from '../containers/Layout'
-// import { Router,Route} from 'react-router-dom';
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom'
-
 
 
 function App() {

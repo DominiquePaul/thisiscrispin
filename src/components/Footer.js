@@ -1,29 +1,25 @@
 import React from "react";
-import "./Footer.css"
-
-const Footer = () => {
-    return (
-        <div className="footer footer-gradient logos col h-100 d-flex align-items-center justify-content-center">
-                <a href="https://github.com/dominiquePaul">Github</a>
-                <a href="https://www.linkedin.com/in/dominique-paul/">LinkedIn</a>
-                <a href="https://twitter.com/dominiquecapaul">Twitter</a>
-                <a href="https://www.strava.com/athletes/36221013">Strava</a>
-        </div>
-    )
+export default class Footer extends React.Component {
+    render() {
+        return(
+            <footer className="footer-gradient logos fixed bottom-0 left-0 z-20 w-full h-16 p-4 bg-white border-t border-gray-200 shadow md:flex md:items-center md:justify-between md:p-6 dark:bg-gray-800 dark:border-gray-600">
+                <span className="text-sm text-gray-800 sm:text-center dark:text-gray-400">© 2023 <a href="/" className="hover:underline">Dominique Paul</a>. All Rights Reserved.</span>
+                <ul className="flex flex-wrap items-center text-sm text-gray-800 dark:text-gray-400 sm:mt-0">
+                    <li>
+                        <a className="mr-4 hover:underline md:mr-6" target="_blank" rel="noopener noreferrer" href="https://www.linkedin.com/in/dominique-paul/">LinkedIn</a>
+                    </li>
+                    <li>
+                        <a className="mr-4 hover:underline md:mr-6" target="_blank" rel="noopener noreferrer" href="https://www.linkedin.com/in/dominique-paul/">LinkedIn</a>
+                    </li>
+                    <li>
+                        <a className="mr-4 hover:underline md:mr-6" target="_blank" rel="noopener noreferrer" href="https://twitter.com/dominiquecapaul">Twitter</a>
+                    </li>
+                    <li>
+                        <a className="hover:underline" target="_blank" rel="noopener noreferrer" href="https://www.strava.com/athletes/36221013">Strava</a>
+                    </li>
+                </ul>
+            </footer>
+        )
+    }
 }
 
-const Footer2 = () => {
-    return (
-        <footer className="footer-logos footer logos col align-items-center justify-content-center">
-            <div className="align-items-center justify-content-center">
-                <a href="https://github.com/dominiquePaul"><img src="./assets/logos/grey/github.png"></img></a>
-                <a href="https://www.linkedin.com/in/dominique-paul/"><img src="./assets/logos/grey/linkedin.png"></img></a>
-                <a href="https://twitter.com/dominiquecapaul"><img src="./assets/logos/grey/twitter.png"></img></a>
-                <a href="https://www.strava.com/athletes/36221013"><img src="./assets/logos/grey/strava.png"></img></a>
-            </div>
-        </footer>
-    )
-}
-
-// export default {Footer, sFooter};
-export {Footer, Footer2};
