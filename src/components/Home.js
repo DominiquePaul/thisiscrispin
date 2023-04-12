@@ -1,8 +1,10 @@
 
 import React from 'react';
 import "./Home.css"
+import useGATracker from './useGATracker';
 
 const Home = () => {
+    const gaEventTracker = useGATracker("Homepage");
 
     return (
         <div className="section">            
@@ -18,18 +20,16 @@ const Home = () => {
                     <div className="subbox row">
 
                         <div className="d-flex firstLinks col justify-content-lg-start justify-content-sm-between">
-                            <p><a href="/about">About</a></p> 
+                            <p><a href="/about" onClick={gaEventTracker("Clicked", "/about")}>About</a></p> 
                             <p>·</p>
-                            <p><a href="/freelance">Freelance</a></p> 
-                            
-                            {/* · <a href="/posts">Posts</a> */}
+                            <p><a href="/freelance" onClick={gaEventTracker("Clicked", "/freelance")}>Freelance</a></p> 
                         </div> 
 
                         <div className="d-flex logos col justify-content-lg-end justify-content-sm-between">
-                            <a href="https://github.com/dominiquePaul"><img alt="github icon" src="./assets/logos/grey/github.png"></img></a>
-                            <a href="https://www.linkedin.com/in/dominique-paul/"><img alt="linkedin icon" src="./assets/logos/grey/linkedin.png"></img></a>
-                            <a href="https://twitter.com/dominiquecapaul"><img alt="twitter icon" src="./assets/logos/grey/twitter.png"></img></a>
-                            <a href="https://www.strava.com/athletes/36221013"><img alt="strava icon" src="./assets/logos/grey/strava.png"></img></a>
+                            <a href="https://github.com/dominiquePaul"  onClick={gaEventTracker("Clicked", "github-link")}><img alt="github icon" src="./assets/logos/grey/github.png"></img></a>
+                            <a href="https://www.linkedin.com/in/dominique-paul/"  onClick={gaEventTracker("Clicked", "linkedin-link")}><img alt="linkedin icon" src="./assets/logos/grey/linkedin.png"></img></a>
+                            <a href="https://twitter.com/dominiquecapaul"  onClick={gaEventTracker("Clicked", "twitter-link")}><img alt="twitter icon" src="./assets/logos/grey/twitter.png"></img></a>
+                            <a href="https://www.strava.com/athletes/36221013"  onClick={gaEventTracker("Clicked", "strava-link")}><img alt="strava icon" src="./assets/logos/grey/strava.png"></img></a>
                         </div>
 
                     </div>
