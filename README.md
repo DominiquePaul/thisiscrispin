@@ -7,6 +7,7 @@ This is the code for my personal website [www.thisiscrispin.com](www.thisiscrisp
 
 ## Todos:
 
+- [x] Added continuous deployment upon git push to google cloud run 
 - [ ] Add google analytics
 - [ ] Change all css to tailwind (partially done)
 - [ ] Add a section for blog posts
