@@ -9,7 +9,7 @@ import Posts from "./components/Posts"
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom'
 import ReactGA from 'react-ga';
 
-const TRACKING_ID = "UA-183804548-1"; // OUR_TRACKING_ID
+const TRACKING_ID = "367341801"; // OUR_TRACKING_ID
 ReactGA.initialize(TRACKING_ID);
 
 function App() {
