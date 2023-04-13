@@ -10,11 +10,11 @@ const Home = () => {
         <div className="section">            
             <div className="home">
                 <h4>thisiscrispin</h4>
-                <h1>Dominique Paul</h1>
-                <div className="shiftedbox shadedbox pt-2">
+                <h1 className="pb-2">Dominique Paul</h1>
+                <div className="shiftedbox shadedbox">
                     <div className="biotext">
                         <article>
-                            <p>I'm a product builder, computer scientist and statistician with a strong interest in how we interact with algorithms and how we can design intelligent systems (computers) so that not-so-intelligent systems (us humans) can use them. I've done research on statistical methods and machine learning for genomics at ETH Zurich. Currently, I'm working on large language models and their applications in educational systems. You can follow what I'm up to by subscribing to my <a href="https://thisiscrispin.substack.com/" target="_blank" rel="noopener noreferrer" onClick={gaEventTracker("Clicked", "introductory-substack-link")} >substack newsletter</a>.</p>
+                            <p>I'm a product builder, computer scientist and statistician with an interest in how we interact with algorithms and how we can design intelligent systems (computers) so that not-so-intelligent systems (us humans) can use them. I've done research on statistical methods and machine learning for genomics at ETH Zurich. Currently, I'm working on large language models and their applications in educational systems. You can follow what I'm up to by subscribing to my <a href="https://thisiscrispin.substack.com/" target="_blank" rel="noopener noreferrer" onClick={gaEventTracker("Clicked", "introductory-substack-link")} >substack newsletter</a>.</p>
                         </article>
                     </div>
                 </div>
