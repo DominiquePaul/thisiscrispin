@@ -14,7 +14,7 @@ const Home = () => {
                 <div className="shiftedbox shadedbox">
                     <div className="biotext">
                         <article>
-                            <p>I'm a product builder, computer scientist and statistician with an interest in how we interact with algorithms and how we can design intelligent systems (computers) so that not-so-intelligent systems (us humans) can use them. I've done research on statistical methods and machine learning for genomics at ETH Zurich. Currently, I'm working on foundation models for tabular data at <a href="https://en.merantix-momentum.com/">Merantix Momentum</a>. You can follow what I'm up to by subscribing to my <a href="https://thisiscrispin.substack.com/" target="_blank" rel="noopener noreferrer" onClick={gaEventTracker("Clicked", "introductory-substack-link")} >substack newsletter</a>.</p>
+                            <p>I'm a product builder, computer scientist and statistician with an interest in how we interact with algorithms and how we can design intelligent systems (computers) so that not-so-intelligent systems (us humans) can use them. I've done research on statistical methods and machine learning for genomics at ETH Zurich and <a href="https://openreview.net/forum?id=IbiiNw4oRj" >published work on tabular foundation models at NeurIPS</a>. Currently, I'm building AI products, MVPs and tools as a freelancer. You can follow what I'm up to by subscribing to my <a href="https://thisiscrispin.substack.com/" target="_blank" rel="noopener noreferrer" onClick={gaEventTracker("Clicked", "introductory-substack-link")} >substack newsletter</a>.</p>
                         </article>
                     </div>
                 </div>

@@ -17,3 +17,13 @@ Some facts about the app:
 - [ ] Change all css to tailwind (partially done)
 - [ ] Add a section for blog posts
 - [ ] Add a picture of myself
+
+# Reminders for myself
+
+### Running the code after downloading the repo in a new environment
+1. [Optionally] Install node and npm via brew: `brew install node`
+1. Install the packages in the folder: `npm install`
+
+### Recreating the distribution code
+
+`npm run build`
