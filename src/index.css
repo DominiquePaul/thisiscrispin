@@ -1,243 +1,221 @@
+/*
+  Based on TailwindCSS recommendations,
+  consider using classes instead of the `@apply` directive
+  @see https://tailwindcss.com/docs/reusing-styles#avoiding-premature-abstraction
+*/
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-@import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@300;400;500;600;700&display=swap');
-
+@import url("https://fonts.googleapis.com/css2?family=Space+Mono:wght@300;400;500;600;700&display=swap");
 @font-face {
-    font-family: "Segoe UI";
-    font-weight: 400;
-    src: local("Segoe UI"), url("../public/fonts/Segoe UI.ttf") format("truetype");
-}
-
-@font-face {
-    font-family: "Segoe UI";
-    font-weight: 700;
-    src: local("Segoe UI Bold"), url("../public/fonts/Segoe UI Bold.ttf") format("truetype");
+  font-family: "Segoe UI";
+  font-weight: 400;
+  src: local("Segoe UI"), url("../public/fonts/Segoe UI.ttf") format("truetype");
 }
 @font-face {
-    font-family: "Segoe UI";
-    font-style: italic;
-    font-weight: 400;
-    src: local("Segoe UI Italic"), url("../public/fonts/Segoe UI Italic.ttf") format("truetype");
+  font-family: "Segoe UI";
+  font-weight: 700;
+  src: local("Segoe UI Bold"),
+    url("../public/fonts/Segoe UI Bold.ttf") format("truetype");
 }
 @font-face {
-    font-family: "Segoe UI";
-    font-style: italic;
-    font-weight: 700;
-    src: local("Segoe UI Bold Italic"), url("../public/fonts/Segoe UI Bold Italic.ttf") format("truetype");
+  font-family: "Segoe UI";
+  font-style: italic;
+  font-weight: 400;
+  src: local("Segoe UI Italic"),
+    url("../public/fonts/Segoe UI Italic.ttf") format("truetype");
 }
 @font-face {
-    font-family: "SF Mono";
-    font-weight: 400;
-    src: local("SF Mono Regular"), url("../public/fonts/SFMonoRegular.otf") format("truetype");
+  font-family: "Segoe UI";
+  font-style: italic;
+  font-weight: 700;
+  src: local("Segoe UI Bold Italic"),
+    url("../public/fonts/Segoe UI Bold Italic.ttf") format("truetype");
 }
-
+@font-face {
+  font-family: "SF Mono";
+  font-weight: 400;
+  src: local("SF Mono Regular"),
+    url("../public/fonts/SFMonoRegular.otf") format("truetype");
+}
 body {
-    margin: 0;
-    padding: 0;
-    border: 0;
-    outline: 0;
-    box-sizing: border-box;
-    list-style: none;
-    text-decoration: none;
-    background-color: #fff;
-  }
-
+  @apply box-border no-underline bg-white m-0 p-0 border-0;
+  outline: 0;
+  list-style: none;
+}
 .content {
-    /* height: 100vh; */
-    overflow: auto;
+  @apply overflow-auto;
+  /* height: 100vh; */
+}
+
+.flexbox-c {
+  @apply flex flex-col justify-between;
+  /* height: 100vh; */
+}
+.firstLinks a {
+  @apply text-[black] no-underline;
+}
+.home {
+  position: relative; /* Set the home container to position relative */
+  @apply static max-h-[30vh] left-[30%] pt-[200px]; /* Increased padding-top to add more space */
+
+  /* background: lightblue; */
 }
 
 h1 {
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
-}
-
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial,
+      sans-serif;
+  }
 .home p {
     font-family: "SF Mono";
-}
-
-
-.flexbox-c {
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-    /* height: 100vh; */
-}
-
-.firstLinks a {
-    color: black;
-    text-decoration: none;
-}
-
-.home {
-    position: static;
-    left: 30%;
-    /* background: lightblue; */
-    max-height: 30vh;
-}
-
-@media (max-width: 768px) 
-{
-    .home h1 {
-        color: rgb(35, 35, 44);
-        font-weight: 700;
-        font-size: 10vw;
-    }
-
-    .central {
-        padding-right: 5%;
-    }
-
-    .section{
-        padding: 200px 0px 200px 15%;
-    }
-
-    .section-text{
-        padding: 0px 0px 100px 15%;
-        font-size: 14px;
-    }
-
-}
-
-@media (min-width: 768px) 
-{
-    .home h1 {
-        color: rgb(35, 35, 44);
-        font-weight: 700;
-        font-size: 72px;
-    }
-
-    .central {
-        padding-right: 30%;
-    }
-
-    .section{
-        padding: 200px 0px 200px 25%;
-    }
-
-    .section-heading {
-        padding: 100px 0px 200px 25%;
-    }
-
-    .section-text{
-        padding: 0px 0px 100px 25%;
-        font-size: 14px;
-    }
-}
-
-.divider{
-    height: 5px;
-    background-color: #69FFC8;
-}
-
-.item-group {
-    padding: 40px 0px 40px 0px;
-}
-
-.single-item {
-    padding: 30px 0px 30px 0px;
-}
-
-.single-item a {
-    color: black;
-    text-decoration: none;
-}
-
-.projects-item-group {
-    display: flex;
-    justify-content: space-between;
-    padding-right: 50px;
-}
-
-.single-item-card {
-    width: 30%;
-    padding: 30px 0px 30px 0px;
-}
-
-.single-item-card p {
-    padding-top: 5px;
-}
-
-.single-item-card a {
-    color: black;
-    text-decoration: none;
-}
-
-.single-item-card img {
-    width: 100%;
-    padding-bottom: 20px;
-}
-
-.flex-wrapper {
-    display: flex;
-    min-height: 100vh;
-    flex-direction: column;
-    justify-content: flex-start;
   }
 
+@media (max-width: 768px) {
+  .home h1 {
+    @apply text-[rgb(35,35,44)] font-bold text-[10vw];
+  }
+  .central {
+    @apply pr-[5%];
+  }
+  .section {
+    @apply pl-[15%] pr-0 py-[200px];
+  }
+  .section-text {
+    @apply text-sm pl-[15%] pr-0 pt-0 pb-[100px];
+  }
+}
+@media (min-width: 768px) {
+  .home h1 {
+    @apply text-[rgb(35,35,44)] font-bold text-7xl;
+  }
+  .central {
+    @apply pr-[30%];
+  }
+  .section {
+    @apply pl-[25%] pr-0 py-[200px];
+  }
+  .section-heading {
+    @apply pl-[25%] pr-0 pt-[100px] pb-[200px];
+  }
+  .section-text {
+    @apply text-sm pl-[25%] pr-0 pt-0 pb-[100px];
+  }
+}
+.divider {
+  @apply h-[5px] bg-[#69FFC8];
+}
+.item-group {
+  @apply px-0 py-10;
+}
+.single-item {
+  @apply px-0 py-[30px];
+}
+.single-item a {
+  @apply text-[black] no-underline;
+}
+.projects-item-group {
+  @apply flex justify-between pr-[50px];
+}
+.single-item-card {
+  @apply w-[30%] px-0 py-[30px];
+}
+.single-item-card p {
+  @apply pt-[5px];
+}
+.single-item-card a {
+  @apply text-[black] no-underline;
+}
+.single-item-card img {
+  @apply w-full pb-5;
+}
+.flex-wrapper {
+  @apply flex min-h-screen flex-col justify-start;
+}
 .footer-gradient {
-    background-image: linear-gradient(57.09deg,rgba(245,250,28,0.9) 0%,rgba(252,255,101,0) 37.99%),linear-gradient(162.34deg,#6AFFC9 25.23%,rgba(70,255,188,0) 70.88%),linear-gradient(95.09deg,#FCFF6D 1.14%,rgba(101,220,176,0.86) 33.44%,rgba(253,125,225,0.86) 62.8%,rgba(211,155,255,0.58) 99.02%);
+  @apply bg-[linear-gradient(57.09deg,rgba(245,250,28,0.9)_0%,rgba(252,255,101,0)_37.99%),linear-gradient(162.34deg,#6AFFC9_25.23%,rgba(70,255,188,0)_70.88%),linear-gradient(95.09deg,#FCFF6D_1.14%,rgba(101,220,176,0.86)_33.44%,rgba(253,125,225,0.86)_62.8%,rgba(211,155,255,0.58)_99.02%)];
 }
-
 .section .heading h1 {
-    font-size: 72px;
-    color: rgb(35, 35, 44);
-    font-weight: 700;
+  @apply text-7xl text-[rgb(35,35,44)] font-bold;
 }
-
 .heading a {
-    text-decoration: none;
-    color: black;   
+  @apply no-underline text-[black];
 }
-
 .centered-colourbar {
-    background-color: #69FFC8;
-    height: 10px;
-    width: 100%;
+  @apply bg-[#69FFC8] h-2.5 w-full;
 }
-
-.bluelink {
-    color: blue;
-}
-
 .short-top {
-    padding-top: 50px;
+  @apply pt-[50px];
 }
-
 .short-bottom {
-    padding-bottom: 50px;
+  @apply pb-[50px];
 }
-
 .vert-flexbox {
-    display: flex;
-    flex-direction: row;
-    align-content: space-between;
+  @apply flex flex-row content-between;
 }
-
 .posts-nav-section {
-    min-width: 30%;
-    height: 100%;
-    padding: 100px 100px 100px 100px;
-    flex-shrink: 0;
+  @apply min-w-[30%] h-full shrink-0 p-[100px];
 }
-
 .posts-nav-section a {
-    color: black;
-    list-style: none;
+  @apply text-[black];
+  list-style: none;
 }
-
 .posts-nav-section ul {
-    list-style: none;
+  list-style: none;
 }
-
 .navbar {
-    background:transparent;
-    padding: 0;
-    max-height: 0;
+  @apply max-h-0 p-0;
+  background: transparent;
 }
-
 .navbar img {
-    width: 50px;
-    padding-top: 10px;
-    padding-left: 10px;
+  @apply w-[50px] pl-2.5 pt-2.5;
+}
+.home .top-image {
+    position: absolute; /* Keep the image positioned absolutely within the .home container */
+    top: 0; /* Start from the top of the .home container */
+    left: 60%; /* Center it horizontally according to your design */
+    max-height: 400px; /* Maximum height of the image */
+    width: auto; /* Maintain the aspect ratio of the image */
+    z-index: -1; /* Keep it behind other content */
+    bottom: auto; /* Remove the bottom property */
+}
+.shiftedbox {
+  @apply m-0 pl-[30px] pr-0 py-0;
+}
+.shadedbox {
+  @apply bg-[linear-gradient(57.09deg,rgba(245,250,28,0.9)_0%,rgba(252,255,101,0)_37.99%),linear-gradient(162.34deg,rgb(106,255,201)_25.23%,rgba(70,255,188,0)_70.88%),linear-gradient(95.09deg,rgb(252,255,109)_1.14%,rgba(101,220,176,0.86)_33.44%,rgba(253,125,225,0.86)_62.8%,rgba(211,155,255,0.58)_99.02%)] text-base pl-[30px] pr-0 py-[30px];
+}
+@media (max-width: 768px) {
+  .shadedbox .biotext {
+    @apply w-[85%];
+    /* padding: 0px 25% 0px 0px; */
+  }
+}
+@media (min-width: 768px) {
+  .shadedbox .biotext {
+    @apply w-9/12;
+    /* padding: 0px 25% 0px 0px; */
+  }
+}
+.home .subbox {
+  @apply w-9/12 m-0 pt-2.5 pb-0 px-0;
+  font-family: "SF Mono";
+  /* max-width: 99%; */
+  /* background-color: red; */
+  /* display: inline-block; */
+}
+.home .subbox .firstLinks {
+  @apply h-10;
+  /* width: auto; */
+  /* height: auto; */
+}
+.home .subbox .firstLinks a {
+  @apply mx-[15px];
+}
+.home .logos {
+  @apply flex inline-block h-10;
+  /* font-family: "SF Mono"; */
+  align-items: right;
+}
+.home .logos img {
+  @apply w-5 mx-[15px];
 }

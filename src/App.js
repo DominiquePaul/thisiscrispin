@@ -1,4 +1,4 @@
-// dont need to add .js at the end
+import './styles/tailwind.css';
 import React, { useEffect } from 'react';
 import Home from "./components/Home"
 import Navbar from "./components/Navbar"

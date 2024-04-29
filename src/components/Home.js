@@ -1,5 +1,4 @@
-import React from 'react';
-import "./Home.css"
+import React, { useRef, useEffect } from 'react';
 import ReactGA from 'react-ga4';
 
 
@@ -12,12 +11,34 @@ const Home = () => {
         });
       };
 
+      const imageRef = React.useRef(null);
+      const shiftedBoxRef = React.useRef(null);
+  
+      const positionImage = () => {
+          if (imageRef.current && shiftedBoxRef.current) {
+              const imageHeight = imageRef.current.offsetHeight;
+              const shiftedBoxPosition = shiftedBoxRef.current.offsetTop;
+              imageRef.current.style.top = `${shiftedBoxPosition - imageHeight}px`;
+          }
+      };
+  
+      React.useEffect(() => {
+          if (imageRef.current.complete) {
+              positionImage(); // Position immediately if image is already loaded
+          } else {
+              imageRef.current.onload = positionImage; // Set position after image loads
+          }
+      }, []);
+
     return (
         <div className="section">            
             <div className="home">
-                <h4>thisiscrispin</h4>
-                <h1 className="pb-2">Dominique Paul</h1>
-                <div className="shiftedbox shadedbox">
+                <div className="headingshome">
+                    <h4>thisiscrispin</h4>
+                    <h1 className="pb-2">Dominique Paul</h1>
+                </div>
+                <img ref={imageRef} src="./assets/profile.png" alt="Profile of dominique" className="top-image"/>
+                <div ref={shiftedBoxRef} className="shiftedbox shadedbox">
                     <div className="biotext">
                         <article>
                             <p>I'm a product builder, computer scientist and statistician interested in how we can design intelligent systems (computers) so that not-so-intelligent systems (us humans) can use them. I've done research on statistical methods and machine learning for genomics at ETH Zurich and <a href="https://openreview.net/forum?id=IbiiNw4oRj" >published work on tabular foundation models at NeurIPS</a>. Currently, I'm building AI products as a freelancer with <a href="https://www.palta-labs.com/" rel="noopener noreferrer" target="_blank" onClick={() => handleButtonClick("Clicked", "palta-labs-link")}>Palta Labs</a>. You can follow what I'm up to by subscribing to my <a href="https://thisiscrispin.substack.com/" target="_blank" rel="noopener noreferrer" onClick={() => handleButtonClick("Clicked", "introductory-substack-link")}>Substack newsletter</a>.</p>
