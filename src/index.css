@@ -178,6 +178,11 @@ h1 {
     z-index: -1; /* Keep it behind other content */
     bottom: auto; /* Remove the bottom property */
 }
+@media (max-width: 600px) {
+    .home .top-image {
+        left: 20%; /* Center the image horizontally on mobile */
+    }
+}
 .shiftedbox {
   @apply m-0 pl-[30px] pr-0 py-0;
 }
