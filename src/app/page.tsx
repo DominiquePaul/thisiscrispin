@@ -19,7 +19,7 @@ export default function Home() {
           </div>
           <div className="relative bg-[linear-gradient(57.09deg,rgba(245,250,28,0.9)_0%,rgba(252,255,101,0)_37.99%),linear-gradient(162.34deg,rgb(106,255,201)_25.23%,rgba(70,255,188,0)_70.88%),linear-gradient(95.09deg,rgb(252,255,109)_1.14%,rgba(101,220,176,0.86)_33.44%,rgba(253,125,225,0.86)_62.8%,rgba(211,155,255,0.58)_99.02%)] p-[30px]">
             <Image
-              src="/profile.png"
+              src="https://images.ctfassets.net/2jl6ez2z7dm3/6AkXaLJsPO9nIr392g2Zyo/a5ca0fa0f635941da88473cd57274615/profile.png?fm=webp&q=80"
               alt="Decorative top image"
               className="absolute bottom-full left-[50%] w-auto h-auto max-h-[40vh]"
               width={400}
