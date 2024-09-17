@@ -1,7 +1,7 @@
 "use client"
 import Image from "next/image";
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
-import InteractiveGrainyHero from '@/components/InteractiveGrainyHero';
+// import InteractiveGrainyHero from '@/components/InteractiveGrainyHero';
 
 export default function Home() {
   return (
