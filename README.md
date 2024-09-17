@@ -9,7 +9,7 @@ Some facts about the app:
 - It's hosted on render.com
 - It uses contentful as a CMS
 
-![screenshot of website]([readme_images/screenshot_website.png](https://images.ctfassets.net/2jl6ez2z7dm3/4ys8cNpGng5JHgbL1KP2er/1a0b5a5a7c65339512ee1348a49740b1/screenshot-2024-09-17.jpeg?q=80))
+![screenshot of website](https://images.ctfassets.net/2jl6ez2z7dm3/4ys8cNpGng5JHgbL1KP2er/1a0b5a5a7c65339512ee1348a49740b1/screenshot-2024-09-17.jpeg?q=80)
 
 ## Todos:
 
