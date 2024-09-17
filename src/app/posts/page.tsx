@@ -10,8 +10,6 @@ export default async function BlogPost() {
     });
 
     const entry = await client.getEntry('UB2adnuFkz807blYey7Kz');
-    console.log('entry:', entry);
-    console.log('mainContent:', entry.fields.mainContent);
     
     return (
       <div>
