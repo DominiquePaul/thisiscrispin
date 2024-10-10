@@ -99,6 +99,7 @@ export default function Home() {
               src="https://images.ctfassets.net/2jl6ez2z7dm3/6ZgFqsuw5gsWmBHZs2oD0f/b12b806c9242e32e9e6e5e198687b4b5/neurips.JPG?fm=webp&q=80"
               alt="Research & Publications"
               fill
+              sizes="(max-width: 768px) 100vw, 50vw"
               className="object-cover"
             />
             <div className="card-overlay absolute inset-0"></div>
@@ -119,6 +120,7 @@ export default function Home() {
               src="https://images.ctfassets.net/2jl6ez2z7dm3/4U1eqV4GxEEJKGTnD2Hqn4/5a8e9314b26c77950ed5f2ca427dd0a3/hockey.JPG?fm=webp&q=80"
               alt="Recent Updates"
               fill
+              sizes="(max-width: 768px) 100vw, 33vw"
               className="object-cover"
             />
             <div className="card-overlay absolute inset-0"></div>
@@ -140,6 +142,7 @@ export default function Home() {
               src="https://images.ctfassets.net/2jl6ez2z7dm3/PKHStba23dM4bOGNr9dyt/f1ce250f41d91eabcfa7180c98610fa9/coding2.JPG?fm=webp&q=80"
               alt="Quick Links"
               fill
+              sizes="(max-width: 768px) 100vw, 25vw"
               className="object-cover"
             />
             <div className="card-overlay absolute inset-0"></div>
@@ -160,6 +163,7 @@ export default function Home() {
               src="https://images.ctfassets.net/2jl6ez2z7dm3/6XZVhquaJdepzhinfh7Ctx/2087ec76df461d48afd800b5836784d8/photography.jpg?fm=webp&q=80"
               alt="Shots"
               fill
+              sizes="(max-width: 768px) 100vw, 25vw"
               className="object-cover"
             />
             <div className="card-overlay absolute inset-0"></div>
@@ -181,6 +185,7 @@ export default function Home() {
               src="https://images.ctfassets.net/2jl6ez2z7dm3/5B22yhakl46JVxU4nR5hFW/3fc0e197806dde5bacc766d518687b94/writing.jpg?fm=webp&q=80"
               alt="Follow me on Substack"
               fill
+              sizes="(max-width: 768px) 100vw, 25vw"
               className="object-cover"
             />
             <div className="card-overlay absolute inset-0"></div>
@@ -198,6 +203,7 @@ export default function Home() {
               src="https://images.ctfassets.net/2jl6ez2z7dm3/5oFWtdiHvWHzu1IqSWvzSd/1b7d189e2cd59642b2293212979ceef8/email2.jpg?fm=webp&q=80"
               alt="Contact Us"
               fill
+              sizes="(max-width: 768px) 100vw, 25vw"
               className="object-cover"
             />
             <div className="card-overlay absolute inset-0"></div>

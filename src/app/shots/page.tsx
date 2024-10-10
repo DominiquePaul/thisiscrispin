@@ -196,24 +196,22 @@ function ImageCarousel() {
 
   const updateURL = useCallback((albumIndex: number, imageOrder: number) => {
     const albumTitle = albums[albumIndex].title.toLowerCase().replace(/ /g, '-');
-    router.push(`/shots?album=${albumTitle}&image=${imageOrder}`, { scroll: false });
-  }, [router]);
+    return `?album=${albumTitle}&image=${imageOrder}`;
+  }, []);
 
   const handleNext = useCallback(() => {
     setOrder(prevOrder => {
       const newOrder = prevOrder < albums[currentAlbumIndex].images.length ? prevOrder + 1 : 1;
-      updateURL(currentAlbumIndex, newOrder);
       return newOrder;
     });
-  }, [currentAlbumIndex, updateURL]);
+  }, [currentAlbumIndex]);
 
   const handlePrev = useCallback(() => {
     setOrder(prevOrder => {
       const newOrder = prevOrder > 1 ? prevOrder - 1 : albums[currentAlbumIndex].images.length;
-      updateURL(currentAlbumIndex, newOrder);
       return newOrder;
     });
-  }, [currentAlbumIndex, updateURL]);
+  }, [currentAlbumIndex]);
 
   useEffect(() => {
     const albumParam = searchParams.get('album');
@@ -228,6 +226,11 @@ function ImageCarousel() {
       return imageIndex > 0 && imageIndex <= maxOrder ? imageIndex : 1;
     });
   }, [searchParams]);
+
+  useEffect(() => {
+    const newURL = updateURL(currentAlbumIndex, order);
+    router.push(`/shots${newURL}`, { scroll: false });
+  }, [currentAlbumIndex, order, router, updateURL]);
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
