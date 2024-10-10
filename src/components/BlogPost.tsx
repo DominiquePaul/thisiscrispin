@@ -11,7 +11,6 @@ const BlogPost: React.FC<{contentfulId: string}> = async ({ contentfulId }) => {
     });
 
     const entry = await client.getEntry(contentfulId);
-    console.log('entry:', entry);
     
     return (
       <div className="min-h-screen pt-20"> {/* Added pt-20 for top padding */}

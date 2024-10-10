@@ -7,7 +7,7 @@ const client = createClient({
 });
 
 export async function getArticles(): Promise<Article[]> {
-  console.log("Fetching articles...");
+  // console.log("Fetching articles...");
   
   try {
     const response = await client.getEntries({
@@ -15,13 +15,13 @@ export async function getArticles(): Promise<Article[]> {
       order: ['-sys.createdAt'],
     });
 
-    console.log("Response received:", JSON.stringify(response, null, 2));
-    console.log("Number of items:", response.items.length);
+    // console.log("Response received:", JSON.stringify(response, null, 2));
+    // console.log("Number of items:", response.items.length);
     
-    if (response.items.length > 0) {
-      console.log("First item content type:", response.items[0].sys.contentType);
-      console.log("First item fields:", JSON.stringify(response.items[0].fields, null, 2));
-    }
+    // if (response.items.length > 0) {
+    //   console.log("First item content type:", response.items[0].sys.contentType);
+    //   console.log("First item fields:", JSON.stringify(response.items[0].fields, null, 2));
+    // }
 
     return response.items.map(item => ({
       id: item.sys.id,

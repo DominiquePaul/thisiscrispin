@@ -1,5 +1,6 @@
 "use client"
 
+import { Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Bebas_Neue, Raleway, Archivo_Black, Questrial, Bodoni_Moda, Playfair_Display } from 'next/font/google'
 import React, { useState, useEffect, useCallback } from "react";
@@ -186,7 +187,7 @@ const albums: Album[] = [
   },
 ];
 
-export default function ImageCarousel() {
+function ImageCarousel() {
   const router = useRouter();
   const searchParams = useSearchParams();
   
@@ -305,5 +306,13 @@ export default function ImageCarousel() {
         ))}
       </div>
     </div>
+  );
+}
+
+export default function ShotsPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <ImageCarousel />
+    </Suspense>
   );
 }
