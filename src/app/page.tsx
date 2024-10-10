@@ -1,11 +1,12 @@
 "use client"
 import Image from "next/image";
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import Link from "next/link";
 // import InteractiveGrainyHero from '@/components/InteractiveGrainyHero';
 
 export default function Home() {
   return (
-    <div className="flex flex-col min-h-screen bg-[#fff] overflow-auto">
+    <div className="flex flex-col min-h-screen overflow-auto">
       {/* <InteractiveGrainyHero /> */}
       <section className="flex-grow-0 pt-[45vh] pl-[5%] sm:pl-[10%]">
         <div className="relative ">
@@ -46,7 +47,7 @@ export default function Home() {
                     <Image alt="github icon" src="/logos/grey/github.png" width={20} height={20} className="w-5" />
                   </a>
                   <a href="https://www.linkedin.com/in/dominique-paul/" target="_blank" rel="noopener noreferrer">
-                    <Image alt="linkedin icon" src="https://images.ctfassets.net/2jl6ez2z7dm3/1Jon1DDHfPRlHp2Q4tv2Z5/b57b3b8b65dfd3a16a0a2e414ca827b2/linkedin.png" width={20} height={20} className="w-5" />
+                    <Image alt="linkedin icon" src="/logos/grey/linkedin.png" width={20} height={20} className="w-5" />
                   </a>
                   <a href="https://twitter.com/dominiquecapaul" target="_blank" rel="noopener noreferrer">
                     <Image alt="twitter icon" src="/logos/grey/twitter.png" width={20} height={20} className="w-5" />
@@ -93,94 +94,102 @@ export default function Home() {
       <div className="grid grid-cols-12 grid-rows-5 gap-4 h-full">
         {/* Row 1 (60% height) */}
         <Card className="col-span-7 row-span-3 relative overflow-hidden bento-card group">
-          <Image
-            src="https://images.ctfassets.net/2jl6ez2z7dm3/6ZgFqsuw5gsWmBHZs2oD0f/b12b806c9242e32e9e6e5e198687b4b5/neurips.JPG?fm=webp&q=80"
-            alt="Research & Publications"
-            fill
-            className="object-cover"
-          />
-          <div className="card-overlay absolute inset-0"></div>
-          <div className="card-content relative z-10">
-            <CardHeader>
-              <CardTitle className="text-white">Publications at NeurIPS and in Nature Communications</CardTitle>
-            </CardHeader>
-            <CardContent className="text-white">
-              Short summaries of the three papers I&apos;ve written in non-technical language.
-            </CardContent>
-          </div>
-        </Card>
-
-        <Card className="col-span-5 row-span-3 relative overflow-hidden bento-card group">
-          <Image
-            src="https://images.ctfassets.net/2jl6ez2z7dm3/4U1eqV4GxEEJKGTnD2Hqn4/5a8e9314b26c77950ed5f2ca427dd0a3/hockey.JPG?fm=webp&q=80"
-            alt="Recent Updates"
-            fill
-            className="object-cover"
-          />
-          <div className="card-overlay absolute inset-0"></div>
-          <div className="card-content relative z-10">
-            <CardHeader>
-              <CardTitle className="text-white">Building Hockey in Sierra Leone</CardTitle>
-            </CardHeader>
-            <CardContent className="text-white">
-                How I lived in Freetown for 6 months, built the country&apos;s first artificial turf, and our plans for bringing Sierra Leone to the Africa Cup of Nations.
-            </CardContent>
-          </div>
-        </Card>
-
-        {/* Row 2 (40% height) */}
-        <Card className="col-span-4 row-span-2 relative overflow-hidden bento-card group">
-          <Image
-            src="https://images.ctfassets.net/2jl6ez2z7dm3/PKHStba23dM4bOGNr9dyt/f1ce250f41d91eabcfa7180c98610fa9/coding2.JPG?fm=webp&q=80"
-            alt="Quick Links"
-            fill
-            className="object-cover"
-          />
-          <div className="card-overlay absolute inset-0"></div>
-          <div className="card-content relative z-10">
-            <CardHeader>
-              <CardTitle className="text-white">Open source projects</CardTitle>
-            </CardHeader>
-            <CardContent className="text-white">
-                How I built a whatsapp bot to stay in touch with my 100-year old grandma and more.
-            </CardContent>
-          </div>
-        </Card>
-
-        <Card className="col-span-4 row-span-2 relative overflow-hidden bento-card group">
-          <Image
-            src="https://images.ctfassets.net/2jl6ez2z7dm3/6XZVhquaJdepzhinfh7Ctx/2087ec76df461d48afd800b5836784d8/photography.jpg?fm=webp&q=80"
-            alt="Photography"
-            fill
-            className="object-cover"
-          />
-          <div className="card-overlay absolute inset-0"></div>
-          <div className="card-content relative z-10">
-            <CardHeader>
-              <CardTitle className="text-white">Photography</CardTitle>
-            </CardHeader>
-            <CardContent className="text-white">
-              Pictures of nature and friends.
-            </CardContent>
-          </div>
-        </Card>
-        
-        {/* Box 5 with vertical split */}
-        <div className="col-span-4 row-span-2 grid grid-rows-2 gap-4">
-          <Card className="relative overflow-hidden bento-card group">
+          <Link href="/p/research-and-publications" className="absolute inset-0 z-10">
             <Image
-              src="https://images.ctfassets.net/2jl6ez2z7dm3/5B22yhakl46JVxU4nR5hFW/3fc0e197806dde5bacc766d518687b94/writing.jpg?fm=webp&q=80"
-              alt="Upcoming Events"
+              src="https://images.ctfassets.net/2jl6ez2z7dm3/6ZgFqsuw5gsWmBHZs2oD0f/b12b806c9242e32e9e6e5e198687b4b5/neurips.JPG?fm=webp&q=80"
+              alt="Research & Publications"
               fill
               className="object-cover"
             />
             <div className="card-overlay absolute inset-0"></div>
             <div className="card-content relative z-10">
               <CardHeader>
-                <CardTitle className="text-white">Writing</CardTitle>
+                <CardTitle className="text-white">Publications at NeurIPS and in Nature Communications</CardTitle>
               </CardHeader>
               <CardContent className="text-white">
-              See past newsletters on Substack.
+                Short summaries of the three papers I&apos;ve written in non-technical language.
+              </CardContent>
+            </div>
+          </Link>
+        </Card>
+
+        <Card className="col-span-5 row-span-3 relative overflow-hidden bento-card group">
+          <Link href="/p/sierra-leone-hockey" className="absolute inset-0 z-10">
+            <Image
+              src="https://images.ctfassets.net/2jl6ez2z7dm3/4U1eqV4GxEEJKGTnD2Hqn4/5a8e9314b26c77950ed5f2ca427dd0a3/hockey.JPG?fm=webp&q=80"
+              alt="Recent Updates"
+              fill
+              className="object-cover"
+            />
+            <div className="card-overlay absolute inset-0"></div>
+            <div className="card-content relative z-10">
+              <CardHeader>
+                <CardTitle className="text-white">Building Hockey in Sierra Leone</CardTitle>
+              </CardHeader>
+              <CardContent className="text-white">
+                  How I lived in Freetown for 6 months, built the country&apos;s first artificial turf, and our plans for bringing Sierra Leone to the Africa Cup of Nations.
+              </CardContent>
+            </div>
+          </Link>
+        </Card>
+
+        {/* Row 2 (40% height) */}
+        <Card className="col-span-4 row-span-2 relative overflow-hidden bento-card group">
+          <Link href="/p/open-source-projects" className="absolute inset-0 z-10">
+            <Image
+              src="https://images.ctfassets.net/2jl6ez2z7dm3/PKHStba23dM4bOGNr9dyt/f1ce250f41d91eabcfa7180c98610fa9/coding2.JPG?fm=webp&q=80"
+              alt="Quick Links"
+              fill
+              className="object-cover"
+            />
+            <div className="card-overlay absolute inset-0"></div>
+            <div className="card-content relative z-10">
+              <CardHeader>
+                <CardTitle className="text-white">Open source projects</CardTitle>
+              </CardHeader>
+              <CardContent className="text-white">
+                  How I built a whatsapp bot to stay in touch with my 100-year old grandma and more.
+              </CardContent>
+              </div>
+          </Link>
+        </Card>
+
+        <Card className="col-span-4 row-span-2 relative overflow-hidden bento-card group">
+          <Link href="/shots" className="absolute inset-0 z-10">
+            <Image
+              src="https://images.ctfassets.net/2jl6ez2z7dm3/6XZVhquaJdepzhinfh7Ctx/2087ec76df461d48afd800b5836784d8/photography.jpg?fm=webp&q=80"
+              alt="Shots"
+              fill
+              className="object-cover"
+            />
+            <div className="card-overlay absolute inset-0"></div>
+            <div className="card-content relative z-10">
+              <CardHeader>
+                <CardTitle className="text-white">Shots</CardTitle>
+              </CardHeader>
+              <CardContent className="text-white">
+                Photographs of nature and friends.
+              </CardContent>
+              </div>
+          </Link>
+        </Card>
+        
+        {/* Box 5 with vertical split */}
+        <div className="col-span-4 row-span-2 grid grid-rows-2 gap-4">
+          <Card className="relative overflow-hidden bento-card group cursor-pointer" onClick={() => window.open('https://thisiscrispin.substack.com', '_blank')}>
+            <Image
+              src="https://images.ctfassets.net/2jl6ez2z7dm3/5B22yhakl46JVxU4nR5hFW/3fc0e197806dde5bacc766d518687b94/writing.jpg?fm=webp&q=80"
+              alt="Follow me on Substack"
+              fill
+              className="object-cover"
+            />
+            <div className="card-overlay absolute inset-0"></div>
+            <div className="card-content relative z-10">
+              <CardHeader>
+                <CardTitle className="text-white">My Substack</CardTitle>
+              </CardHeader>
+              <CardContent className="text-white">
+                See past newsletters and follow what I&apos;m up to.
               </CardContent>
             </div>
           </Card>
