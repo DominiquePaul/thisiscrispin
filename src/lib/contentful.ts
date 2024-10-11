@@ -7,28 +7,24 @@ const client = createClient({
 });
 
 export async function getArticles(): Promise<Article[]> {
-  // console.log("Fetching articles...");
-  
   try {
     const response = await client.getEntries({
-      content_type: 'markdownrtc',  // Update this line
+      content_type: 'markdownrtc',
       order: ['-sys.createdAt'],
     });
 
-    // console.log("Response received:", JSON.stringify(response, null, 2));
-    // console.log("Number of items:", response.items.length);
-    
-    // if (response.items.length > 0) {
-    //   console.log("First item content type:", response.items[0].sys.contentType);
-    //   console.log("First item fields:", JSON.stringify(response.items[0].fields, null, 2));
-    // }
-
-    return response.items.map(item => ({
+    const articles = response.items.map(item => ({
       id: item.sys.id,
       title: item.fields.title as string,
+      createdAt: item.sys.createdAt,
       slug: item.fields.slug as string,
+      coverImage: `https:${(item.fields.coverImage as any).fields.file.url}`,
+      excerpt: item.fields.excerpt as string,
       tags: item.metadata.tags.map(tag => tag.sys.id),
     }));
+
+
+    return articles;
   } catch (error) {
     console.error("Error fetching articles:", error);
     throw error;
@@ -47,11 +43,15 @@ export async function getArticleBySlug(slug: string) {
   }
 
   const article = response.items[0];
-  return {
+  const articleData = {
     id: article.sys.id,
-    title: article.fields.title,
+    createdAt: article.sys.createdAt,
     slug: article.fields.slug,
+    title: article.fields.title,
+    excerpt: article.fields.excerpt,
+    coverImage: `https:${(article.fields.coverImage as any).fields.file.url}`,
     content: article.fields.content,
-    // ... other fields
   };
+
+  return articleData;
 }
