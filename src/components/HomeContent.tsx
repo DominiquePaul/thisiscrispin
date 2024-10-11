@@ -227,7 +227,7 @@ export default function HomeContent({ articles, allTags }: HomeContentProps) {
       
       {/* Add the BlogContent component as a teaser */}
       <div className="mt-32">
-        <h2 className="text-4xl font-bold mb-8">Latest Blog Posts</h2>
+        <h2 className="text-4xl font-bold mb-8">Latest Posts</h2>
         <BlogContent articles={articles} allTags={allTags} isTeaser={true} maxArticles={3} />
       </div>
       
@@ -235,7 +235,7 @@ export default function HomeContent({ articles, allTags }: HomeContentProps) {
       <div className="mt-8 text-center">
         <Link href="/p">
           <Button variant="outline" size="lg">
-            See all blog posts
+            See all posts
           </Button>
         </Link>
       </div>

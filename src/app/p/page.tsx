@@ -7,8 +7,10 @@ export default async function BlogPage() {
   const allTags = Array.from(new Set(articles.flatMap(article => article.tags)))
 
   return (
-    <Suspense fallback={<div>Loading...</div>}>
-      <BlogContent articles={articles} allTags={allTags} />
-    </Suspense>
+    <div className="pt-8 px-8 md:px-16">
+      <Suspense fallback={<div>Loading...</div>}>
+        <BlogContent articles={articles} allTags={allTags} />
+      </Suspense>
+    </div>
   )
 }

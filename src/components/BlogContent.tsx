@@ -36,7 +36,7 @@ export default function BlogContent({ articles, allTags = [], isTeaser = false, 
     <div className={`${isTeaser ? '' : 'mt-24'}`}>
       {!isTeaser && (
         <header className="mb-8">
-          <h1 className="text-6xl font-bold mb-4">Blog</h1>
+          <h1 className="text-6xl font-bold mb-4">Posts</h1>
           <nav className="flex justify-between items-center">
             <Select onValueChange={(value) => setSelectedTag(value)}>
               <SelectTrigger className="w-[180px]">
@@ -57,7 +57,7 @@ export default function BlogContent({ articles, allTags = [], isTeaser = false, 
         {displayedArticles.map((article) => (
           <Link href={`/p/${article.slug}`} key={article.id} className="block mb-8 pb-8 border-b last:border-b-0 hover:bg-gray-50 transition-colors duration-200">
             <div className="flex justify-between items-start">
-              <div className="flex-1 pr-4">
+              <div className="flex-1">
                 <div className="flex items-center space-x-2 mb-2">
                   {article.tags.map((tag) => (
                     <Badge key={tag} variant="secondary">{tag}</Badge>
@@ -73,7 +73,8 @@ export default function BlogContent({ articles, allTags = [], isTeaser = false, 
                   })}
                 </p>
               </div>
-              <div className="w-[200px] h-[200px] relative">
+              {/* Only render the image on larger screens */}
+              <div className="hidden md:w-[200px] md:h-[200px] relative md:block">
                 <Image
                   src={`${article.coverImage}?fm=webp&q=60`}
                   alt={article.title}
