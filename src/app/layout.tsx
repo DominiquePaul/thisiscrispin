@@ -53,7 +53,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${inter.className} ${segoeUI.variable} ${sfMono.variable} bg-[#f9f9f9]`}>
+      <body className={`${inter.className} ${segoeUI.variable} ${sfMono.variable} bg-[#F2F2F2]`}>
         <div className="absolute top-4 left-4 z-10">
           <Link href="/">
             <Image src="/logo_large.png" alt="Logo" width={64} height={64} />

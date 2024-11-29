@@ -55,7 +55,7 @@ export default function BlogContent({ articles, allTags = [], isTeaser = false, 
 
       <div>
         {displayedArticles.map((article) => (
-          <Link href={`/p/${article.slug}`} key={article.id} className="block mb-8 pb-8 border-b last:border-b-0 hover:bg-gray-50 transition-colors duration-200">
+          <Link href={`/p/${article.slug}`} key={article.id} className="block mb-8  border-b last:border-b-0 hover:bg-gray-200 transition-colors duration-200">
             <div className="flex justify-between items-start">
               <div className="flex-1">
                 <div className="flex items-center space-x-2 mb-2">

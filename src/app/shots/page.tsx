@@ -58,9 +58,9 @@ const CarouselImage: React.FC<CarouselImageProps & { index: number }> = ({ src, 
 
   const getImageSizeClass = () => {
     if (aspectRatio === null) return '';
-    if (aspectRatio > 1.2) return 'max-w-[80vw] max-h-[55vh] sm:max-w-[70vw] sm:max-h-[65vh]'; // Landscape
-    if (aspectRatio < 0.8) return 'max-w-[70vw] max-h-[75vh] sm:max-w-[60vw] sm:max-h-[70vh]'; // Portrait
-    return 'max-w-[65vw] max-h-[65vh] sm:max-w-[70vw] sm:max-h-[70vh]'; // Square-ish
+    if (aspectRatio > 1.2) return 'max-w-[80vw] max-h-[55vh] sm:max-w-[80vw] sm:max-h-[70vh]'; // Landscape
+    if (aspectRatio < 0.8) return 'max-w-[80vw] max-h-[75vh] sm:max-w-[80vw] sm:max-h-[80vh]'; // Portrait
+    return 'max-w-[70vw] max-h-[70vh] sm:max-w-[80vw] sm:max-h-[80vh]'; // Square-ish
   };
 
   return (
@@ -68,14 +68,14 @@ const CarouselImage: React.FC<CarouselImageProps & { index: number }> = ({ src, 
          style={{
            zIndex: 3 - index,
            opacity: index === 0 ? 1 : 1,
-           transform: `translate(-50%, -55%) rotate(${rotation}deg) scale(${1 - index * 0.1})`,
+           transform: `translate(-50%, -52%) rotate(${rotation}deg) scale(${1 - index * 0.1})`,
          }}>
       <div className="relative inline-block">
         <Image
           className={`border-8 border-[#F9F9F9] ${getImageSizeClass()}`}
           src={src}
-          width={1000}
-          height={1000}
+          width={1200}
+          height={1200}
           style={{ width: 'auto', height: 'auto' }}
           alt={alt}
           onLoad={handleImageLoad}
