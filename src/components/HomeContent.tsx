@@ -36,7 +36,7 @@ export default function HomeContent({ articles, allTags }: HomeContentProps) {
               width={400}
               height={400}
             />
-            <p className="w-full pr-[10%] text-lg" style={{ fontFamily: 'var(--font-sf-mono)' }}>
+            <p className="w-full pr-[20%] text-lg" style={{ fontFamily: 'var(--font-sf-mono)' }}>
               I&apos;m a product builder, computer scientist and statistician interested in how we can design intelligent systems (computers) so that not-so-intelligent systems (us humans) can use them. I&apos;ve done research on statistical learning methods and ML at ETH Zurich, <a href="https://openreview.net/forum?id=IbiiNw4oRj" >published work on tabular foundation models at NeurIPS</a>, and am now exploring a new product idea.
             </p>
           </div>
