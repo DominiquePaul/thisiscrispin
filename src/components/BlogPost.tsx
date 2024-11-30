@@ -29,12 +29,12 @@ const BlogPost: React.FC<{contentfulId: string}> = async ({ contentfulId }) => {
     
     return (
       <div className="min-h-screen pt-20"> {/* Added pt-20 for top padding */}
-        <div className="max-w-4xl mx-auto px-4 py-8">
+        <div className="max-w-2xl mx-auto px-4 py-8">
           <article>
             <h1 className={`text-6xl font-bold mb-16 ${plexSans.className}`}>
               {entry.fields.title as string}
             </h1>
-            <div className={`prose prose-lg max-w-none ${plexSans.className}`}>
+            <div className={`prose prose-md max-w-none ${plexSans.className}`}>
               {entry.fields.mainContent ? (
                 <ReactMarkdown 
                   remarkPlugins={[remarkGfm]}
