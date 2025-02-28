@@ -6,7 +6,7 @@ This is the code for my personal website [www.thisiscrispin.com](www.thisiscrisp
 
 Some facts about the app:
 - It's a NextJS app that uses typescript
-- It's hosted on render.com
+- It's hosted on vercel.com. Previously I used render.com, but I changed to vercel for built-in
 - It uses contentful as a CMS
 
 ![screenshot of website](https://images.ctfassets.net/2jl6ez2z7dm3/4ys8cNpGng5JHgbL1KP2er/1a0b5a5a7c65339512ee1348a49740b1/screenshot-2024-09-17.jpeg?q=80)
@@ -15,6 +15,6 @@ Some facts about the app:
 
 - [x] Change all CSS to TailwindCSS
 - [x] Add a picture of myself
-- [ ] Add google analytics
-- [ ] Add a blog section
+- [x] Add ~google~ Vercel analytics
+- [x] Add a blog section
 - [ ] Optimise for SEO
