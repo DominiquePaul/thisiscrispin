@@ -28,7 +28,7 @@ const BlogPost: React.FC<{contentfulId: string}> = async ({ contentfulId }) => {
     const entry = await client.getEntry(contentfulId);
     
     return (
-      <div className="min-h-screen pt-20"> {/* Added pt-20 for top padding */}
+      <div className="min-h-screen pt-20">
         <div className="max-w-2xl mx-auto px-4 py-8">
           <article>
             <h1 className={`text-6xl font-bold mb-16 ${plexSans.className}`}>
@@ -50,7 +50,7 @@ const BlogPost: React.FC<{contentfulId: string}> = async ({ contentfulId }) => {
                       }
                       
                       return (
-                        <Image 
+                        <Image
                           {...props} 
                           src={imgSrc}
                           width={1200}
