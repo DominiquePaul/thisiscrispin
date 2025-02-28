@@ -62,77 +62,9 @@ export default function HomeContent({ articles, allTags }: HomeContentProps) {
           </div>
         </div>
       </section>
-      
-      {/* Projects Section */}
-      <section className="flex-grow px-[10%] 2xl:px-[20%] py-24">
-        <h1 className="text-5xl font-bold mb-12">Projects I care about</h1>
-        <div className="grid grid-cols-4 md:grid-cols-12 gap-4 auto-rows-min md:grid-rows-[400px_300px] h-full">
-          {/* Row 1 */}
-          <ProjectCard
-            href="/p/research-and-publications"
-            imageSrc="https://images.ctfassets.net/2jl6ez2z7dm3/6ZgFqsuw5gsWmBHZs2oD0f/b12b806c9242e32e9e6e5e198687b4b5/neurips.JPG?fm=webp&q=80"
-            imageAlt="Research & Publications"
-            title="Publications at NeurIPS and in Nature Communications"
-            description="Short summaries of the three papers I've written in non-technical language."
-            className="col-span-4 md:col-span-7 h-[400px]"
-          />
-
-          <ProjectCard
-            href="/p/sierra-leone-hockey"
-            imageSrc="https://images.ctfassets.net/2jl6ez2z7dm3/4U1eqV4GxEEJKGTnD2Hqn4/5a8e9314b26c77950ed5f2ca427dd0a3/hockey.JPG?fm=webp&q=80"
-            imageAlt="Recent Updates"
-            title="Building Hockey in Sierra Leone"
-            description="How I lived in Freetown for 6 months, built the country's first artificial turf, and our plans for bringing Sierra Leone to the Africa Cup of Nations."
-            className="col-span-4 md:col-span-5 h-[400px]"
-          />
-
-          {/* Row 2 */}
-          <ProjectCard
-            href="/p/open-source-projects"
-            imageSrc="https://images.ctfassets.net/2jl6ez2z7dm3/PKHStba23dM4bOGNr9dyt/f1ce250f41d91eabcfa7180c98610fa9/coding2.JPG?fm=webp&q=80"
-            imageAlt="Quick Links"
-            title="Open source projects"
-            description="How I built a whatsapp bot to stay in touch with my 100-year old grandma and more."
-            className="col-span-4 md:col-span-4 h-[300px]"
-          />
-
-          <ProjectCard
-            href="/shots"
-            imageSrc="https://images.ctfassets.net/2jl6ez2z7dm3/6XZVhquaJdepzhinfh7Ctx/2087ec76df461d48afd800b5836784d8/photography.jpg?fm=webp&q=80"
-            imageAlt="Shots"
-            title="Shots"
-            description="Photographs of nature and friends."
-            className="col-span-4 md:col-span-4 h-[300px]"
-          />
-
-          {/* Box 5 with vertical split */}
-          <div className="col-span-4 md:col-span-4 grid grid-rows-2 gap-4 h-[300px]">
-            <ProjectCard
-              href="https://thisiscrispin.substack.com"
-              imageSrc="https://images.ctfassets.net/2jl6ez2z7dm3/5B22yhakl46JVxU4nR5hFW/3fc0e197806dde5bacc766d518687b94/writing.jpg?fm=webp&q=80"
-              imageAlt="Follow me on Substack"
-              title="My Substack"
-              description="See past newsletters and follow what I'm up to."
-              className="h-[142px]"
-              isExternal={true}
-            />
-
-            <ProjectCard
-              href=""
-              imageSrc="https://images.ctfassets.net/2jl6ez2z7dm3/5oFWtdiHvWHzu1IqSWvzSd/1b7d189e2cd59642b2293212979ceef8/email2.jpg?fm=webp&q=80"
-              imageAlt="Contact Us"
-              title="Contact me via email"
-              description=""
-              className="h-[142px]"
-              onClick={() => window.location.href = 'mailto:dominique.c.a.paul@gmail.com'}
-            />
-          </div>
-        </div>
-      </section>
-      
       {/* Blog Section */}
       <section className="px-[10%] 2xl:px-[20%] py-24">
-        <h1 className="text-5xl font-bold mb-12">Latest Posts</h1>
+        <h1 className="text-5xl font-bold mb-12">Writing</h1>
         <BlogContent articles={articles} allTags={allTags} isTeaser={true} maxArticles={3} />
         
         <div className="mt-8 text-center">
