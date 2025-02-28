@@ -37,7 +37,7 @@ export default function HomeContent({ articles, allTags }: HomeContentProps) {
               height={400}
             />
             <p className="w-full pr-[20%] text-lg" style={{ fontFamily: 'var(--font-sf-mono)' }}>
-              I'm a hacker, extrovert, nerd and dreamer. I believe spending a weekend coding is a weekend well spent, but I also love getting my hands dirty like in 2023 when I spent half a year in Sierra Leone clearing freight containers. I studied statistics at ETH Zurich, <a href="https://openreview.net/forum?id=IbiiNw4oRj" >published at NeurIPS</a> and spent 2024 building ML pipelines as a freelancer. Right now I'm working out how I can build a product and company around my passion for machine learning engineering and research.
+              I&apos;m a hacker, extrovert, nerd and dreamer. I believe spending a weekend coding is a weekend well spent, but I also love getting my hands dirty like in 2023 when I spent half a year in Sierra Leone clearing freight containers. I studied statistics at ETH Zurich, <a href="https://openreview.net/forum?id=IbiiNw4oRj" >published at NeurIPS</a> and spent 2024 building ML pipelines as a freelancer. Right now I&apos;m working out how I can build a product and company around my passion for machine learning engineering and research.
             </p>
           </div>
           <div className="pl-[30px] mt-2.5">
