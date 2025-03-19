@@ -30,11 +30,11 @@ export default function HomeContent({ articles, allTags }: HomeContentProps) {
           </div>
           <div className="relative bg-[linear-gradient(57.09deg,rgba(245,250,28,0.9)_0%,rgba(252,255,101,0)_37.99%),linear-gradient(162.34deg,rgb(106,255,201)_25.23%,rgba(70,255,188,0)_70.88%),linear-gradient(95.09deg,rgb(252,255,109)_1.14%,rgba(101,220,176,0.86)_33.44%,rgba(253,125,225,0.86)_62.8%,rgba(211,155,255,0.58)_99.02%)] p-[30px]">
             <Image
-              src="https://images.ctfassets.net/2jl6ez2z7dm3/6AkXaLJsPO9nIr392g2Zyo/a5ca0fa0f635941da88473cd57274615/profile.png?fm=webp&q=80"
+              src="https://images.ctfassets.net/2jl6ez2z7dm3/60e2epJPiz2xl7SQ6qrVB/c2ec5203690ff15cb11d776a0f04f470/website-profile_cropped.webp"
               alt="Decorative top image"
-              className="absolute bottom-full left-[40%] sm:left-[60%] w-auto h-auto max-h-[40vh]"
-              width={400}
-              height={400}
+              className="absolute bottom-full -z-10 left-[40%] sm:left-[45%] w-auto h-auto max-h-[50vh]"
+              width={600}
+              height={600}
             />
             <p className="w-full pr-[20%] text-lg" style={{ fontFamily: 'var(--font-sf-mono)' }}>
               I&apos;m a hacker, extrovert, nerd and dreamer. I believe spending a weekend coding is a weekend well spent, but I also love getting my hands dirty like in 2023 when I spent half a year in Sierra Leone clearing freight containers. I studied statistics at ETH Zurich, <a href="https://openreview.net/forum?id=IbiiNw4oRj" >published at NeurIPS</a> and spent 2024 building ML pipelines as a freelancer. Right now I&apos;m working out how I can build a product and company around my passion for machine learning engineering and research.
