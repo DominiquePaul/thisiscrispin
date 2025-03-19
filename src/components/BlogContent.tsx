@@ -12,7 +12,7 @@ interface Article {
   title: string
   excerpt: string
   createdAt: string
-  coverImage: string
+  coverImage?: string
   tags: string[]
 }
 
@@ -74,15 +74,17 @@ export default function BlogContent({ articles, allTags = [], isTeaser = false, 
                 </p>
               </div>
               {/* Only render the image on larger screens */}
-              <div className="hidden md:w-[200px] md:h-[200px] relative md:block">
-                <Image
-                  src={`${article.coverImage}?fm=webp&q=60`}
-                  alt={article.title}
-                  fill
-                  sizes="200px"
-                  className="object-cover rounded-sm"
-                />
-              </div>
+              {article.coverImage && (
+                <div className="hidden md:w-[200px] md:h-[200px] relative md:block">
+                  <Image
+                    src={`${article.coverImage}?fm=webp&q=60`}
+                    alt={article.title}
+                    fill
+                    sizes="200px"
+                    className="object-cover rounded-sm"
+                  />
+                </div>
+              )}
             </div>
           </Link>
         ))}
