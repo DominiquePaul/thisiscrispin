@@ -27,8 +27,9 @@ export default function BlogContent({ articles, allTags = [], isTeaser = false, 
   const [selectedTag, setSelectedTag] = useState<string>("all")
 
   const filteredArticles = selectedTag === "all"
-    ? articles
-    : articles.filter(article => article.tags.includes(selectedTag))
+    ? articles.filter(article => !article.tags.includes("hideOnThisiscrispin"))
+    : articles.filter(article => article.tags.includes(selectedTag) && !article.tags.includes("hideOnThisiscrispin"))
+
 
   const displayedArticles = filteredArticles.slice(0, maxArticles)
 
