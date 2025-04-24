@@ -55,9 +55,94 @@ export default function MDXEditor({
       .mdxeditor {
         padding: 1rem !important;
         min-height: 500px !important;
+        font-size: 16px !important;
+        line-height: 1.5 !important;
       }
       .toolbar-group {
         border: none !important;
+      }
+      /* Base text styles */
+      .mdxeditor p, 
+      .mdxeditor a, 
+      .mdxeditor li, 
+      .mdxeditor blockquote,
+      .mdxeditor code {
+        font-size: 16px !important;
+        line-height: 1.5 !important;
+      }
+      /* Heading styles with consistent proportions */
+      .mdxeditor h1 {
+        font-size: 2em !important; /* 32px at base 16px */
+        font-weight: 700 !important;
+        margin-top: 1.5em !important;
+        margin-bottom: 0.75em !important;
+        line-height: 1.2 !important;
+      }
+      .mdxeditor h2 {
+        font-size: 1.75em !important; /* 28px at base 16px */
+        font-weight: 600 !important;
+        margin-top: 1.25em !important;
+        margin-bottom: 0.6em !important;
+        line-height: 1.3 !important;
+      }
+      .mdxeditor h3 {
+        font-size: 1.5em !important; /* 24px at base 16px */
+        font-weight: 600 !important;
+        margin-top: 1em !important;
+        margin-bottom: 0.5em !important;
+        line-height: 1.4 !important;
+      }
+      .mdxeditor h4 {
+        font-size: 1.25em !important; /* 20px at base 16px */
+        font-weight: 600 !important;
+        margin-top: 0.8em !important;
+        margin-bottom: 0.4em !important;
+        line-height: 1.4 !important;
+      }
+      .mdxeditor h5 {
+        font-size: 1.125em !important; /* 18px at base 16px */
+        font-weight: 600 !important;
+        margin-top: 0.7em !important;
+        margin-bottom: 0.35em !important;
+        line-height: 1.4 !important;
+      }
+      .mdxeditor h6 {
+        font-size: 1em !important; /* 16px at base 16px */
+        font-weight: 600 !important;
+        margin-top: 0.6em !important;
+        margin-bottom: 0.3em !important;
+        line-height: 1.4 !important;
+      }
+      /* Ensure links are distinct */
+      .mdxeditor a {
+        color: #2563eb !important;
+        text-decoration: underline !important;
+      }
+      /* Ensure lists are consistent */
+      .mdxeditor ul, .mdxeditor ol {
+        padding-left: 2em !important;
+        margin: 0.5em 0 !important;
+      }
+      /* Ensure blockquotes are consistent */
+      .mdxeditor blockquote {
+        border-left: 4px solid #e5e7eb !important;
+        padding-left: 1em !important;
+        margin-left: 0 !important;
+        font-style: italic !important;
+      }
+      /* Ensure code blocks are consistent */
+      .mdxeditor pre {
+        background-color: #f3f4f6 !important;
+        padding: 0.75em !important;
+        border-radius: 0.375rem !important;
+        overflow-x: auto !important;
+      }
+      .mdxeditor code {
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace !important;
+        font-size: 0.9em !important;
+        background-color: rgba(0, 0, 0, 0.05) !important;
+        padding: 0.2em 0.4em !important;
+        border-radius: 0.25em !important;
       }
     `;
     document.head.appendChild(style);
@@ -213,7 +298,9 @@ export default function MDXEditor({
           
           // Create all plugins
           const plugins = [
-            mdx.headingsPlugin(),
+            mdx.headingsPlugin({
+              allowedHeadingLevels: [1, 2, 3, 4, 5, 6] // Ensure all heading levels are supported
+            }),
             mdx.listsPlugin(),
             mdx.quotePlugin(),
             mdx.thematicBreakPlugin(),
@@ -359,6 +446,7 @@ export default function MDXEditor({
         onChange={handleContentChange}
         plugins={editorPlugins}
         className="w-full rounded-md"
+        contentEditableClassName="prose prose-base max-w-none"
       />
     </div>
   );
