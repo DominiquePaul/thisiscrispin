@@ -5,7 +5,9 @@ import Image from 'next/image';
 import Link from "next/link";
 import "./globals.css";
 import { Analytics } from "@vercel/analytics/react"
-
+import { AuthProvider } from '@/lib/AuthContext';
+import AdminPanel from '@/components/AdminPanel';
+import { Toaster } from "@/components/ui/toaster";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -56,13 +58,17 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`${inter.className} ${segoeUI.variable} ${sfMono.variable} bg-[#F2F2F2]`}>
-        <div className="absolute top-4 left-4 z-10">
-          <Link href="/">
-            <Image src="/logo_large.png" alt="Logo" width={64} height={64} />
-          </Link>
-        </div>
-        {children}
-        <Analytics />
+        <AuthProvider>
+          <div className="absolute top-4 left-4 z-10">
+            <Link href="/">
+              <Image src="/logo_large.png" alt="Logo" width={64} height={64} />
+            </Link>
+          </div>
+          <AdminPanel />
+          {children}
+          <Toaster />
+          <Analytics />
+        </AuthProvider>
       </body>
     </html>
   );

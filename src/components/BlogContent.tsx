@@ -5,6 +5,7 @@ import Image from "next/image"
 import Link from "next/link"
 import { Badge } from "@/components/ui/badge"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import NewPostDialog from './NewPostDialog'
 
 interface Article {
   id: string
@@ -50,6 +51,7 @@ export default function BlogContent({ articles, allTags = [], isTeaser = false, 
                 ))}
               </SelectContent>
             </Select>
+            <NewPostDialog />
           </nav>
         </header>
       )}

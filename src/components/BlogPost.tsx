@@ -4,6 +4,7 @@ import remarkGfm from 'remark-gfm';
 import rehypeRaw from 'rehype-raw'; // Import rehype-raw
 import Image from 'next/image';
 import { IBM_Plex_Sans, IBM_Plex_Mono } from 'next/font/google';
+import BlogPostClient from './BlogPostClient';
 
 const plexSans = IBM_Plex_Sans({ 
   subsets: ['latin'],
@@ -26,19 +27,32 @@ const BlogPost: React.FC<{contentfulId: string}> = async ({ contentfulId }) => {
     });
 
     const entry = await client.getEntry(contentfulId);
+    const title = entry.fields.title as string;
+    const content = entry.fields.mainContent as string;
+    
+    // Extract tags from metadata if available
+    const tags = entry.metadata?.tags?.map(tag => tag.sys.id) || [];
     
     return (
       <div className="min-h-screen pt-20">
         <div className="max-w-2xl mx-auto px-4 py-8">
+          {/* Client component for edit functionality */}
+          <BlogPostClient 
+            contentfulId={contentfulId} 
+            title={title} 
+            content={content} 
+            tags={tags} 
+          />
+          
           <article>
             <h1 className={`text-6xl font-bold mb-16 ${plexSans.className}`}>
-              {entry.fields.title as string}
+              {title}
             </h1>
             <div className={`prose prose-md max-w-none ${plexSans.className}`}>
-              {entry.fields.mainContent ? (
+              {content ? (
                 <ReactMarkdown 
                   remarkPlugins={[remarkGfm]}
-                  rehypePlugins={[rehypeRaw]} // Enable raw HTML rendering
+                  rehypePlugins={[rehypeRaw]} 
                   components={{
                     img: ({node, ...props}) => {
                       let imgSrc = props.src || '';
@@ -70,7 +84,7 @@ const BlogPost: React.FC<{contentfulId: string}> = async ({ contentfulId }) => {
                     ),
                   }}
                 >
-                  {entry.fields.mainContent as string}
+                  {content}
                 </ReactMarkdown>
               ) : (
                 <div className="text-gray-600">No content available</div>
