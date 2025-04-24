@@ -3,6 +3,20 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import dynamic from 'next/dynamic';
 import '@mdxeditor/editor/style.css';
+import { IBM_Plex_Sans, IBM_Plex_Mono } from 'next/font/google';
+
+// Setup fonts same as BlogPost.tsx
+const plexSans = IBM_Plex_Sans({ 
+  subsets: ['latin'],
+  weight: ['400', '600'],
+  display: 'swap',
+});
+
+const plexMono = IBM_Plex_Mono({ 
+  subsets: ['latin'],
+  weight: ['400'],
+  display: 'swap',
+});
 
 // Dynamically import MDXEditor to avoid SSR issues
 const MDXEditorComponent = dynamic(
@@ -43,6 +57,12 @@ export default function MDXEditor({
   // Essential refs
   const editorRef = useRef<any>(null);
   const isInternalChange = useRef(false);
+  const editorDomRef = useRef<HTMLDivElement | null>(null);
+  const selectionStateRef = useRef<{
+    start: number;
+    end: number;
+    hasFocus: boolean;
+  }>({ start: 0, end: 0, hasFocus: false });
   
   // Debounced callbacks
   const debouncedOnChange = useRef(
@@ -50,6 +70,53 @@ export default function MDXEditor({
       onChange(newContent);
     }, 500)
   ).current;
+
+  // Capture selection and focus state
+  const saveSelectionState = useCallback(() => {
+    if (!editorDomRef.current) return;
+    
+    // Check if editor has focus
+    const hasFocus = document.activeElement === editorDomRef.current || 
+                    editorDomRef.current.contains(document.activeElement);
+    
+    // Get selection if available
+    let start = 0;
+    let end = 0;
+    
+    try {
+      const selection = window.getSelection();
+      if (selection && selection.rangeCount > 0) {
+        const range = selection.getRangeAt(0);
+        if (editorDomRef.current.contains(range.startContainer)) {
+          // Store character offsets (simplified)
+          start = range.startOffset;
+          end = range.endOffset;
+        }
+      }
+    } catch (e) {
+      console.error('Error capturing selection', e);
+    }
+    
+    selectionStateRef.current = { start, end, hasFocus };
+  }, []);
+  
+  // Restore selection and focus
+  const restoreSelectionState = useCallback(() => {
+    const { hasFocus } = selectionStateRef.current;
+    
+    if (hasFocus && editorDomRef.current) {
+      // Focus the editor
+      setTimeout(() => {
+        if (editorDomRef.current) {
+          // Focus the editable element inside the editor
+          const editableElement = editorDomRef.current.querySelector('[contenteditable=true]');
+          if (editableElement) {
+            (editableElement as HTMLElement).focus();
+          }
+        }
+      }, 0);
+    }
+  }, []);
 
   // Set client-side rendering flag and add styles
   useEffect(() => {
@@ -66,8 +133,9 @@ export default function MDXEditor({
       .mdxeditor {
         padding: 1rem !important;
         min-height: 500px !important;
-        font-size: 16px !important;
+        font-size: 18px !important; /* Increased to match prose-md */
         line-height: 1.5 !important;
+        font-family: ${plexSans.style.fontFamily} !important;
       }
       .toolbar-group {
         border: none !important;
@@ -76,53 +144,65 @@ export default function MDXEditor({
       .mdxeditor p, 
       .mdxeditor a, 
       .mdxeditor li, 
-      .mdxeditor blockquote,
+      .mdxeditor blockquote {
+        font-size: 16px !important; /* Increased to match prose-md */
+        line-height: 1.5 !important;
+        font-family: ${plexSans.style.fontFamily} !important;
+      }
+      /* Code blocks use monospace font */
       .mdxeditor code {
         font-size: 16px !important;
         line-height: 1.5 !important;
+        font-family: ${plexMono.style.fontFamily} !important;
       }
       /* Heading styles with consistent proportions */
       .mdxeditor h1 {
-        font-size: 2em !important; /* 32px at base 16px */
-        font-weight: 700 !important;
+        font-size: 36px !important; 
+        font-weight: 800 !important;
         margin-top: 1.5em !important;
         margin-bottom: 0.75em !important;
-        line-height: 1.2 !important;
+        line-height: 40px !important; 
+        font-family: ${plexSans.style.fontFamily} !important;
       }
       .mdxeditor h2 {
-        font-size: 1.75em !important; /* 28px at base 16px */
+        font-size: 1.5rem !important; /* Match prose-md h2 size */
         font-weight: 600 !important;
         margin-top: 1.25em !important;
         margin-bottom: 0.6em !important;
         line-height: 1.3 !important;
+        font-family: ${plexSans.style.fontFamily} !important;
       }
       .mdxeditor h3 {
-        font-size: 1.5em !important; /* 24px at base 16px */
+        font-size: 1.25rem !important; /* Match prose-md h3 size */
         font-weight: 600 !important;
         margin-top: 1em !important;
         margin-bottom: 0.5em !important;
         line-height: 1.4 !important;
+        font-family: ${plexSans.style.fontFamily} !important;
       }
       .mdxeditor h4 {
-        font-size: 1.25em !important; /* 20px at base 16px */
+        font-size: 1.125rem !important; /* Match prose-md h4 size */
         font-weight: 600 !important;
         margin-top: 0.8em !important;
         margin-bottom: 0.4em !important;
         line-height: 1.4 !important;
+        font-family: ${plexSans.style.fontFamily} !important;
       }
       .mdxeditor h5 {
-        font-size: 1.125em !important; /* 18px at base 16px */
+        font-size: 1rem !important; /* Match prose-md h5 size */
         font-weight: 600 !important;
         margin-top: 0.7em !important;
         margin-bottom: 0.35em !important;
         line-height: 1.4 !important;
+        font-family: ${plexSans.style.fontFamily} !important;
       }
       .mdxeditor h6 {
-        font-size: 1em !important; /* 16px at base 16px */
+        font-size: 0.875rem !important; /* Match prose-md h6 size */
         font-weight: 600 !important;
         margin-top: 0.6em !important;
         margin-bottom: 0.3em !important;
         line-height: 1.4 !important;
+        font-family: ${plexSans.style.fontFamily} !important;
       }
       /* Ensure links are distinct */
       .mdxeditor a {
@@ -148,20 +228,13 @@ export default function MDXEditor({
         border-radius: 0.375rem !important;
         overflow-x: auto !important;
       }
-      .mdxeditor code {
-        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace !important;
-        font-size: 0.9em !important;
-        background-color: rgba(0, 0, 0, 0.05) !important;
-        padding: 0.2em 0.4em !important;
-        border-radius: 0.25em !important;
-      }
     `;
     document.head.appendChild(style);
     
     return () => {
       document.head.removeChild(style);
     };
-  }, []);
+  }, [plexSans.style.fontFamily]);
 
   // Update content when initialContent prop changes
   useEffect(() => {
@@ -173,6 +246,9 @@ export default function MDXEditor({
   const handleContentChange = useCallback((newContent: string) => {
     // Skip if no change
     if (newContent === content) return;
+    
+    // Save selection state before update
+    saveSelectionState();
     
     // Mark as internal change to prevent loops
     isInternalChange.current = true;
@@ -188,12 +264,17 @@ export default function MDXEditor({
     // Reset internal change flag after a short delay
     setTimeout(() => {
       isInternalChange.current = false;
+      // Restore selection state after update
+      restoreSelectionState();
     }, 0);
-  }, [content, debouncedOnChange]);
+  }, [content, debouncedOnChange, saveSelectionState, restoreSelectionState]);
 
   // Insert image helper function
   const insertImageWithMarkdown = useCallback((url: string, altText: string = 'image') => {
     if (!url) return;
+    
+    // Save selection state before update
+    saveSelectionState();
     
     // Create image markdown
     const imageMarkdown = `![${altText}](${url})`;
@@ -202,7 +283,10 @@ export default function MDXEditor({
     const newContent = content ? `${content}\n\n${imageMarkdown}\n` : imageMarkdown;
     setContent(newContent);
     debouncedOnChange(newContent);
-  }, [content, debouncedOnChange]);
+    
+    // Restore focus after insertion
+    setTimeout(restoreSelectionState, 0);
+  }, [content, debouncedOnChange, saveSelectionState, restoreSelectionState]);
   
   // Handle drag and drop for images
   const handleDrop = useCallback((event: React.DragEvent<HTMLDivElement>) => {
@@ -227,6 +311,16 @@ export default function MDXEditor({
         console.error('Failed to upload dropped image:', error);
       });
   }, [onUploadImage, insertImageWithMarkdown]);
+  
+  // Restore focus after renders
+  useEffect(() => {
+    restoreSelectionState();
+  }, [content, restoreSelectionState]);
+  
+  // Connect DOM ref to editorDomRef
+  const handleEditorRef = useCallback((node: HTMLDivElement | null) => {
+    editorDomRef.current = node;
+  }, []);
   
   // Load editor plugins
   useEffect(() => {
@@ -312,6 +406,7 @@ export default function MDXEditor({
   
   return (
     <div 
+      ref={handleEditorRef}
       className="mdx-editor-wrapper w-full" 
       onDragOver={(e) => e.preventDefault()}
       onDrop={handleDrop}

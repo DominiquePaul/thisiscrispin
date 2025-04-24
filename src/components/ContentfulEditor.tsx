@@ -9,6 +9,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import ContentDebugger from './ContentDebugger';
+import { IBM_Plex_Sans } from 'next/font/google';
+
+const plexSans = IBM_Plex_Sans({ 
+  subsets: ['latin'],
+  weight: ['400', '600'],
+  display: 'swap',
+});
 
 interface Tag {
   id: string;
@@ -348,13 +355,16 @@ export default function ContentfulEditor({
           <label htmlFor="title" className="text-sm font-medium">
             Title
           </label>
-          <Input
-            id="title"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            className="text-3xl font-bold border-none shadow-none px-0 focus-visible:ring-0 focus-visible:ring-offset-0"
-            placeholder="Title"
-          />
+          <div className={plexSans.className}>
+            <Input
+              id="title"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              className="text-6xl font-bold border-none shadow-none px-0 focus-visible:ring-0 focus-visible:ring-offset-0 mb-16 w-full h-auto py-0"
+              placeholder="Title"
+              style={{ fontSize: '60px', lineHeight: '60px' }}
+            />
+          </div>
         </div>
         
         <div className="space-y-2">
