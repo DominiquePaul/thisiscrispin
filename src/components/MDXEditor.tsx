@@ -35,29 +35,23 @@ export default function MDXEditor({
   onChange,
   onUploadImage
 }: MDXEditorProps) {
-  console.log("📌 MDXEditor rendered with onUploadImage handler:", !!onUploadImage);
-
+  // Core state
   const [content, setContent] = useState(initialContent || '');
   const [isClient, setIsClient] = useState(false);
   const [editorPlugins, setEditorPlugins] = useState<any[]>([]);
-  const contentRef = useRef(initialContent || '');
-  const uploadedImages = useRef<Map<string, string>>(new Map());
+  
+  // Essential refs
   const editorRef = useRef<any>(null);
-  const internalChange = useRef(false);
-
-  // Create a debounced version of onChange
+  const isInternalChange = useRef(false);
+  
+  // Debounced callbacks
   const debouncedOnChange = useRef(
     debounce((newContent: string) => {
       onChange(newContent);
     }, 500)
   ).current;
 
-  // Sync the content ref with the state for logging purposes
-  useEffect(() => {
-    contentRef.current = content;
-  }, [content]);
-
-  // Set client-side rendering flag
+  // Set client-side rendering flag and add styles
   useEffect(() => {
     setIsClient(true);
     
@@ -169,112 +163,48 @@ export default function MDXEditor({
     };
   }, []);
 
-  // Update the effect that sets the initial content
+  // Update content when initialContent prop changes
   useEffect(() => {
-    // Only update content from initialContent when the editor first mounts
-    // or when initialContent changes from outside
-    console.log('initialContent changed to:', initialContent);
+    // Only sync with initialContent when it changes from outside
     setContent(initialContent || '');
-    contentRef.current = initialContent || '';
   }, [initialContent]);
 
-  // Handle content update with image persistence
-  const handleContentChange = (newContent: string) => {
-    // Skip processing if content hasn't changed
-    if (newContent === content) {
-      return;
-    }
+  // Simplified content change handler
+  const handleContentChange = useCallback((newContent: string) => {
+    // Skip if no change
+    if (newContent === content) return;
     
-    // Update internal reference immediately for internal tracking
-    contentRef.current = newContent;
-    internalChange.current = true;
+    // Mark as internal change to prevent loops
+    isInternalChange.current = true;
     
-    // Only update state if there's significant change (like image additions)
-    if (newContent.includes('![') && newContent !== content) {
-      console.log('Content updated with images:', newContent.substring(0, 100) + '...');
-      
-      // Log all tracked images
-      if (uploadedImages.current.size > 0) {
-        console.log('Checking tracked images against content:', 
-          [...uploadedImages.current.entries()]);
-      }
-      
-      // Update state for significant changes immediately
+    // For significant changes, update state immediately
+    if (newContent.includes('![') || Math.abs(content.length - newContent.length) > 10) {
       setContent(newContent);
-    } else {
-      // For regular typing, we'll update the contentRef but delay the state update
-      // This prevents constant rerenders while typing
-      setContent(prevContent => {
-        // Only update if the content has significantly changed
-        if (Math.abs(prevContent.length - newContent.length) > 10) {
-          return newContent;
-        }
-        return prevContent;
-      });
     }
     
-    // Always use debounced onChange for parent component updates
+    // Always debounce parent updates to prevent rerender cascade
     debouncedOnChange(newContent);
-  };
-  
-  // Add a useEffect to handle the internalChange flag reset
-  useEffect(() => {
-    // After the content has been updated and rendered, we can safely reset the flag
-    if (internalChange.current && content === contentRef.current) {
-      // Use RAF to ensure we're outside of React's reconciliation cycle
-      requestAnimationFrame(() => {
-        internalChange.current = false;
-      });
-    }
-  }, [content]);
-  
-  // Modify the existing useEffect that watches content changes
-  useEffect(() => {
-    // Only update the editor when content changes from an external source (not from typing in the editor)
-    if (editorRef.current && !internalChange.current && content !== contentRef.current) {
-      console.log('Updating editor markdown from external change', { 
-        current: contentRef.current, 
-        new: content
-      });
-      
-      // Update the editor's content directly
-      if (typeof editorRef.current.setMarkdown === 'function') {
-        editorRef.current.setMarkdown(content);
-      }
-      
-      // Update our ref
-      contentRef.current = content;
-    }
-  }, [content]);
-
-  // Custom implementation for manually inserting an image with markdown
-  const insertImageWithMarkdown = useCallback((url: string, altText: string = 'image', status?: string) => {
-    if (!url) return;
     
-    console.log('Manually inserting image with markdown:', url, status ? `(status: ${status})` : '');
+    // Reset internal change flag after a short delay
+    setTimeout(() => {
+      isInternalChange.current = false;
+    }, 0);
+  }, [content, debouncedOnChange]);
+
+  // Insert image helper function
+  const insertImageWithMarkdown = useCallback((url: string, altText: string = 'image') => {
+    if (!url) return;
     
     // Create image markdown
     const imageMarkdown = `![${altText}](${url})`;
     
-    // Insert at cursor position or append to end if we can't determine position
-    try {
-      // For direct markdown manipulation, append to current content with a newline
-      const newContent = content ? `${content}\n\n${imageMarkdown}\n` : imageMarkdown;
-      setContent(newContent);
-      contentRef.current = newContent;
-      debouncedOnChange(newContent);
-      console.log('Image inserted with markdown:', imageMarkdown);
-      
-      // If the image is still processing, setup polling to check for the final URL
-      if (status === 'processing') {
-        console.log('Image is still processing, will poll for updates');
-      }
-    } catch (error) {
-      console.error('Error inserting image:', error);
-    }
+    // Insert image at the end of content with newlines
+    const newContent = content ? `${content}\n\n${imageMarkdown}\n` : imageMarkdown;
+    setContent(newContent);
+    debouncedOnChange(newContent);
   }, [content, debouncedOnChange]);
   
-  // Handle Drag & Drop for images - useful feature
+  // Handle drag and drop for images
   const handleDrop = useCallback((event: React.DragEvent<HTMLDivElement>) => {
     if (!onUploadImage) return;
     
@@ -287,12 +217,10 @@ export default function MDXEditor({
     const file = files[0];
     if (!file.type.startsWith('image/')) return;
     
-    console.log('Image dropped into editor, uploading:', file.name);
     onUploadImage(file)
-      .then(({ url, status }) => {
+      .then(({ url }) => {
         if (url) {
-          console.log('Successfully uploaded dropped image:', url, status ? `(status: ${status})` : '');
-          insertImageWithMarkdown(url, file.name.split('.')[0] || 'image', status);
+          insertImageWithMarkdown(url, file.name.split('.')[0] || 'image');
         }
       })
       .catch(error => {
@@ -300,70 +228,17 @@ export default function MDXEditor({
       });
   }, [onUploadImage, insertImageWithMarkdown]);
   
-  // Load plugins
+  // Load editor plugins
   useEffect(() => {
     const loadPlugins = async () => {
-      console.log("📌 Loading MDXEditor plugins, onUploadImage available:", !!onUploadImage);
-      
       if (isClient) {
         try {
           const mdx = await import('@mdxeditor/editor');
           
-          // Create a safe image upload handler for MDXEditor
-          const safeImageUploadHandler = async (image: File): Promise<string> => {
-            console.log("📌 MDXEditor image upload handler called for file:", image.name);
-            
-            if (!onUploadImage) {
-              console.warn('No image upload handler provided to MDXEditor');
-              return Promise.resolve('');
-            }
-            
-            try {
-              console.log('Starting image upload process for:', image.name, `(${image.size} bytes)`);
-              
-              // Wrap in try-catch to ensure we never reject
-              const result = await onUploadImage(image).catch(error => {
-                console.error('Image upload rejected:', error);
-                return { url: '', width: 0, height: 0 };
-              });
-              
-              // Validate the result
-              if (result && typeof result.url === 'string' && result.url) {
-                console.log('Successfully uploaded image, URL:', result.url);
-                const finalUrl = result.url;
-                
-                // Track the uploaded image
-                uploadedImages.current.set(image.name, finalUrl);
-                console.log('Tracking uploaded image:', image.name, finalUrl);
-                
-                // For images uploaded via the plugin that don't appear correctly,
-                // we'll manually insert them as a fallback
-                setTimeout(() => {
-                  const currentContent = contentRef.current;
-                  console.log('Current content chars after upload:', currentContent.length);
-                  
-                  // Check if the image URL is already in the content
-                  if (!currentContent.includes(finalUrl)) {
-                    console.log('Image URL not found in content, manually inserting');
-                    insertImageWithMarkdown(finalUrl, image.name.split('.')[0] || 'image');
-                  }
-                }, 500);
-                
-                return finalUrl;
-              }
-              
-              console.error('Invalid upload result format:', result);
-              return '';
-            } catch (error) {
-              console.error('Failed to upload image:', error);
-              return '';
-            }
-          };
-          
           // Create all plugins
           const plugins = [
             mdx.headingsPlugin({
-              allowedHeadingLevels: [1, 2, 3, 4, 5, 6] // Ensure all heading levels are supported
+              allowedHeadingLevels: [1, 2, 3, 4, 5, 6]
             }),
             mdx.listsPlugin(),
             mdx.quotePlugin(),
@@ -371,44 +246,25 @@ export default function MDXEditor({
             mdx.markdownShortcutPlugin(),
             mdx.linkPlugin(),
             mdx.linkDialogPlugin(),
-            // Configure image plugin differently to avoid the error
             mdx.imagePlugin({
               imageUploadHandler: async (file) => {
-                console.log("🟢 Direct imageUploadHandler called with file:", file.name);
-                
-                if (!onUploadImage) {
-                  console.error('No onUploadImage handler provided!');
-                  return '';
-                }
+                if (!onUploadImage) return '';
                 
                 try {
-                  console.log("🟢 Calling onUploadImage function");
                   const result = await onUploadImage(file);
-                  console.log("🟢 Upload result:", result);
                   
                   if (result && result.url) {
-                    console.log("🟢 Successfully uploaded image, returning URL:", result.url);
-                    
-                    // Check if the asset is still processing
+                    // For processing images, manually insert as fallback
                     if (result.status === 'unprocessed' || result.status === 'processed_unpublished' || result.status === 'processing') {
-                      console.log("🟢 Asset is still processing. Adding to content anyway.");
-                      
-                      // Insert the image directly into the content as a fallback
                       setTimeout(() => {
-                        if (contentRef.current && !contentRef.current.includes(result.url)) {
-                          console.log("🟢 Manually inserting image as fallback");
-                          insertImageWithMarkdown(result.url, file.name, result.status);
-                        }
+                        insertImageWithMarkdown(result.url, file.name);
                       }, 500);
                     }
-                    
                     return result.url;
-                  } else {
-                    console.error("🟢 Invalid upload result:", result);
-                    return '';
                   }
+                  return '';
                 } catch (error) {
-                  console.error("🟢 Error in upload:", error);
+                  console.error("Error uploading image:", error);
                   return '';
                 }
               }
@@ -449,23 +305,7 @@ export default function MDXEditor({
     loadPlugins();
   }, [isClient, onUploadImage, insertImageWithMarkdown]);
   
-  // Add debugging for re-renders
-  useEffect(() => {
-    console.log('MDXEditor rendered/re-rendered', {
-      contentLength: content.length,
-      hasImages: content.includes('!['),
-      editorPluginsLoaded: editorPlugins.length > 0
-    });
-    
-    // Extract image URLs from content for debugging
-    if (content.includes('![')) {
-      const imageRegex = /!\[.*?\]\((.*?)\)/g;
-      const matches = [...content.matchAll(imageRegex)];
-      const imageUrls = matches.map(match => match[1]);
-      console.log('Current content contains images:', imageUrls);
-    }
-  }, [content, editorPlugins]);
-  
+  // Show loading state if not client-side or plugins not loaded
   if (!isClient || editorPlugins.length === 0) {
     return <div className="animate-pulse bg-gray-100 rounded-md h-[500px] w-full"></div>;
   }
