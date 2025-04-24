@@ -21,6 +21,15 @@ interface MDXEditorProps {
   }>;
 }
 
+// Debounce helper function
+const debounce = (fn: Function, ms = 300) => {
+  let timeoutId: ReturnType<typeof setTimeout>;
+  return function(...args: any[]) {
+    clearTimeout(timeoutId);
+    timeoutId = setTimeout(() => fn(...args), ms);
+  };
+};
+
 export default function MDXEditor({
   initialContent,
   onChange,
@@ -34,6 +43,14 @@ export default function MDXEditor({
   const contentRef = useRef(initialContent || '');
   const uploadedImages = useRef<Map<string, string>>(new Map());
   const editorRef = useRef<any>(null);
+  const internalChange = useRef(false);
+
+  // Create a debounced version of onChange
+  const debouncedOnChange = useRef(
+    debounce((newContent: string) => {
+      onChange(newContent);
+    }, 500)
+  ).current;
 
   // Sync the content ref with the state for logging purposes
   useEffect(() => {
@@ -161,14 +178,60 @@ export default function MDXEditor({
     contentRef.current = initialContent || '';
   }, [initialContent]);
 
-  // Add a new useEffect that will update the editor's markdown when content changes externally
-  // This should be placed near the other useEffect hooks
-  useEffect(() => {
-    // This ref helps us avoid infinite loops by tracking whether the change
-    // was from us or externally
-    const isInitialRender = contentRef.current !== content;
+  // Handle content update with image persistence
+  const handleContentChange = (newContent: string) => {
+    // Skip processing if content hasn't changed
+    if (newContent === content) {
+      return;
+    }
     
-    if (editorRef.current && isInitialRender) {
+    // Update internal reference immediately for internal tracking
+    contentRef.current = newContent;
+    internalChange.current = true;
+    
+    // Only update state if there's significant change (like image additions)
+    if (newContent.includes('![') && newContent !== content) {
+      console.log('Content updated with images:', newContent.substring(0, 100) + '...');
+      
+      // Log all tracked images
+      if (uploadedImages.current.size > 0) {
+        console.log('Checking tracked images against content:', 
+          [...uploadedImages.current.entries()]);
+      }
+      
+      // Update state for significant changes immediately
+      setContent(newContent);
+    } else {
+      // For regular typing, we'll update the contentRef but delay the state update
+      // This prevents constant rerenders while typing
+      setContent(prevContent => {
+        // Only update if the content has significantly changed
+        if (Math.abs(prevContent.length - newContent.length) > 10) {
+          return newContent;
+        }
+        return prevContent;
+      });
+    }
+    
+    // Always use debounced onChange for parent component updates
+    debouncedOnChange(newContent);
+  };
+  
+  // Add a useEffect to handle the internalChange flag reset
+  useEffect(() => {
+    // After the content has been updated and rendered, we can safely reset the flag
+    if (internalChange.current && content === contentRef.current) {
+      // Use RAF to ensure we're outside of React's reconciliation cycle
+      requestAnimationFrame(() => {
+        internalChange.current = false;
+      });
+    }
+  }, [content]);
+  
+  // Modify the existing useEffect that watches content changes
+  useEffect(() => {
+    // Only update the editor when content changes from an external source (not from typing in the editor)
+    if (editorRef.current && !internalChange.current && content !== contentRef.current) {
       console.log('Updating editor markdown from external change', { 
         current: contentRef.current, 
         new: content
@@ -198,7 +261,8 @@ export default function MDXEditor({
       // For direct markdown manipulation, append to current content with a newline
       const newContent = content ? `${content}\n\n${imageMarkdown}\n` : imageMarkdown;
       setContent(newContent);
-      onChange(newContent);
+      contentRef.current = newContent;
+      debouncedOnChange(newContent);
       console.log('Image inserted with markdown:', imageMarkdown);
       
       // If the image is still processing, setup polling to check for the final URL
@@ -208,7 +272,7 @@ export default function MDXEditor({
     } catch (error) {
       console.error('Error inserting image:', error);
     }
-  }, [content, onChange]);
+  }, [content, debouncedOnChange]);
   
   // Handle Drag & Drop for images - useful feature
   const handleDrop = useCallback((event: React.DragEvent<HTMLDivElement>) => {
@@ -385,33 +449,6 @@ export default function MDXEditor({
     loadPlugins();
   }, [isClient, onUploadImage, insertImageWithMarkdown]);
   
-  // Handle content update with image persistence
-  const handleContentChange = (newContent: string) => {
-    console.log('Content changed:', { 
-      oldLength: content.length, 
-      newLength: newContent.length,
-      hasImagesOld: content.includes('!['),
-      hasImagesNew: newContent.includes('![')
-    });
-    
-    // Check for image markdown syntax
-    if (newContent.includes('![') && newContent !== content) {
-      console.log('Content updated with images:', newContent.substring(0, 100) + '...');
-      
-      // Ensure uploaded images are properly referenced
-      let processedContent = newContent;
-      
-      // Log all tracked images
-      if (uploadedImages.current.size > 0) {
-        console.log('Checking tracked images against content:', 
-          [...uploadedImages.current.entries()]);
-      }
-    }
-    
-    setContent(newContent);
-    onChange(newContent);
-  };
-  
   // Add debugging for re-renders
   useEffect(() => {
     console.log('MDXEditor rendered/re-rendered', {
@@ -441,7 +478,7 @@ export default function MDXEditor({
     >
       <MDXEditorComponent
         ref={editorRef}
-        key={`mdx-editor-${initialContent.substring(0, 20)}`}
+        key="mdx-editor-instance"
         markdown={content}
         onChange={handleContentChange}
         plugins={editorPlugins}

@@ -1,7 +1,17 @@
 "use client";
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '@/lib/AuthContext';
+import { 
+  Dialog, 
+  DialogContent, 
+  DialogHeader,
+  DialogTitle,
+  DialogFooter 
+} from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { Label } from '@/components/ui/label';
 
 interface AdminLoginModalProps {
   isOpen: boolean;
@@ -12,7 +22,6 @@ export default function AdminLoginModal({ isOpen, onClose }: AdminLoginModalProp
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
-  const modalRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   
   const { login, isLocked, errorMessage } = useAuth();
@@ -20,26 +29,11 @@ export default function AdminLoginModal({ isOpen, onClose }: AdminLoginModalProp
   // Focus input when modal opens
   useEffect(() => {
     if (isOpen && inputRef.current) {
-      inputRef.current.focus();
+      setTimeout(() => {
+        inputRef.current?.focus();
+      }, 100);
     }
   }, [isOpen]);
-  
-  // Handle click outside to close modal
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (modalRef.current && !modalRef.current.contains(event.target as Node)) {
-        onClose();
-      }
-    };
-    
-    if (isOpen) {
-      document.addEventListener('mousedown', handleClickOutside);
-    }
-    
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, [isOpen, onClose]);
   
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -65,62 +59,49 @@ export default function AdminLoginModal({ isOpen, onClose }: AdminLoginModalProp
     }
   };
   
-  if (!isOpen) return null;
-  
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div 
-        ref={modalRef}
-        className="bg-white p-6 rounded-lg shadow-lg max-w-md w-full"
-      >
-        <h2 className="text-xl font-bold mb-4">Admin Login</h2>
+    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>Admin Login</DialogTitle>
+        </DialogHeader>
         
         {success ? (
           <div className="text-green-600 mb-4">Login successful!</div>
         ) : (
-          <form onSubmit={handleSubmit}>
-            <div className="mb-4">
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
-                Password
-              </label>
-              <input
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="password">Password</Label>
+              <Input
                 ref={inputRef}
                 type="password"
                 id="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                 disabled={isLocked || loading}
               />
             </div>
             
-            {errorMessage && (
-              <div className="text-red-500 text-sm mb-4">{errorMessage}</div>
+            {errorMessage && !isLocked && (
+              <div className="text-red-500 text-sm">{errorMessage}</div>
             )}
             
             {isLocked ? (
-              <div className="text-amber-600 mb-4">
+              <div className="text-amber-600">
                 {errorMessage}
               </div>
             ) : (
-              <button
+              <Button
                 type="submit"
-                className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 transition-colors"
+                className="w-full"
                 disabled={loading}
               >
                 {loading ? 'Logging in...' : 'Login'}
-              </button>
+              </Button>
             )}
           </form>
         )}
-        
-        <button
-          onClick={onClose}
-          className="mt-4 text-sm text-gray-500 hover:text-gray-700"
-        >
-          Cancel
-        </button>
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 } 

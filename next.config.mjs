@@ -6,8 +6,11 @@ const nextConfig = {
           protocol: 'https',
           hostname: 'images.ctfassets.net',
         },
+        {
+          protocol: 'https',
+          hostname: 'assets.ctfassets.net',
+        },
       ],
-      domains: ['assets.ctfassets.net'],
     },
   }
 
