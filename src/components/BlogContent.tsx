@@ -42,6 +42,21 @@ export default function BlogContent({ articles, allTags = [], isTeaser = false, 
   const [selectedTag, setSelectedTag] = useState<string>("all")
   const { isAuthenticated } = useAuth()
   
+  // Map from tag ID to display name
+  const getTagDisplayName = (tagId: string) => {
+    const tagMap: Record<string, string> = {
+      "devProjects": "Dev Projects",
+      "web": "Web",
+      "writing": "Writing",
+      "design": "Design",
+      "personal": "Personal",
+      "hideOnThisiscrispin": "Hidden",
+      // Add more mappings as needed
+    };
+    
+    return tagMap[tagId] || tagId; // Fallback to tagId if no mapping exists
+  }
+  
   // Filter out the hideOnThisiscrispin tag for non-admins in dropdown
   const visibleTags = isAuthenticated 
     ? allTags 
@@ -71,7 +86,7 @@ export default function BlogContent({ articles, allTags = [], isTeaser = false, 
               <SelectContent>
                 <SelectItem value="all">All Tags</SelectItem>
                 {visibleTags.map((tag) => (
-                  <SelectItem key={tag} value={tag}>{tag}</SelectItem>
+                  <SelectItem key={tag} value={tag}>{getTagDisplayName(tag)}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -85,20 +100,22 @@ export default function BlogContent({ articles, allTags = [], isTeaser = false, 
           <Link href={`/p/${article.slug}`} key={article.id} className="block border-b last:border-b-0 hover:bg-gray-200 transition-colors duration-200">
             <div className="flex justify-between items-center pt-4 pb-4">
               <div className="flex-1 pr-8">
-                <div className="flex items-center space-x-2 mb-2">
-                  {article.tags.map((tag) => (
-                    <Badge key={tag} variant="secondary">{tag}</Badge>
-                  ))}
-                </div>
                 <h2 className="text-2xl font-bold mb-2">{article.title}</h2>
                 <p className="text-gray-600 mb-2">{article.excerpt}</p>
-                <p className="text-sm text-gray-500">
+                <p className="text-sm text-gray-500 mb-2">
                   {new Date(article.createdAt).toLocaleDateString('en-US', {
                     year: 'numeric',
                     month: 'long',
                     day: 'numeric'
                   })}
                 </p>
+                <div className="flex items-center space-x-2">
+                  {article.tags.map((tag) => (
+                    <Badge key={tag} variant="secondary" className="border border-gray-300">
+                      {getTagDisplayName(tag)}
+                    </Badge>
+                  ))}
+                </div>
               </div>
               {/* Only render the image on larger screens */}
               {article.coverImage && (
