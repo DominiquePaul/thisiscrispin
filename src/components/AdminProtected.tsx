@@ -1,11 +1,13 @@
 "use client";
 
-import { ReactNode } from 'react';
+import { ReactNode, useEffect } from 'react';
 import { useAuth } from '@/lib/AuthContext';
+import { useRouter } from 'next/navigation';
 
 interface AdminProtectedProps {
   children: ReactNode;
   fallback?: ReactNode;
+  redirectToHome?: boolean;
 }
 
 /**
@@ -14,9 +16,18 @@ interface AdminProtectedProps {
  */
 export default function AdminProtected({ 
   children, 
-  fallback = null 
+  fallback = null,
+  redirectToHome = false
 }: AdminProtectedProps) {
   const { isAuthenticated } = useAuth();
+  const router = useRouter();
+  
+  // If redirectToHome is true and the user is not authenticated, redirect to homepage
+  useEffect(() => {
+    if (redirectToHome && !isAuthenticated) {
+      router.push('/');
+    }
+  }, [isAuthenticated, redirectToHome, router]);
   
   if (!isAuthenticated) {
     return <>{fallback}</>;

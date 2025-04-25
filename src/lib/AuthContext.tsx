@@ -1,6 +1,7 @@
 "use client";
 
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { useRouter, usePathname } from 'next/navigation';
 
 interface AuthContextType {
   isAuthenticated: boolean;
@@ -28,6 +29,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLocked, setIsLocked] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
+  const router = useRouter();
+  const pathname = usePathname();
   
   // Check authentication status on initial load and periodically
   const checkAuthStatus = async () => {
@@ -98,6 +101,20 @@ export function AuthProvider({ children }: AuthProviderProps) {
         credentials: 'include',
       });
       setIsAuthenticated(false);
+      
+      // Check if we're on a restricted page that might require authentication
+      // This could include editing pages, admin dashboards, etc.
+      const restrictedPathPatterns = [
+        /\/edit\//,
+        /\/admin\//,
+        /\/new$/
+      ];
+      
+      // If we're on a restricted page, redirect to homepage
+      const isRestrictedPage = restrictedPathPatterns.some(pattern => pattern.test(pathname));
+      if (isRestrictedPage) {
+        router.push('/');
+      }
     } catch (error) {
       console.error('Logout error:', error);
     }

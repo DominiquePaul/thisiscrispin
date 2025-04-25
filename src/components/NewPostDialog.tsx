@@ -16,6 +16,7 @@ import { Label } from "@/components/ui/label";
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/AuthContext';
 import { toast } from "@/components/ui/use-toast";
+import AdminProtected from './AdminProtected';
 
 export default function NewPostDialog() {
   const [isOpen, setIsOpen] = useState(false);
@@ -109,59 +110,57 @@ export default function NewPostDialog() {
     }
   };
 
-  if (!isAuthenticated) {
-    return null;
-  }
-
   return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogTrigger asChild>
-        <Button variant="default">New Post</Button>
-      </DialogTrigger>
-      <DialogContent className="sm:max-w-[425px]">
-        <DialogHeader>
-          <DialogTitle>Create New Post</DialogTitle>
-          <DialogDescription>
-            Enter a title and a unique slug for your new post.
-          </DialogDescription>
-        </DialogHeader>
-        <form onSubmit={handleSubmit}>
-          <div className="grid gap-4 py-4">
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="title" className="text-right">
-                Title
-              </Label>
-              <Input
-                id="title"
-                value={title}
-                onChange={handleTitleChange}
-                className="col-span-3"
-                placeholder="My New Post"
-              />
+    <AdminProtected>
+      <Dialog open={isOpen} onOpenChange={setIsOpen}>
+        <DialogTrigger asChild>
+          <Button variant="default">New Post</Button>
+        </DialogTrigger>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Create New Post</DialogTitle>
+            <DialogDescription>
+              Enter a title and a unique slug for your new post.
+            </DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleSubmit}>
+            <div className="grid gap-4 py-4">
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="title" className="text-right">
+                  Title
+                </Label>
+                <Input
+                  id="title"
+                  value={title}
+                  onChange={handleTitleChange}
+                  className="col-span-3"
+                  placeholder="My New Post"
+                />
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="slug" className="text-right">
+                  Slug
+                </Label>
+                <Input
+                  id="slug"
+                  value={slug}
+                  onChange={(e) => setSlug(e.target.value)}
+                  className="col-span-3"
+                  placeholder="my-new-post"
+                />
+              </div>
+              {error && (
+                <div className="text-red-500 text-sm px-4">{error}</div>
+              )}
             </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="slug" className="text-right">
-                Slug
-              </Label>
-              <Input
-                id="slug"
-                value={slug}
-                onChange={(e) => setSlug(e.target.value)}
-                className="col-span-3"
-                placeholder="my-new-post"
-              />
-            </div>
-            {error && (
-              <div className="text-red-500 text-sm px-4">{error}</div>
-            )}
-          </div>
-          <DialogFooter>
-            <Button type="submit" disabled={isLoading}>
-              {isLoading ? "Creating..." : "Create Post"}
-            </Button>
-          </DialogFooter>
-        </form>
-      </DialogContent>
-    </Dialog>
+            <DialogFooter>
+              <Button type="submit" disabled={isLoading}>
+                {isLoading ? "Creating..." : "Create Post"}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+    </AdminProtected>
   );
 } 

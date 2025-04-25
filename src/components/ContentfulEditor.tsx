@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { IBM_Plex_Sans } from 'next/font/google';
 import Image from 'next/image';
+import AdminProtected from './AdminProtected';
 
 const plexSans = IBM_Plex_Sans({ 
   subsets: ['latin'],
@@ -301,54 +302,70 @@ export default function ContentfulEditor({
     });
   };
 
-  // Modify the authentication check to show a helpful message instead of returning null
-  if (!isAuthenticated) {
-    return (
-      <div className="my-8 p-6 border border-red-300 bg-red-50 rounded-md">
-        <h2 className="text-lg font-medium text-red-800 mb-2">Authentication Required</h2>
-        <p className="text-red-700">
-          You must be logged in as an admin to edit content. 
-          If you believe you should be authenticated, try refreshing the page.
-        </p>
-      </div>
-    );
-  }
-  
+  // Wrap the editor in AdminProtected with redirectToHome=true
   return (
-    <div className="my-8">
-      {message && (
-        <Alert variant={messageType === 'success' ? 'default' : 'destructive'} className="mb-6">
-          <AlertDescription>{message}</AlertDescription>
-        </Alert>
-      )}
-      
-      <div className="space-y-6">
-        {/* Cover Image Section */}
-        <div className="space-y-2">
-          <label className="text-sm font-medium">
-            Cover Image
-          </label>
-          {coverImage ? (
-            <div className="relative">
-              <div className="w-full relative aspect-[16/9] mb-4">
-                <Image
-                  src={coverImage}
-                  alt="Cover Image"
-                  fill
-                  className="object-cover rounded-md"
-                />
+    <AdminProtected 
+      redirectToHome={true}
+      fallback={
+        <div className="my-8 p-6 border border-red-300 bg-red-50 rounded-md">
+          <h2 className="text-lg font-medium text-red-800 mb-2">Authentication Required</h2>
+          <p className="text-red-700">
+            You must be logged in as an admin to edit content.
+            Redirecting to homepage...
+          </p>
+        </div>
+      }
+    >
+      <div className="my-8">
+        {message && (
+          <Alert variant={messageType === 'success' ? 'default' : 'destructive'} className="mb-6">
+            <AlertDescription>{message}</AlertDescription>
+          </Alert>
+        )}
+        
+        <div className="space-y-6">
+          {/* Cover Image Section */}
+          <div className="space-y-2">
+            <label className="text-sm font-medium">
+              Cover Image
+            </label>
+            {coverImage ? (
+              <div className="relative">
+                <div className="w-full relative aspect-[16/9] mb-4">
+                  <Image
+                    src={coverImage}
+                    alt="Cover Image"
+                    fill
+                    className="object-cover rounded-md"
+                  />
+                </div>
+                <div className="flex space-x-2">
+                  <Button 
+                    variant="destructive" 
+                    size="sm"
+                    onClick={handleRemoveCoverImage}
+                  >
+                    Remove Cover Image
+                  </Button>
+                  <label className="cursor-pointer">
+                    <Button variant="outline" size="sm" type="button">
+                      Replace Image
+                    </Button>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleCoverImageUpload}
+                      className="hidden"
+                    />
+                  </label>
+                </div>
               </div>
-              <div className="flex space-x-2">
-                <Button 
-                  variant="destructive" 
-                  size="sm"
-                  onClick={handleRemoveCoverImage}
-                >
-                  Remove Cover Image
-                </Button>
+            ) : (
+              <div className="border-2 border-dashed border-gray-300 rounded-md p-6 flex flex-col items-center">
+                <p className="text-gray-500 mb-4">No cover image selected</p>
                 <label className="cursor-pointer">
                   <Button variant="outline" size="sm" type="button">
-                    Replace Image
+                    Upload Cover Image
                   </Button>
                   <input
                     type="file"
@@ -358,89 +375,74 @@ export default function ContentfulEditor({
                   />
                 </label>
               </div>
+            )}
+          </div>
+          
+          {/* Title Section */}
+          <div className="space-y-2">
+            <label htmlFor="title" className="text-sm font-medium">
+              Title
+            </label>
+            <div className={plexSans.className}>
+              <Input
+                id="title"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                className="text-6xl font-bold border-none shadow-none px-0 focus-visible:ring-0 focus-visible:ring-offset-0 mb-16 w-full h-auto py-0"
+                placeholder="Title"
+                style={{ fontSize: '60px', lineHeight: '60px' }}
+              />
             </div>
-          ) : (
-            <div className="border-2 border-dashed border-gray-300 rounded-md p-6 flex flex-col items-center">
-              <p className="text-gray-500 mb-4">No cover image selected</p>
-              <label className="cursor-pointer">
-                <Button variant="outline" size="sm" type="button">
-                  Upload Cover Image
-                </Button>
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={handleCoverImageUpload}
-                  className="hidden"
-                />
-              </label>
-            </div>
-          )}
-        </div>
-        
-        {/* Title Section */}
-        <div className="space-y-2">
-          <label htmlFor="title" className="text-sm font-medium">
-            Title
-          </label>
-          <div className={plexSans.className}>
-            <Input
-              id="title"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              className="text-6xl font-bold border-none shadow-none px-0 focus-visible:ring-0 focus-visible:ring-offset-0 mb-16 w-full h-auto py-0"
-              placeholder="Title"
-              style={{ fontSize: '60px', lineHeight: '60px' }}
+          </div>
+          
+          {/* Content Section */}
+          <div className="space-y-2">
+            <MDXEditor
+              key={`editor-${contentfulId}`}
+              initialContent={content}
+              onChange={(newContent) => {
+                setContent(newContent);
+              }}
+              onUploadImage={handleUploadImage}
             />
+          </div>
+          
+          {/* Tags Section */}
+          <div className="space-y-2">
+            <label className="text-sm font-medium">
+              Tags
+            </label>
+            {isLoading ? (
+              <p className="text-muted-foreground">Loading tags...</p>
+            ) : (
+              <TagSelector
+                selectedTags={selectedTagIds}
+                onChange={setSelectedTagIds}
+                availableTags={availableTags}
+                onCreateTag={handleCreateTag}
+              />
+            )}
           </div>
         </div>
         
-        {/* Content Section */}
-        <div className="space-y-2">
-          <MDXEditor
-            key={`editor-${contentfulId}`}
-            initialContent={content}
-            onChange={(newContent) => {
-              setContent(newContent);
-            }}
-            onUploadImage={handleUploadImage}
-          />
-        </div>
-        
-        {/* Tags Section */}
-        <div className="space-y-2">
-          <label className="text-sm font-medium">
-            Tags
-          </label>
-          {isLoading ? (
-            <p className="text-muted-foreground">Loading tags...</p>
-          ) : (
-            <TagSelector
-              selectedTags={selectedTagIds}
-              onChange={setSelectedTagIds}
-              availableTags={availableTags}
-              onCreateTag={handleCreateTag}
-            />
-          )}
+        <div className="mt-6 flex justify-end space-x-4">
+          <Button
+            onClick={onCancel}
+            variant="outline"
+            disabled={isSaving}
+            className="px-6"
+          >
+            Cancel
+          </Button>
+          <Button
+            onClick={handleButtonClick}
+            disabled={isSaving}
+            className="px-6"
+          >
+            {isSaving ? 'Saving...' : 'Save Changes'}
+          </Button>
         </div>
       </div>
-      
-      <div className="mt-6 flex justify-end space-x-4">
-        <Button
-          onClick={onCancel}
-          variant="outline"
-          disabled={isSaving}
-          className="px-6"
-        >
-          Cancel
-        </Button>
-        <Button
-          onClick={handleButtonClick}
-          disabled={isSaving}
-          className="px-6"
-        >
-          {isSaving ? 'Saving...' : 'Save Changes'}
-        </Button>
-      </div>
-    </div>
+    </AdminProtected>
   );
 } 
