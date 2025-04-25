@@ -4,7 +4,6 @@ import { useState, useEffect } from 'react';
 import MDXEditor from './MDXEditor';
 import TagSelector from './TagSelector';
 import { useAuth } from '@/lib/AuthContext';
-import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -29,9 +28,10 @@ interface ContentfulEditorProps {
     title: string;
     mainContent: string;
     coverImage?: string;
+    excerpt?: string;
   };
   initialTags: string[];
-  onSaved?: (title: string, content: string, tags: string[], coverImage?: string) => void;
+  onSaved?: (title: string, content: string, tags: string[], coverImage?: string, excerpt?: string) => void;
   onCancel?: () => void;
 }
 
@@ -45,6 +45,7 @@ export default function ContentfulEditor({
   const [title, setTitle] = useState(initialContent.title || '');
   const [content, setContent] = useState(initialContent.mainContent || '');
   const [coverImage, setCoverImage] = useState(initialContent.coverImage || '');
+  const [excerpt, setExcerpt] = useState(initialContent.excerpt || '');
   const [selectedTagIds, setSelectedTagIds] = useState<string[]>(initialTags);
   const [availableTags, setAvailableTags] = useState<Tag[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -211,7 +212,8 @@ export default function ContentfulEditor({
       // Build fields object for update
       const fields: any = {
         title: title,
-        mainContent: contentToSave
+        mainContent: contentToSave,
+        excerpt: excerpt
       };
       
       // Add coverImage if present
@@ -280,7 +282,7 @@ export default function ContentfulEditor({
       
       // Call the onSaved callback if provided
       if (onSaved) {
-        onSaved(title, contentToSave, selectedTagIds, coverImage);
+        onSaved(title, contentToSave, selectedTagIds, coverImage, excerpt);
       }
       
       setTimeout(() => {
@@ -348,10 +350,16 @@ export default function ContentfulEditor({
                     Remove Cover Image
                   </Button>
                   <label className="cursor-pointer">
-                    <Button variant="outline" size="sm" type="button">
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      type="button"
+                      onClick={() => document.getElementById('replace-image-upload')?.click()}
+                    >
                       Replace Image
                     </Button>
                     <input
+                      id="replace-image-upload"
                       type="file"
                       accept="image/*"
                       onChange={handleCoverImageUpload}
@@ -364,10 +372,16 @@ export default function ContentfulEditor({
               <div className="border-2 border-dashed border-gray-300 rounded-md p-6 flex flex-col items-center">
                 <p className="text-gray-500 mb-4">No cover image selected</p>
                 <label className="cursor-pointer">
-                  <Button variant="outline" size="sm" type="button">
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    type="button"
+                    onClick={() => document.getElementById('cover-image-upload')?.click()}
+                  >
                     Upload Cover Image
                   </Button>
                   <input
+                    id="cover-image-upload"
                     type="file"
                     accept="image/*"
                     onChange={handleCoverImageUpload}
@@ -391,6 +405,22 @@ export default function ContentfulEditor({
                 className="text-6xl font-bold border-none shadow-none px-0 focus-visible:ring-0 focus-visible:ring-offset-0 mb-16 w-full h-auto py-0"
                 placeholder="Title"
                 style={{ fontSize: '60px', lineHeight: '60px' }}
+              />
+            </div>
+          </div>
+          
+          {/* Excerpt Section */}
+          <div className="space-y-2">
+            <label htmlFor="excerpt" className="text-sm font-medium">
+              Excerpt (shown on homepage)
+            </label>
+            <div>
+              <textarea
+                id="excerpt"
+                value={excerpt}
+                onChange={(e) => setExcerpt(e.target.value)}
+                className="w-full h-32 p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="Write a brief excerpt for the blog post preview..."
               />
             </div>
           </div>

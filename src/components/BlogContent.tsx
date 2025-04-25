@@ -7,6 +7,19 @@ import { Badge } from "@/components/ui/badge"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import NewPostDialog from './NewPostDialog'
 import { useAuth } from '@/lib/AuthContext'
+import { IBM_Plex_Sans, IBM_Plex_Mono } from 'next/font/google';
+
+const plexSans = IBM_Plex_Sans({ 
+  subsets: ['latin'],
+  weight: ['400', '600'],
+  display: 'swap',
+});
+
+const plexMono = IBM_Plex_Mono({ 
+  subsets: ['latin'],
+  weight: ['400'],
+  display: 'swap',
+});
 
 interface Article {
   id: string
@@ -46,9 +59,9 @@ export default function BlogContent({ articles, allTags = [], isTeaser = false, 
   const displayedArticles = filteredArticles.slice(0, maxArticles)
 
   return (
-    <div className={`${isTeaser ? '' : 'mt-24'}`}>
+    <div className={`${isTeaser ? '' : 'mt-24'} ${plexSans.className}`}>
       {!isTeaser && (
-        <header className="mb-8">
+        <header>
           <h1 className="text-6xl font-bold mb-4">Posts</h1>
           <nav className="flex justify-between items-center">
             <Select onValueChange={(value) => setSelectedTag(value)}>
@@ -69,8 +82,8 @@ export default function BlogContent({ articles, allTags = [], isTeaser = false, 
 
       <div>
         {displayedArticles.map((article) => (
-          <Link href={`/p/${article.slug}`} key={article.id} className="block mb-8  border-b last:border-b-0 hover:bg-gray-200 transition-colors duration-200">
-            <div className="flex justify-between items-start">
+          <Link href={`/p/${article.slug}`} key={article.id} className="block border-b last:border-b-0 hover:bg-gray-200 transition-colors duration-200">
+            <div className="flex justify-between items-center pt-4 pb-4">
               <div className="flex-1">
                 <div className="flex items-center space-x-2 mb-2">
                   {article.tags.map((tag) => (

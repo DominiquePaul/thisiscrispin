@@ -29,6 +29,7 @@ const BlogPost: React.FC<{contentfulId: string}> = async ({ contentfulId }) => {
     const entry = await client.getEntry(contentfulId);
     const title = entry.fields.title as string;
     const content = entry.fields.mainContent as string;
+    const excerpt = entry.fields.excerpt as string || '';
     const createdAt = entry.sys.createdAt; // Extract creation date
     
     // Extract coverImage if it exists
@@ -52,6 +53,7 @@ const BlogPost: React.FC<{contentfulId: string}> = async ({ contentfulId }) => {
             tags={tags}
             createdAt={createdAt}
             coverImage={coverImage}
+            excerpt={excerpt}
           />
         </div>
       </div>

@@ -33,6 +33,7 @@ interface BlogPostClientProps {
   tags: string[];
   createdAt: string;
   coverImage?: string;
+  excerpt?: string;
 }
 
 export default function BlogPostClient({ 
@@ -41,13 +42,15 @@ export default function BlogPostClient({
   content: initialContent, 
   tags: initialTags,
   createdAt,
-  coverImage: initialCoverImage
+  coverImage: initialCoverImage,
+  excerpt: initialExcerpt
 }: BlogPostClientProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [title, setTitle] = useState(initialTitle);
   const [content, setContent] = useState(initialContent);
   const [tags, setTags] = useState(initialTags);
   const [coverImage, setCoverImage] = useState(initialCoverImage);
+  const [excerpt, setExcerpt] = useState(initialExcerpt || '');
   
   // Format date for display
   const formattedDate = new Date(createdAt).toLocaleDateString('en-US', {
@@ -62,7 +65,8 @@ export default function BlogPostClient({
     setContent(initialContent);
     setTags(initialTags);
     setCoverImage(initialCoverImage);
-  }, [initialTitle, initialContent, initialTags, initialCoverImage]);
+    setExcerpt(initialExcerpt || '');
+  }, [initialTitle, initialContent, initialTags, initialCoverImage, initialExcerpt]);
   
   // Handle cancellation of editing
   const handleCancel = () => {
@@ -71,6 +75,7 @@ export default function BlogPostClient({
     setContent(initialContent);
     setTags(initialTags);
     setCoverImage(initialCoverImage);
+    setExcerpt(initialExcerpt || '');
     setIsEditing(false);
   };
 
@@ -79,13 +84,14 @@ export default function BlogPostClient({
   };
 
   // Handle successful save from the editor
-  const handleSaved = (newTitle: string, newContent: string, newTags: string[], newCoverImage?: string) => {
+  const handleSaved = (newTitle: string, newContent: string, newTags: string[], newCoverImage?: string, newExcerpt?: string) => {
     setTitle(newTitle);
     setContent(newContent);
     setTags(newTags);
     if (newCoverImage) {
       setCoverImage(newCoverImage);
     }
+    setExcerpt(newExcerpt || '');
     setIsEditing(false); // Exit editing mode after successful save
   };
   
@@ -110,7 +116,8 @@ export default function BlogPostClient({
             initialContent={{
               title,
               mainContent: content,
-              coverImage
+              coverImage,
+              excerpt
             }}
             initialTags={tags}
             onSaved={handleSaved}
