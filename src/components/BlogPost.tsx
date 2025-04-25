@@ -43,61 +43,13 @@ const BlogPost: React.FC<{contentfulId: string}> = async ({ contentfulId }) => {
             content={content} 
             tags={tags} 
           />
-          
-          <article>
-            <h1 className={`text-6xl font-bold mb-16 ${plexSans.className}`}>
-              {title}
-            </h1>
-            <div className={`prose prose-md max-w-none ${plexSans.className}`}>
-              {content ? (
-                <ReactMarkdown 
-                  remarkPlugins={[remarkGfm]}
-                  rehypePlugins={[rehypeRaw]} 
-                  components={{
-                    img: ({node, ...props}) => {
-                      let imgSrc = props.src || '';
-                      // Handle different URL formats
-                      if (imgSrc.startsWith('//')) {
-                        imgSrc = `https:${imgSrc}`;
-                      } else if (!imgSrc.startsWith('http://') && !imgSrc.startsWith('https://') && !imgSrc.startsWith('/')) {
-                        imgSrc = `/${imgSrc}`;
-                      }
-                      
-                      return (
-                        <Image
-                          {...props} 
-                          src={imgSrc}
-                          width={1200}
-                          height={0}
-                          sizes="(max-width: 768px) 100vw, 800px"
-                          style={{
-                            width: '100%',
-                            height: 'auto',
-                          }}
-                          alt={props.alt || ''}
-                          className="my-4"
-                        />
-                      );
-                    },
-                    code: ({node, ...props}) => (
-                      <code className={`${plexMono.className} bg-gray-100 rounded px-1`} {...props} />
-                    ),
-                  }}
-                >
-                  {content}
-                </ReactMarkdown>
-              ) : (
-                <div className="text-gray-600">No content available</div>
-              )}
-            </div>
-          </article>
         </div>
       </div>
     );
   } catch (error) {
     console.error('Error fetching content from Contentful:', error);
     return (
-      <div className="min-h-screen pt-20"> {/* Added pt-20 for top padding */}
+      <div className="min-h-screen pt-20">
         <div className="max-w-3xl mx-auto px-4 py-8">
           <div className="border-l-4 border-red-500 text-red-700 p-4" role="alert">
             <p className="font-bold">Error</p>

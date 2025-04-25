@@ -8,7 +8,6 @@ import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/componen
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import ContentDebugger from './ContentDebugger';
 import { IBM_Plex_Sans } from 'next/font/google';
 
 const plexSans = IBM_Plex_Sans({ 
@@ -30,13 +29,15 @@ interface ContentfulEditorProps {
   };
   initialTags: string[];
   onSaved?: (title: string, content: string, tags: string[]) => void;
+  onCancel?: () => void;
 }
 
 export default function ContentfulEditor({
   contentfulId,
   initialContent,
   initialTags = [],
-  onSaved
+  onSaved,
+  onCancel
 }: ContentfulEditorProps) {
   const [title, setTitle] = useState(initialContent.title || '');
   const [content, setContent] = useState(initialContent.mainContent || '');
@@ -48,24 +49,6 @@ export default function ContentfulEditor({
   const [messageType, setMessageType] = useState<'success' | 'error'>('success');
   
   const { isAuthenticated } = useAuth();
-
-  // Debug state changes
-  useEffect(() => {
-    console.log('ContentfulEditor content changed:', {
-      contentLength: content.length,
-      hasImages: content.includes('!['),
-      title
-    });
-  }, [content, title]);
-
-  // Debug initialization
-  useEffect(() => {
-    console.log('ContentfulEditor initialized with:', {
-      initialTitle: initialContent.title,
-      initialContentLength: initialContent.mainContent.length,
-      hasInitialImages: initialContent.mainContent.includes('![')
-    });
-  }, []);
 
   // Fetch available tags when component mounts
   useEffect(() => {
@@ -94,11 +77,6 @@ export default function ContentfulEditor({
     fetchTags();
   }, [isAuthenticated]);
   
-  // Add authentication debugging to the start of the component
-  useEffect(() => {
-    console.log('ContentfulEditor authentication status:', isAuthenticated);
-  }, [isAuthenticated]);
-  
   // Handler for creating new tags
   const handleCreateTag = async (name: string): Promise<Tag> => {
     const response = await fetch('/api/contentful/tags', {
@@ -124,25 +102,14 @@ export default function ContentfulEditor({
   // Handler for uploading images
   const handleUploadImage = async (file: File) => {
     try {
-      console.log('🔴 IMAGE UPLOAD STARTED', { 
-        fileName: file.name,
-        fileSize: file.size,
-        fileType: file.type
-      });
-      
       // Validate file type
       if (!file.type.startsWith('image/')) {
         throw new Error('Only image files are supported');
       }
       
-      console.log(`Starting upload for ${file.name} (${file.size} bytes, ${file.type})`);
-      
       // Create FormData
       const formData = new FormData();
       formData.append('file', file);
-      
-      // Log the request details
-      console.log('🔴 SENDING API REQUEST to /api/contentful/asset');
       
       // Upload the image with better error handling
       const response = await fetch('/api/contentful/asset', {
@@ -150,15 +117,8 @@ export default function ContentfulEditor({
         body: formData
       });
       
-      console.log('🔴 RECEIVED API RESPONSE', { 
-        status: response.status,
-        ok: response.ok,
-        statusText: response.statusText
-      });
-      
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
-        console.error('Image upload failed:', errorData);
         throw new Error('Failed to upload image: ' + (errorData.error || response.statusText));
       }
       
@@ -167,12 +127,10 @@ export default function ContentfulEditor({
       
       // Validate response structure
       if (!data || !data.asset || !data.asset.url) {
-        console.error('Invalid response from image upload endpoint:', data);
         throw new Error('Invalid response from server');
       }
       
       const asset = data.asset;
-      console.log('🔴 SUCCESSFULLY UPLOADED IMAGE:', asset);
       
       // Show temporary success message
       setMessage(`Image "${file.name}" uploaded successfully!`);
@@ -186,8 +144,6 @@ export default function ContentfulEditor({
         height: asset.height || 0
       };
     } catch (error) {
-      console.error('🔴 ERROR IN UPLOAD:', error);
-      
       // Show error message to user
       setMessage(`Failed to upload image: ${error instanceof Error ? error.message : 'Unknown error'}`);
       setMessageType('error');
@@ -210,24 +166,6 @@ export default function ContentfulEditor({
       setIsSaving(true);
       setMessage('Saving changes...');
       
-      console.log('Current content state before save:', content);
-      console.log('Current title before save:', title);
-      
-      // Check if content includes images
-      const hasImages = content.includes('![');
-      if (hasImages) {
-        console.log('Content contains images, ensuring proper format before save');
-        const imageMatches = content.match(/!\[.*?\]\((.*?)\)/g);
-        console.log('Found image references:', imageMatches);
-        
-        // Store image references for later verification
-        const imageUrlsFound = imageMatches?.map(match => {
-          const urlMatch = match.match(/!\[.*?\]\((.*?)\)/);
-          return urlMatch?.[1] || '';
-        }) || [];
-        console.log('Image URLs found:', imageUrlsFound);
-      }
-      
       // Make a copy of the content to ensure it's properly saved
       const contentToSave = content;
       
@@ -249,11 +187,8 @@ export default function ContentfulEditor({
       const contentResult = await contentResponse.json();
       
       if (!contentResponse.ok) {
-        console.error('Content update failed:', contentResult);
         throw new Error('Failed to update content: ' + (contentResult.message || contentResponse.statusText));
       }
-      
-      console.log('Content updated successfully:', contentResult);
       
       // 2. Update tags
       const tagsResponse = await fetch('/api/contentful/tags', {
@@ -269,7 +204,6 @@ export default function ContentfulEditor({
       
       if (!tagsResponse.ok) {
         const tagsResult = await tagsResponse.json().catch(() => ({}));
-        console.error('Tags update failed:', tagsResult);
         throw new Error('Failed to update tags: ' + (tagsResult.message || tagsResponse.statusText));
       }
       
@@ -282,29 +216,15 @@ export default function ContentfulEditor({
       setTitle(title);
       setContent(contentToSave); // Preserve the exact content we saved
       
-      console.log('State preserved after save:', {
-        titleLength: title.length,
-        contentLength: contentToSave.length,
-        hasImages: contentToSave.includes('![')
-      });
-      
       // Call the onSaved callback if provided
       if (onSaved) {
         onSaved(title, contentToSave, selectedTagIds);
       }
       
-      // Don't reload the page - this preserves the editor state with images
       setTimeout(() => {
         setMessage('');
-        
-        // Verify content still has images after timeout
-        if (hasImages) {
-          console.log('Verifying content still has images after save timeout');
-          console.log('Current content contains image markdown:', content.includes('!['));
-        }
       }, 3000);
     } catch (error) {
-      console.error('Error saving changes:', error);
       setMessage('Failed to save changes: ' + (error instanceof Error ? error.message : 'Unknown error'));
       setMessageType('error');
     } finally {
@@ -314,14 +234,6 @@ export default function ContentfulEditor({
   
   // Add a direct click handler function before the return statement
   const handleButtonClick = () => {
-    console.log('Save button clicked');
-    console.log('Current state:', { 
-      title: title.length > 0 ? title.substring(0, 20) + '...' : '(empty)', 
-      contentLength: content.length,
-      hasImages: content.includes('!['),
-      authenticated: isAuthenticated
-    });
-    
     // Call the save function
     handleSave().catch(error => {
       console.error('Error caught in save button handler:', error);
@@ -330,7 +242,6 @@ export default function ContentfulEditor({
 
   // Modify the authentication check to show a helpful message instead of returning null
   if (!isAuthenticated) {
-    console.log('Authentication check failed - not showing editor');
     return (
       <div className="my-8 p-6 border border-red-300 bg-red-50 rounded-md">
         <h2 className="text-lg font-medium text-red-800 mb-2">Authentication Required</h2>
@@ -369,24 +280,9 @@ export default function ContentfulEditor({
         
         <div className="space-y-2">
           <MDXEditor
-            key={`editor-${contentfulId}-${content.length}`}
+            key={`editor-${contentfulId}`}
             initialContent={content}
             onChange={(newContent) => {
-              console.log('MDXEditor onChange called with content length:', newContent.length);
-              console.log('Current content state before update:', content.length);
-              
-              // Check for image markdown to ensure we don't lose them
-              const hadImages = content.includes('![');
-              const hasImages = newContent.includes('![');
-              
-              if (hadImages && !hasImages) {
-                console.warn('Image markdown was removed during update - this may indicate a problem');
-              }
-              
-              if (!hadImages && hasImages) {
-                console.log('New image added to content');
-              }
-              
               setContent(newContent);
             }}
             onUploadImage={handleUploadImage}
@@ -410,7 +306,15 @@ export default function ContentfulEditor({
         </div>
       </div>
       
-      <div className="mt-6 text-right">
+      <div className="mt-6 flex justify-end space-x-4">
+        <Button
+          onClick={onCancel}
+          variant="outline"
+          disabled={isSaving}
+          className="px-6"
+        >
+          Cancel
+        </Button>
         <Button
           onClick={handleButtonClick}
           disabled={isSaving}
@@ -419,8 +323,6 @@ export default function ContentfulEditor({
           {isSaving ? 'Saving...' : 'Save Changes'}
         </Button>
       </div>
-      
-      <ContentDebugger content={content} title={title} />
     </div>
   );
 } 

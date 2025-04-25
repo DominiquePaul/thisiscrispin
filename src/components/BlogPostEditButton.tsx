@@ -27,7 +27,7 @@ export default function BlogPostEditButton({
         variant="default"
         size="sm"
       >
-        {isEditing ? 'Hide Editor' : 'Edit Article'}
+        Edit
       </Button>
     </AdminProtected>
   );
