@@ -29,6 +29,7 @@ const BlogPost: React.FC<{contentfulId: string}> = async ({ contentfulId }) => {
     const entry = await client.getEntry(contentfulId);
     const title = entry.fields.title as string;
     const content = entry.fields.mainContent as string;
+    const createdAt = entry.sys.createdAt; // Extract creation date
     
     // Extract tags from metadata if available
     const tags = entry.metadata?.tags?.map(tag => tag.sys.id) || [];
@@ -41,7 +42,8 @@ const BlogPost: React.FC<{contentfulId: string}> = async ({ contentfulId }) => {
             contentfulId={contentfulId} 
             title={title} 
             content={content} 
-            tags={tags} 
+            tags={tags}
+            createdAt={createdAt}
           />
         </div>
       </div>

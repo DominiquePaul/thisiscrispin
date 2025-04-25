@@ -133,8 +133,8 @@ export default function MDXEditor({
       .mdxeditor {
         padding: 1rem !important;
         min-height: 500px !important;
-        font-size: 18px !important; /* Increased to match prose-md */
-        line-height: 1.5 !important;
+        font-size: 18px !important;
+        line-height: 1.75 !important; /* Increased line height */
         font-family: ${plexSans.style.fontFamily} !important;
       }
       .toolbar-group {
@@ -145,9 +145,27 @@ export default function MDXEditor({
       .mdxeditor a, 
       .mdxeditor li, 
       .mdxeditor blockquote {
-        font-size: 16px !important; /* Increased to match prose-md */
-        line-height: 1.5 !important;
+        font-size: 16px !important;
+        line-height: 1.75 !important; /* Increased line height */
         font-family: ${plexSans.style.fontFamily} !important;
+        margin-bottom: 1.5em !important; /* Add more spacing between paragraphs */
+      }
+      /* Fix for consecutive paragraphs */
+      .mdxeditor p + p {
+        margin-top: -0.5em !important; /* Adjust top margin when paragraphs follow each other */
+      }
+      /* Source mode styling */
+      .mdxeditor-source-view {
+        font-size: 14px !important;
+        line-height: 1.4 !important;
+        font-family: ${plexMono.style.fontFamily} !important;
+      }
+      /* The actual pre/textarea where markdown source is displayed */
+      .mdxeditor-source-view pre, 
+      .mdxeditor-source-view textarea {
+        font-size: 14px !important;
+        line-height: 1.4 !important;
+        font-family: ${plexMono.style.fontFamily} !important;
       }
       /* Code blocks use monospace font */
       .mdxeditor code {

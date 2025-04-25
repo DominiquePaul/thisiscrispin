@@ -31,18 +31,27 @@ interface BlogPostClientProps {
   title: string;
   content: string;
   tags: string[];
+  createdAt: string;
 }
 
 export default function BlogPostClient({ 
   contentfulId, 
   title: initialTitle, 
   content: initialContent, 
-  tags: initialTags 
+  tags: initialTags,
+  createdAt
 }: BlogPostClientProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [title, setTitle] = useState(initialTitle);
   const [content, setContent] = useState(initialContent);
   const [tags, setTags] = useState(initialTags);
+  
+  // Format date for display
+  const formattedDate = new Date(createdAt).toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric'
+  });
   
   // Update state when props change (in case content is reloaded)
   useEffect(() => {
@@ -102,9 +111,12 @@ export default function BlogPostClient({
       ) : (
         /* Render article content when not in editing mode */
         <article>
-          <h1 className={`text-6xl font-bold mb-16 ${plexSans.className}`}>
+          <h1 className={`text-6xl font-bold mb-4 ${plexSans.className}`}>
             {title}
           </h1>
+          <div className={`text-gray-400 mb-12 text-sm italic ${plexSans.className}`}>
+            Published on {formattedDate}
+          </div>
           <div className={`prose prose-md max-w-none ${plexSans.className}`}>
             {content ? (
               <ReactMarkdown 
