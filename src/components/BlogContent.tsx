@@ -84,7 +84,7 @@ export default function BlogContent({ articles, allTags = [], isTeaser = false, 
         {displayedArticles.map((article) => (
           <Link href={`/p/${article.slug}`} key={article.id} className="block border-b last:border-b-0 hover:bg-gray-200 transition-colors duration-200">
             <div className="flex justify-between items-center pt-4 pb-4">
-              <div className="flex-1">
+              <div className="flex-1 pr-8">
                 <div className="flex items-center space-x-2 mb-2">
                   {article.tags.map((tag) => (
                     <Badge key={tag} variant="secondary">{tag}</Badge>
