@@ -1,8 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSpaceEnvironment } from '@/lib/contentful-management';
+import { isAuthenticated } from '@/lib/auth-helpers';
 
 // Get all tags from Contentful
 export async function GET(req: NextRequest) {
+  // Check if user is authenticated
+  if (!isAuthenticated(req)) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
   try {
     const { environment } = await getSpaceEnvironment();
     const tags = await environment.getTags();
@@ -25,9 +31,14 @@ export async function GET(req: NextRequest) {
 
 // Create a new tag in Contentful
 export async function POST(req: NextRequest) {
+  // Check if user is authenticated
+  if (!isAuthenticated(req)) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
   try {
     const body = await req.json();
-    const { name } = body;
+    const { name, isPublic = true } = body;
 
     if (!name) {
       return NextResponse.json({ error: 'Tag name is required' }, { status: 400 });
@@ -40,11 +51,16 @@ export async function POST(req: NextRequest) {
     
     // Create a new tag with the ID and name
     const newTag = await environment.createTag(id, name);
+
+    // Set visibility property in tag's metadata if Contentful supports it
+    // Note: If Contentful doesn't support custom metadata for tags directly, 
+    // we need to store this information elsewhere
     
     return NextResponse.json({
       tag: {
         id: newTag.sys.id,
         name: newTag.name,
+        isPublic,
         sys: newTag.sys
       }
     });
@@ -59,6 +75,11 @@ export async function POST(req: NextRequest) {
 
 // Update tags for an entry
 export async function PUT(req: NextRequest) {
+  // Check if user is authenticated
+  if (!isAuthenticated(req)) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+  
   try {
     const body = await req.json();
     const { entryId, tagIds } = body;

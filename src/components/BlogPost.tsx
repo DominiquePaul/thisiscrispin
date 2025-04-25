@@ -31,6 +31,13 @@ const BlogPost: React.FC<{contentfulId: string}> = async ({ contentfulId }) => {
     const content = entry.fields.mainContent as string;
     const createdAt = entry.sys.createdAt; // Extract creation date
     
+    // Extract coverImage if it exists
+    let coverImage = undefined;
+    if (entry.fields.coverImage) {
+      const imageAsset = entry.fields.coverImage as any;
+      coverImage = `https:${imageAsset.fields.file.url}`;
+    }
+    
     // Extract tags from metadata if available
     const tags = entry.metadata?.tags?.map(tag => tag.sys.id) || [];
     
@@ -44,6 +51,7 @@ const BlogPost: React.FC<{contentfulId: string}> = async ({ contentfulId }) => {
             content={content} 
             tags={tags}
             createdAt={createdAt}
+            coverImage={coverImage}
           />
         </div>
       </div>

@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { IBM_Plex_Sans } from 'next/font/google';
+import Image from 'next/image';
 
 const plexSans = IBM_Plex_Sans({ 
   subsets: ['latin'],
@@ -26,9 +27,10 @@ interface ContentfulEditorProps {
   initialContent: {
     title: string;
     mainContent: string;
+    coverImage?: string;
   };
   initialTags: string[];
-  onSaved?: (title: string, content: string, tags: string[]) => void;
+  onSaved?: (title: string, content: string, tags: string[], coverImage?: string) => void;
   onCancel?: () => void;
 }
 
@@ -41,6 +43,7 @@ export default function ContentfulEditor({
 }: ContentfulEditorProps) {
   const [title, setTitle] = useState(initialContent.title || '');
   const [content, setContent] = useState(initialContent.mainContent || '');
+  const [coverImage, setCoverImage] = useState(initialContent.coverImage || '');
   const [selectedTagIds, setSelectedTagIds] = useState<string[]>(initialTags);
   const [availableTags, setAvailableTags] = useState<Tag[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -154,6 +157,41 @@ export default function ContentfulEditor({
     }
   };
   
+  // Handler for setting cover image
+  const handleCoverImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    
+    try {
+      setMessage('Uploading cover image...');
+      setMessageType('success');
+      
+      const result = await handleUploadImage(file);
+      
+      if (result.url) {
+        setCoverImage(result.url);
+        setMessage('Cover image uploaded successfully!');
+      } else {
+        setMessage('Failed to upload cover image.');
+        setMessageType('error');
+      }
+      
+      setTimeout(() => setMessage(''), 3000);
+    } catch (error) {
+      setMessage(`Error uploading cover image: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      setMessageType('error');
+      setTimeout(() => setMessage(''), 5000);
+    }
+  };
+  
+  // Handler for removing cover image
+  const handleRemoveCoverImage = () => {
+    setCoverImage('');
+    setMessage('Cover image removed.');
+    setMessageType('success');
+    setTimeout(() => setMessage(''), 3000);
+  };
+  
   // Handler for saving changes
   const handleSave = async () => {
     if (!title.trim()) {
@@ -169,6 +207,32 @@ export default function ContentfulEditor({
       // Make a copy of the content to ensure it's properly saved
       const contentToSave = content;
       
+      // Build fields object for update
+      const fields: any = {
+        title: title,
+        mainContent: contentToSave
+      };
+      
+      // Add coverImage if present
+      if (coverImage) {
+        // Create a reference to the asset
+        // Note: This assumes the coverImage URL follows the Contentful format
+        // and can be converted back to an asset ID
+        const assetIdMatch = coverImage.match(/\/\/images\.ctfassets\.net\/[^/]+\/([^/]+)\//);
+        if (assetIdMatch && assetIdMatch[1]) {
+          fields.coverImage = {
+            sys: {
+              type: 'Link',
+              linkType: 'Asset',
+              id: assetIdMatch[1]
+            }
+          };
+        }
+      } else {
+        // Set to null to remove the cover image if it was present before
+        fields.coverImage = null;
+      }
+      
       // 1. Update content fields
       const contentResponse = await fetch('/api/contentful/entry', {
         method: 'PUT',
@@ -177,10 +241,7 @@ export default function ContentfulEditor({
         },
         body: JSON.stringify({
           entryId: contentfulId,
-          fields: {
-            title: title,
-            mainContent: contentToSave
-          }
+          fields: fields
         })
       });
       
@@ -218,7 +279,7 @@ export default function ContentfulEditor({
       
       // Call the onSaved callback if provided
       if (onSaved) {
-        onSaved(title, contentToSave, selectedTagIds);
+        onSaved(title, contentToSave, selectedTagIds, coverImage);
       }
       
       setTimeout(() => {
@@ -262,6 +323,61 @@ export default function ContentfulEditor({
       )}
       
       <div className="space-y-6">
+        {/* Cover Image Section */}
+        <div className="space-y-2">
+          <label className="text-sm font-medium">
+            Cover Image
+          </label>
+          {coverImage ? (
+            <div className="relative">
+              <div className="w-full relative aspect-[16/9] mb-4">
+                <Image
+                  src={coverImage}
+                  alt="Cover Image"
+                  fill
+                  className="object-cover rounded-md"
+                />
+              </div>
+              <div className="flex space-x-2">
+                <Button 
+                  variant="destructive" 
+                  size="sm"
+                  onClick={handleRemoveCoverImage}
+                >
+                  Remove Cover Image
+                </Button>
+                <label className="cursor-pointer">
+                  <Button variant="outline" size="sm" type="button">
+                    Replace Image
+                  </Button>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleCoverImageUpload}
+                    className="hidden"
+                  />
+                </label>
+              </div>
+            </div>
+          ) : (
+            <div className="border-2 border-dashed border-gray-300 rounded-md p-6 flex flex-col items-center">
+              <p className="text-gray-500 mb-4">No cover image selected</p>
+              <label className="cursor-pointer">
+                <Button variant="outline" size="sm" type="button">
+                  Upload Cover Image
+                </Button>
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleCoverImageUpload}
+                  className="hidden"
+                />
+              </label>
+            </div>
+          )}
+        </div>
+        
+        {/* Title Section */}
         <div className="space-y-2">
           <label htmlFor="title" className="text-sm font-medium">
             Title
@@ -278,6 +394,7 @@ export default function ContentfulEditor({
           </div>
         </div>
         
+        {/* Content Section */}
         <div className="space-y-2">
           <MDXEditor
             key={`editor-${contentfulId}`}
@@ -289,6 +406,7 @@ export default function ContentfulEditor({
           />
         </div>
         
+        {/* Tags Section */}
         <div className="space-y-2">
           <label className="text-sm font-medium">
             Tags

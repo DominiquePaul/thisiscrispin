@@ -13,6 +13,14 @@ export default function AdminPanel() {
     setShowModal(true);
   };
   
+  const handleLogout = async () => {
+    try {
+      await logout();
+    } catch (error) {
+      console.error('Logout error:', error);
+    }
+  };
+  
   return (
     <>
       <KeySequenceDetector 
@@ -33,7 +41,7 @@ export default function AdminPanel() {
             <span className="w-2 h-2 bg-green-500 rounded-full mr-2"></span>
             <span>Admin Mode</span>
             <button 
-              onClick={logout}
+              onClick={handleLogout}
               className="ml-2 text-red-600 hover:text-red-800"
             >
               Logout

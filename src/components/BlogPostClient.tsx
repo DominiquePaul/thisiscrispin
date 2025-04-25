@@ -32,6 +32,7 @@ interface BlogPostClientProps {
   content: string;
   tags: string[];
   createdAt: string;
+  coverImage?: string;
 }
 
 export default function BlogPostClient({ 
@@ -39,12 +40,14 @@ export default function BlogPostClient({
   title: initialTitle, 
   content: initialContent, 
   tags: initialTags,
-  createdAt
+  createdAt,
+  coverImage: initialCoverImage
 }: BlogPostClientProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [title, setTitle] = useState(initialTitle);
   const [content, setContent] = useState(initialContent);
   const [tags, setTags] = useState(initialTags);
+  const [coverImage, setCoverImage] = useState(initialCoverImage);
   
   // Format date for display
   const formattedDate = new Date(createdAt).toLocaleDateString('en-US', {
@@ -58,26 +61,31 @@ export default function BlogPostClient({
     setTitle(initialTitle);
     setContent(initialContent);
     setTags(initialTags);
-  }, [initialTitle, initialContent, initialTags]);
+    setCoverImage(initialCoverImage);
+  }, [initialTitle, initialContent, initialTags, initialCoverImage]);
   
-  const toggleEditing = () => {
-    setIsEditing(!isEditing);
-  };
-
   // Handle cancellation of editing
   const handleCancel = () => {
     // Reset to the initial content if needed
     setTitle(initialTitle);
     setContent(initialContent);
     setTags(initialTags);
+    setCoverImage(initialCoverImage);
     setIsEditing(false);
   };
 
+  const toggleEditing = () => {
+    setIsEditing(!isEditing);
+  };
+
   // Handle successful save from the editor
-  const handleSaved = (newTitle: string, newContent: string, newTags: string[]) => {
+  const handleSaved = (newTitle: string, newContent: string, newTags: string[], newCoverImage?: string) => {
     setTitle(newTitle);
     setContent(newContent);
     setTags(newTags);
+    if (newCoverImage) {
+      setCoverImage(newCoverImage);
+    }
     setIsEditing(false); // Exit editing mode after successful save
   };
   
@@ -101,7 +109,8 @@ export default function BlogPostClient({
             contentfulId={contentfulId}
             initialContent={{
               title,
-              mainContent: content
+              mainContent: content,
+              coverImage
             }}
             initialTags={tags}
             onSaved={handleSaved}
@@ -111,6 +120,18 @@ export default function BlogPostClient({
       ) : (
         /* Render article content when not in editing mode */
         <article>
+          {coverImage && (
+            <div className="w-full mb-8 relative aspect-[16/9]">
+              <Image
+                src={coverImage}
+                alt={title}
+                fill
+                priority
+                sizes="(max-width: 768px) 100vw, 800px"
+                className="object-cover rounded-md"
+              />
+            </div>
+          )}
           <h1 className={`text-6xl font-bold mb-4 ${plexSans.className}`}>
             {title}
           </h1>

@@ -6,6 +6,7 @@ import Link from "next/link"
 import { Badge } from "@/components/ui/badge"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import NewPostDialog from './NewPostDialog'
+import { useAuth } from '@/lib/AuthContext'
 
 interface Article {
   id: string
@@ -26,11 +27,21 @@ interface BlogContentProps {
 
 export default function BlogContent({ articles, allTags = [], isTeaser = false, maxArticles = Infinity }: BlogContentProps) {
   const [selectedTag, setSelectedTag] = useState<string>("all")
+  const { isAuthenticated } = useAuth()
+  
+  // Filter out the hideOnThisiscrispin tag for non-admins in dropdown
+  const visibleTags = isAuthenticated 
+    ? allTags 
+    : allTags.filter(tag => tag !== "hideOnThisiscrispin")
 
-  const filteredArticles = selectedTag === "all"
-    ? articles.filter(article => !article.tags.includes("hideOnThisiscrispin"))
-    : articles.filter(article => article.tags.includes(selectedTag) && !article.tags.includes("hideOnThisiscrispin"))
-
+  // Different filtering strategies for admin vs non-admin
+  const filteredArticles = isAuthenticated
+    ? (selectedTag === "all" 
+        ? articles 
+        : articles.filter(article => article.tags.includes(selectedTag)))
+    : (selectedTag === "all" 
+        ? articles.filter(article => !article.tags.includes("hideOnThisiscrispin"))
+        : articles.filter(article => article.tags.includes(selectedTag) && !article.tags.includes("hideOnThisiscrispin")))
 
   const displayedArticles = filteredArticles.slice(0, maxArticles)
 
@@ -46,7 +57,7 @@ export default function BlogContent({ articles, allTags = [], isTeaser = false, 
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Tags</SelectItem>
-                {allTags.map((tag) => (
+                {visibleTags.map((tag) => (
                   <SelectItem key={tag} value={tag}>{tag}</SelectItem>
                 ))}
               </SelectContent>
