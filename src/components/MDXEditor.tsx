@@ -252,7 +252,7 @@ export default function MDXEditor({
     return () => {
       document.head.removeChild(style);
     };
-  }, [plexSans.style.fontFamily]);
+  }, []);
 
   // Update content when initialContent prop changes
   useEffect(() => {

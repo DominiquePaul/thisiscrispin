@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import MDXEditor from './MDXEditor';
 import TagSelector from './TagSelector';
 import { useAuth } from '@/lib/AuthContext';
@@ -10,6 +10,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { IBM_Plex_Sans } from 'next/font/google';
 import Image from 'next/image';
 import AdminProtected from './AdminProtected';
+import { debounce } from 'lodash';
 
 const plexSans = IBM_Plex_Sans({ 
   subsets: ['latin'],
@@ -52,6 +53,15 @@ export default function ContentfulEditor({
   const [isSaving, setIsSaving] = useState(false);
   const [message, setMessage] = useState('');
   const [messageType, setMessageType] = useState<'success' | 'error'>('success');
+  const [autoSaveEnabled, setAutoSaveEnabled] = useState(() => {
+    // Load preference from localStorage if available
+    if (typeof window !== 'undefined') {
+      const savedPreference = localStorage.getItem('autoSaveEnabled');
+      return savedPreference === 'true';
+    }
+    return false;
+  });
+  const [lastSaved, setLastSaved] = useState<Date | null>(null);
   
   const { isAuthenticated } = useAuth();
 
@@ -195,7 +205,7 @@ export default function ContentfulEditor({
   };
   
   // Handler for saving changes
-  const handleSave = async () => {
+  const handleSave = async (isAutoSave = false) => {
     if (!title.trim()) {
       setMessage('Title is required');
       setMessageType('error');
@@ -274,14 +284,15 @@ export default function ContentfulEditor({
       // After successful save, preserve state and log again to verify
       setMessage('Changes saved successfully!');
       setMessageType('success');
+      setLastSaved(new Date());
       
       // Save the current state to component state to preserve after save
       // This ensures we don't lose data if the component re-renders
       setTitle(title);
       setContent(contentToSave); // Preserve the exact content we saved
       
-      // Call the onSaved callback if provided
-      if (onSaved) {
+      // Call the onSaved callback if provided, but only for manual saves, not auto-saves
+      if (onSaved && !isAutoSave) {
         onSaved(title, contentToSave, selectedTagIds, coverImage, excerpt);
       }
       
@@ -296,13 +307,52 @@ export default function ContentfulEditor({
     }
   };
   
+  // Create debounced version of save function for auto-save
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const debouncedSave = useCallback(
+    debounce(() => {
+      if (autoSaveEnabled) {
+        handleSave(true).catch(error => {
+          console.error('Error during auto-save:', error);
+        });
+      }
+    }, 2000),
+    [title, content, excerpt, selectedTagIds, coverImage, autoSaveEnabled]
+  );
+  
+  // Effect to trigger auto-save when content changes
+  useEffect(() => {
+    if (autoSaveEnabled) {
+      debouncedSave();
+    }
+    
+    return () => {
+      debouncedSave.cancel();
+    };
+  }, [title, content, excerpt, selectedTagIds, coverImage, autoSaveEnabled, debouncedSave]);
+  
+  // Handle toggling auto-save
+  const handleToggleAutoSave = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const checked = e.target.checked;
+    setAutoSaveEnabled(checked);
+    // Save preference to localStorage
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('autoSaveEnabled', checked.toString());
+    }
+  };
+  
   // Add a direct click handler function before the return statement
   const handleButtonClick = () => {
-    // Call the save function
-    handleSave().catch(error => {
+    // Call the save function (explicitly with false for isAutoSave)
+    handleSave(false).catch(error => {
       console.error('Error caught in save button handler:', error);
     });
   };
+
+  // Format last saved time if available
+  const formattedLastSaved = lastSaved 
+    ? lastSaved.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+    : null;
 
   // Wrap the editor in AdminProtected with redirectToHome=true
   return (
@@ -455,22 +505,48 @@ export default function ContentfulEditor({
           </div>
         </div>
         
-        <div className="mt-6 flex justify-end space-x-4">
-          <Button
-            onClick={onCancel}
-            variant="outline"
-            disabled={isSaving}
-            className="px-6"
-          >
-            Cancel
-          </Button>
-          <Button
-            onClick={handleButtonClick}
-            disabled={isSaving}
-            className="px-6"
-          >
-            {isSaving ? 'Saving...' : 'Save Changes'}
-          </Button>
+        <div className="mt-6 flex justify-between items-center">
+          <div className="flex items-center space-x-2">
+            <div className="flex items-center space-x-2 group relative">
+              <input
+                id="auto-save"
+                type="checkbox"
+                checked={autoSaveEnabled}
+                onChange={handleToggleAutoSave}
+                className="w-10 h-5 appearance-none bg-gray-300 rounded-full checked:bg-blue-500 transition-colors duration-200 relative cursor-pointer
+                before:content-[''] before:absolute before:w-4 before:h-4 before:bg-white before:rounded-full before:top-0.5 before:left-0.5 before:transition-transform
+                checked:before:transform checked:before:translate-x-5"
+              />
+              <label htmlFor="auto-save" className="cursor-pointer text-sm">Auto-save</label>
+              <div className="absolute -bottom-10 left-0 invisible group-hover:visible bg-black text-white text-xs px-2 py-1 rounded whitespace-nowrap">
+                Automatically saves changes after 2 seconds of inactivity
+              </div>
+            </div>
+            
+            {autoSaveEnabled && formattedLastSaved && (
+              <span className="text-gray-500 text-sm ml-4">
+                Last saved at {formattedLastSaved}
+              </span>
+            )}
+          </div>
+          
+          <div className="flex space-x-4">
+            <Button
+              onClick={onCancel}
+              variant="outline"
+              disabled={isSaving}
+              className="px-6"
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleButtonClick}
+              disabled={isSaving}
+              className="px-6"
+            >
+              {isSaving ? 'Saving...' : 'Save Changes'}
+            </Button>
+          </div>
         </div>
       </div>
     </AdminProtected>
