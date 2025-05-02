@@ -10,7 +10,9 @@ export default function AdminPanel() {
   const { isAuthenticated, logout } = useAuth();
   
   const handleSequenceDetected = () => {
-    setShowModal(true);
+    if (!isAuthenticated) {
+      setShowModal(true);
+    }
   };
   
   const handleLogout = async () => {
