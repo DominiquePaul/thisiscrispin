@@ -18,3 +18,8 @@ Some facts about the app:
 - [x] Add ~google~ Vercel analytics
 - [x] Add a blog section
 - [ ] Optimise for SEO
+
+
+
+Other cool websites:
+- I like this blog layout: https://marcoschonert.com/project/raju
