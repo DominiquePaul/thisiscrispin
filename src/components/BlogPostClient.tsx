@@ -8,6 +8,7 @@ import remarkGfm from 'remark-gfm';
 import rehypeRaw from 'rehype-raw';
 import Image from 'next/image';
 import { IBM_Plex_Sans, IBM_Plex_Mono } from 'next/font/google';
+import VideoEmbed from './VideoEmbed';
 
 const plexSans = IBM_Plex_Sans({ 
   subsets: ['latin'],
@@ -149,11 +150,50 @@ export default function BlogPostClient({
             {content ? (
               <ReactMarkdown 
                 remarkPlugins={[remarkGfm]}
-                rehypePlugins={[rehypeRaw]} 
+                rehypePlugins={[rehypeRaw]}
+                // Configure how elements are wrapped - prevents <div> inside <p> issues
+                skipHtml={false}
                 components={{
+                  p: ({node, children, ...props}) => {
+                    // Check if this paragraph contains only a video element
+                    // This prevents wrapping videos in <p> tags which causes nesting issues
+                    if (node && node.children.length === 1) {
+                      const child = node.children[0];
+                      if (child.type === 'element' && child.tagName === 'img') {
+                        const imgSrc = child.properties?.src as string || '';
+                        const isVideoFile = /\.(mp4|m4v|webm|ogg|mov)(\?.*)?$/i.test(imgSrc);
+                        const isContentfulVideo = imgSrc.includes('ctfassets.net') && isVideoFile;
+                        const isYouTube = imgSrc.includes('youtube.com') || imgSrc.includes('youtu.be');
+                        const isVimeo = imgSrc.includes('vimeo.com');
+                        
+                        if (isVideoFile || isContentfulVideo || isYouTube || isVimeo) {
+                          // Don't wrap videos in <p> tags - render children directly
+                          return <>{children}</>;
+                        }
+                      }
+                    }
+                    // Regular paragraph
+                    return <p {...props}>{children}</p>;
+                  },
                   img: ({node, ...props}) => {
                     let imgSrc = props.src || '';
-                    // Handle different URL formats
+                    
+                    // Check if it's a video file or video platform URL
+                    const isVideoFile = /\.(mp4|m4v|webm|ogg|mov)(\?.*)?$/i.test(imgSrc);
+                    const isContentfulVideo = imgSrc.includes('ctfassets.net') && isVideoFile;
+                    const isYouTube = imgSrc.includes('youtube.com') || imgSrc.includes('youtu.be');
+                    const isVimeo = imgSrc.includes('vimeo.com');
+                    
+                    // Only convert to video if using image syntax with video content
+                    if (isVideoFile || isContentfulVideo || isYouTube || isVimeo) {
+                      // Render as video instead of image
+                      if (imgSrc.startsWith('//')) {
+                        imgSrc = `https:${imgSrc}`;
+                      }
+                      return <VideoEmbed url={imgSrc} title={props.alt} />;
+                    }
+                    
+                    // Handle different URL formats for images
                     if (imgSrc.startsWith('//')) {
                       imgSrc = `https:${imgSrc}`;
                     } else if (!imgSrc.startsWith('http://') && !imgSrc.startsWith('https://') && !imgSrc.startsWith('/')) {
@@ -175,6 +215,10 @@ export default function BlogPostClient({
                         className="my-4"
                       />
                     );
+                  },
+                  a: ({node, ...props}) => {
+                    // All links remain as regular links - no video embedding for link syntax
+                    return <a {...props} className="text-blue-600 hover:text-blue-800 underline" />;
                   },
                   code: ({node, ...props}) => (
                     <code className={`${plexMono.className} bg-gray-100 rounded px-1`} {...props} />
