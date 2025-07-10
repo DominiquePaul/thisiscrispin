@@ -200,6 +200,25 @@ export default function BlogPostClient({
                       imgSrc = `/${imgSrc}`;
                     }
                     
+                    // Check if it's a GIF - use regular img tag to preserve animation
+                    const isGif = /\.(gif)(\?.*)?$/i.test(imgSrc);
+                    
+                    if (isGif) {
+                      return (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          {...props}
+                          src={imgSrc}
+                          alt={props.alt || ''}
+                          className="my-4 w-full h-auto"
+                          style={{
+                            maxWidth: '100%',
+                            height: 'auto',
+                          }}
+                        />
+                      );
+                    }
+                    
                     return (
                       <Image
                         {...props} 
