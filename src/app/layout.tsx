@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import { IBM_Plex_Sans } from "next/font/google";
 import localFont from 'next/font/local';
 import Image from 'next/image';
 import Link from "next/link";
@@ -9,7 +9,11 @@ import { AuthProvider } from '@/lib/AuthContext';
 import AdminPanel from '@/components/AdminPanel';
 import { Toaster } from "@/components/ui/toaster";
 
-const inter = Inter({ subsets: ["latin"] });
+const ibmPlexSans = IBM_Plex_Sans({ 
+  subsets: ["latin"],
+  weight: ['400', '500', '600', '700'],
+  variable: '--font-ibm-plex-sans'
+});
 
 const segoeUI = localFont({
   src: [
@@ -57,7 +61,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${inter.className} ${segoeUI.variable} ${sfMono.variable} bg-[#F2F2F2]`}>
+      <body className={`${ibmPlexSans.className} ${ibmPlexSans.variable} ${segoeUI.variable} ${sfMono.variable} bg-[#F2F2F2]`}>
         <AuthProvider>
           <div className="absolute top-4 left-4 z-10">
             <Link href="/">

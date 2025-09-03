@@ -69,6 +69,14 @@ export default function HomeContent({ articles, allTags }: HomeContentProps) {
                     </svg>
                   </a>
                 </div>
+                {/* Photographs button - positioned to align with writings section */}
+                <div className="flex justify-end pb-10">
+                  <Link href="/shots">
+                    <span className="text-[#8E8E8E] hover:text-[#6E6E6E] transition-colors duration-200 cursor-pointer text-sm font-ibm-plex-sans">
+                      Photographs
+                    </span>
+                  </Link>
+                </div>
               </div>
             </div>
           </div>

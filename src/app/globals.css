@@ -66,4 +66,8 @@
   body {
     @apply bg-background text-foreground;
   }
+  
+  .font-ibm-plex-sans {
+    font-family: var(--font-ibm-plex-sans), ui-sans-serif, system-ui, sans-serif;
+  }
 }

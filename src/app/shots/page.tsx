@@ -137,54 +137,54 @@ const albums: Album[] = [
       },
     ],
   },
-  {
-    title: "Mexico & Brasil",
-    headerImage: "https://example.com/ghana-header.jpg",
-    images: [
-      {
-        src: "https://example.com/ghana1.jpg",
-        alt: "Ghana 1",
-        rotation: 5,
-      },
-      {
-        src: "https://example.com/ghana2.jpg",
-        alt: "Ghana 2",
-        rotation: -3,
-      },
-    ],
-  },
-  {
-    title: "Japan",
-    headerImage: "https://example.com/nigeria-header.jpg",
-    images: [
-      {
-        src: "https://example.com/nigeria1.jpg",
-        alt: "Nigeria 1",
-        rotation: 8,
-      },
-      {
-        src: "https://example.com/nigeria2.jpg",
-        alt: "Nigeria 2",
-        rotation: -5,
-      },
-    ],
-  },
-  {
-    title: "Sierra Leone Hockey",
-    headerImage: "https://example.com/kenya-header.jpg",
-    images: [
-      {
-        src: "https://example.com/kenya1.jpg",
-        alt: "Kenya 1",
-        rotation: 6,
-      },
-      {
-        src: "https://example.com/kenya2.jpg",
-        alt: "Kenya 2",
-        rotation: -4,
-      },
-    ],
-  },
+  // {
+  //   title: "Mexico & Brasil",
+  //   headerImage: "https://example.com/ghana-header.jpg",
+  //   images: [
+  //     {
+  //       src: "https://example.com/ghana1.jpg",
+  //       alt: "Ghana 1",
+  //       rotation: 5,
+  //     },
+  //     {
+  //       src: "https://example.com/ghana2.jpg",
+  //       alt: "Ghana 2",
+  //       rotation: -3,
+  //     },
+  //   ],
+  // },
+  // {
+  //   title: "Japan",
+  //   headerImage: "https://example.com/nigeria-header.jpg",
+  //   images: [
+  //     {
+  //       src: "https://example.com/nigeria1.jpg",
+  //       alt: "Nigeria 1",
+  //       rotation: 8,
+  //     },
+  //     {
+  //       src: "https://example.com/nigeria2.jpg",
+  //       alt: "Nigeria 2",
+  //       rotation: -5,
+  //     },
+  //   ],
+  // },
+  // {
+  //   title: "Sierra Leone Hockey",
+  //   headerImage: "https://example.com/kenya-header.jpg",
+  //   images: [
+  //     {
+  //       src: "https://example.com/kenya1.jpg",
+  //       alt: "Kenya 1",
+  //       rotation: 6,
+  //     },
+  //     {
+  //       src: "https://example.com/kenya2.jpg",
+  //       alt: "Kenya 2",
+  //       rotation: -4,
+  //     },
+  //   ],
+  // },
 ];
 
 function ImageCarousel() {
