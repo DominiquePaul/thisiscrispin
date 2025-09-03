@@ -46,10 +46,12 @@ export async function getArticleBySlug(slug: string) {
   const articleData = {
     id: article.sys.id,
     createdAt: article.sys.createdAt,
-    slug: article.fields.slug,
+    slug: article.sys.slug,
     title: article.fields.title,
     excerpt: article.fields.excerpt,
-    coverImage: `https:${(article.fields.coverImage as any).fields.file.url}`,
+    coverImage: article.fields.coverImage 
+      ? `https:${(article.fields.coverImage as any).fields.file.url}`
+      : undefined,
     content: article.fields.content,
   };
 
