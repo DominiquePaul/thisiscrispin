@@ -100,9 +100,9 @@ export default function BlogContent({ articles, allTags = [], isTeaser = false, 
           <Link href={`/p/${article.slug}`} key={article.id} className="block border-b last:border-b-0 hover:bg-gray-200 transition-colors duration-200">
             <div className="flex justify-between items-center pt-4 pb-4">
               <div className="flex-1 pr-8">
-                <h2 className="text-2xl font-bold mb-2">{article.title}</h2>
-                <p className="text-gray-600 mb-2">{article.excerpt}</p>
-                <p className="text-sm text-gray-500 mb-2">
+                <h2 className="text-2xl font-bold mb-2 p-2">{article.title}</h2>
+                <p className="text-gray-600 mb-2 p-2">{article.excerpt}</p>
+                <p className="text-sm text-gray-500 mb-2 p-2">
                   {new Date(article.createdAt).toLocaleDateString('en-US', {
                     year: 'numeric',
                     month: 'long',

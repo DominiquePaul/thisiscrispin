@@ -70,10 +70,10 @@ export default function HomeContent({ articles, allTags }: HomeContentProps) {
                   </a>
                 </div>
                 {/* Photographs button - positioned to align with writings section */}
-                <div className="flex justify-end pb-10">
+                <div className="flex justify-end pb-10 pr-2">
                   <Link href="/shots">
                     <span className="text-[#8E8E8E] hover:text-[#6E6E6E] transition-colors duration-200 cursor-pointer text-sm font-ibm-plex-sans">
-                      Photographs
+                      Occasional Photography
                     </span>
                   </Link>
                 </div>
