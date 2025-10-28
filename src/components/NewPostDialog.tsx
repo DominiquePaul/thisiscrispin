@@ -74,7 +74,29 @@ export default function NewPostDialog() {
           fields: {
             title: { 'en-US': title },
             slug: { 'en-US': slug },
-            mainContent: { 'en-US': '# ' + title + '\n\nStart writing here...' },
+            // Initialize Contentful Rich Text document structure
+            content: {
+              'en-US': {
+                nodeType: 'document',
+                data: {},
+                content: [
+                  {
+                    nodeType: 'heading-1',
+                    data: {},
+                    content: [
+                      { nodeType: 'text', value: title, marks: [], data: {} }
+                    ]
+                  },
+                  {
+                    nodeType: 'paragraph',
+                    data: {},
+                    content: [
+                      { nodeType: 'text', value: 'Start writing here...', marks: [], data: {} }
+                    ]
+                  }
+                ]
+              }
+            },
             excerpt: { 'en-US': title }
           }
         })

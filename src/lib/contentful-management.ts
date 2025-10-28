@@ -53,11 +53,12 @@ export const updateEntry = async (entryId: string, fields: any) => {
       if (value === null || value === undefined) {
         sanitizedFields[key] = { 'en-US': '' };
       } else {
-        // Special handling for mainContent with images
-        if (key === 'mainContent' && typeof value === 'object' && value !== null) {
+        // Special handling for rich text content field
+        if (key === 'content' && typeof value === 'object' && value !== null) {
           const enUsValue = (value as Record<string, any>)['en-US'];
-          if (typeof enUsValue === 'string' && enUsValue.includes('![')) {
-            console.log('Content contains images, preserving markdown format');
+          // Rich text content: already in proper Contentful document shape
+          if (enUsValue && typeof enUsValue === 'object') {
+            console.log('Rich text content detected, passing through as-is');
           }
         }
         sanitizedFields[key] = value;
