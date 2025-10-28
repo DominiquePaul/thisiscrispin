@@ -9,6 +9,7 @@ import rehypeRaw from 'rehype-raw';
 import Image from 'next/image';
 import { IBM_Plex_Sans, IBM_Plex_Mono } from 'next/font/google';
 import VideoEmbed from './VideoEmbed';
+import { richTextToMarkdown } from '@/lib/utils';
 
 const plexSans = IBM_Plex_Sans({ 
   subsets: ['latin'],
@@ -30,7 +31,8 @@ const ContentfulEditor = dynamic(() => import('./ContentfulEditor'), {
 interface BlogPostClientProps {
   contentfulId: string;
   title: string;
-  content: string;
+  // Contentful Rich Text document
+  content: any;
   tags: string[];
   createdAt: string;
   coverImage?: string;
@@ -48,7 +50,7 @@ export default function BlogPostClient({
 }: BlogPostClientProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [title, setTitle] = useState(initialTitle);
-  const [content, setContent] = useState(initialContent);
+  const [content, setContent] = useState<any>(initialContent);
   const [tags, setTags] = useState(initialTags);
   const [coverImage, setCoverImage] = useState(initialCoverImage);
   const [excerpt, setExcerpt] = useState(initialExcerpt || '');
@@ -85,7 +87,7 @@ export default function BlogPostClient({
   };
 
   // Handle successful save from the editor
-  const handleSaved = (newTitle: string, newContent: string, newTags: string[], newCoverImage?: string, newExcerpt?: string) => {
+  const handleSaved = (newTitle: string, newContent: any, newTags: string[], newCoverImage?: string, newExcerpt?: string) => {
     setTitle(newTitle);
     setContent(newContent);
     setTags(newTags);
@@ -116,7 +118,7 @@ export default function BlogPostClient({
             contentfulId={contentfulId}
             initialContent={{
               title,
-              content,
+              content: content,
               coverImage,
               excerpt
             }}
@@ -151,12 +153,10 @@ export default function BlogPostClient({
               <ReactMarkdown 
                 remarkPlugins={[remarkGfm]}
                 rehypePlugins={[rehypeRaw]}
-                // Configure how elements are wrapped - prevents <div> inside <p> issues
                 skipHtml={false}
                 components={{
                   p: ({node, children, ...props}) => {
                     // Check if this paragraph contains only a video element
-                    // This prevents wrapping videos in <p> tags which causes nesting issues
                     if (node && node.children.length === 1) {
                       const child = node.children[0];
                       if (child.type === 'element' && child.tagName === 'img') {
@@ -167,40 +167,33 @@ export default function BlogPostClient({
                         const isVimeo = imgSrc.includes('vimeo.com');
                         
                         if (isVideoFile || isContentfulVideo || isYouTube || isVimeo) {
-                          // Don't wrap videos in <p> tags - render children directly
                           return <>{children}</>;
                         }
                       }
                     }
-                    // Regular paragraph
                     return <p {...props}>{children}</p>;
                   },
                   img: ({node, ...props}) => {
                     let imgSrc = props.src || '';
                     
-                    // Check if it's a video file or video platform URL
                     const isVideoFile = /\.(mp4|m4v|webm|ogg|mov)(\?.*)?$/i.test(imgSrc);
                     const isContentfulVideo = imgSrc.includes('ctfassets.net') && isVideoFile;
                     const isYouTube = imgSrc.includes('youtube.com') || imgSrc.includes('youtu.be');
                     const isVimeo = imgSrc.includes('vimeo.com');
                     
-                    // Only convert to video if using image syntax with video content
                     if (isVideoFile || isContentfulVideo || isYouTube || isVimeo) {
-                      // Render as video instead of image
                       if (imgSrc.startsWith('//')) {
                         imgSrc = `https:${imgSrc}`;
                       }
                       return <VideoEmbed url={imgSrc} title={props.alt} />;
                     }
                     
-                    // Handle different URL formats for images
                     if (imgSrc.startsWith('//')) {
                       imgSrc = `https:${imgSrc}`;
                     } else if (!imgSrc.startsWith('http://') && !imgSrc.startsWith('https://') && !imgSrc.startsWith('/')) {
                       imgSrc = `/${imgSrc}`;
                     }
                     
-                    // Check if it's a GIF - use regular img tag to preserve animation
                     const isGif = /\.(gif)(\?.*)?$/i.test(imgSrc);
                     
                     if (isGif) {
@@ -236,7 +229,6 @@ export default function BlogPostClient({
                     );
                   },
                   a: ({node, ...props}) => {
-                    // All links remain as regular links - no video embedding for link syntax
                     return <a {...props} className="text-blue-600 hover:text-blue-800 underline" />;
                   },
                   code: ({node, ...props}) => (
@@ -244,7 +236,7 @@ export default function BlogPostClient({
                   ),
                 }}
               >
-                {content}
+                {richTextToMarkdown(content)}
               </ReactMarkdown>
             ) : (
               <div className="text-gray-600">No content available</div>

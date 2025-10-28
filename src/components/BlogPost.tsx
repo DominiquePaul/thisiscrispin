@@ -28,7 +28,8 @@ const BlogPost: React.FC<{contentfulId: string}> = async ({ contentfulId }) => {
 
     const entry = await client.getEntry(contentfulId);
     const title = entry.fields.title as string;
-    const content = entry.fields.content as string;
+    // `content` is now Contentful Rich Text (object)
+    const content = entry.fields.content as any;
     const excerpt = entry.fields.excerpt as string || '';
     const createdAt = entry.sys.createdAt; // Extract creation date
     

@@ -27,12 +27,13 @@ interface ContentfulEditorProps {
   contentfulId: string;
   initialContent: {
     title: string;
-    content: string;
+    // Rich text field from Contentful; we won't edit it here yet
+    content?: any;
     coverImage?: string;
     excerpt?: string;
   };
   initialTags: string[];
-  onSaved?: (title: string, content: string, tags: string[], coverImage?: string, excerpt?: string) => void;
+  onSaved?: (title: string, content: any, tags: string[], coverImage?: string, excerpt?: string) => void;
   onCancel?: () => void;
 }
 
@@ -44,6 +45,7 @@ export default function ContentfulEditor({
   onCancel
 }: ContentfulEditorProps) {
   const [title, setTitle] = useState(initialContent.title || '');
+  // Store the rich text content; for now the editor is disabled
   const [content, setContent] = useState(initialContent.content || '');
   const [coverImage, setCoverImage] = useState(initialContent.coverImage || '');
   const [excerpt, setExcerpt] = useState(initialContent.excerpt || '');
@@ -220,9 +222,9 @@ export default function ContentfulEditor({
       const contentToSave = content;
       
       // Build fields object for update
+      // Only update non-body fields for now; leave Rich Text body to Contentful UI
       const fields: any = {
         title: title,
-        content: contentToSave,
         excerpt: excerpt
       };
       
@@ -293,7 +295,7 @@ export default function ContentfulEditor({
       
       // Call the onSaved callback if provided, but only for manual saves, not auto-saves
       if (onSaved && !isAutoSave) {
-        onSaved(title, contentToSave, selectedTagIds, coverImage, excerpt);
+        onSaved(title, initialContent.content ?? contentToSave, selectedTagIds, coverImage, excerpt);
       }
       
       setTimeout(() => {
