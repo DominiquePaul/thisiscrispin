@@ -116,7 +116,7 @@ export default function BlogPostClient({
             contentfulId={contentfulId}
             initialContent={{
               title,
-              mainContent: content,
+              content,
               coverImage,
               excerpt
             }}

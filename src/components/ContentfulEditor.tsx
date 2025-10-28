@@ -27,7 +27,7 @@ interface ContentfulEditorProps {
   contentfulId: string;
   initialContent: {
     title: string;
-    mainContent: string;
+    content: string;
     coverImage?: string;
     excerpt?: string;
   };
@@ -44,7 +44,7 @@ export default function ContentfulEditor({
   onCancel
 }: ContentfulEditorProps) {
   const [title, setTitle] = useState(initialContent.title || '');
-  const [content, setContent] = useState(initialContent.mainContent || '');
+  const [content, setContent] = useState(initialContent.content || '');
   const [coverImage, setCoverImage] = useState(initialContent.coverImage || '');
   const [excerpt, setExcerpt] = useState(initialContent.excerpt || '');
   const [selectedTagIds, setSelectedTagIds] = useState<string[]>(initialTags);
@@ -222,7 +222,7 @@ export default function ContentfulEditor({
       // Build fields object for update
       const fields: any = {
         title: title,
-        mainContent: contentToSave,
+        content: contentToSave,
         excerpt: excerpt
       };
       

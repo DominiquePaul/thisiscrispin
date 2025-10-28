@@ -74,7 +74,7 @@ export default function NewPostDialog() {
           fields: {
             title: { 'en-US': title },
             slug: { 'en-US': slug },
-            mainContent: { 'en-US': '# ' + title + '\n\nStart writing here...' },
+            content: { 'en-US': '# ' + title + '\n\nStart writing here...' },
             excerpt: { 'en-US': title }
           }
         })
