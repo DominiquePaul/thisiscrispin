@@ -97,19 +97,23 @@ export default function BlogContent({ articles, allTags = [], isTeaser = false, 
 
       <div>
         {displayedArticles.map((article) => (
-          <Link href={`/p/${article.slug}`} key={article.id} className="block border-b last:border-b-0 hover:bg-gray-200 transition-colors duration-200">
-            <div className="flex justify-between items-center pt-4 pb-4">
-              <div className="flex-1 pr-8">
-                <h2 className="text-2xl font-bold mb-2 p-2">{article.title}</h2>
-                <p className="text-gray-600 mb-2 p-2">{article.excerpt}</p>
-                <p className="text-sm text-gray-500 mb-2 p-2">
+          <Link
+            href={`/p/${article.slug}`}
+            key={article.id}
+            className="block border-b last:border-b-0 group"
+          >
+            <div className="flex items-center gap-6 md:gap-8 px-4 md:px-8 py-4 transition-colors duration-200 rounded-[6px] group-hover:bg-gray-200">
+              <div className="flex-1 space-y-3">
+                <h2 className="text-2xl font-bold">{article.title}</h2>
+                <p className="text-gray-600">{article.excerpt}</p>
+                <p className="text-sm text-gray-500">
                   {new Date(article.createdAt).toLocaleDateString('en-US', {
                     year: 'numeric',
                     month: 'long',
                     day: 'numeric'
                   })}
                 </p>
-                <div className="flex items-center space-x-2">
+                <div className="flex flex-wrap items-center gap-2">
                   {article.tags.map((tag) => (
                     <Badge key={tag} variant="secondary" className="border border-gray-300">
                       {getTagDisplayName(tag)}
@@ -119,7 +123,7 @@ export default function BlogContent({ articles, allTags = [], isTeaser = false, 
               </div>
               {/* Only render the image on larger screens */}
               {article.coverImage && (
-                <div className="hidden md:w-[200px] md:h-[200px] relative md:block">
+                <div className="hidden md:block md:h-[200px] md:w-[200px] relative flex-shrink-0">
                   <Image
                     src={`${article.coverImage}?fm=webp&q=60`}
                     alt={article.title}

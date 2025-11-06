@@ -1,10 +1,13 @@
 "use client";
 
+import { useState } from "react";
 import Image from "next/image";
 // import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import Link from "next/link";
 import BlogContent from '@/components/BlogContent';
+import FeedbackForm from '@/components/FeedbackForm';
 import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 // import ProjectCard from '@/components/ProjectCard';
 
 
@@ -15,10 +18,12 @@ interface HomeContentProps {
   
 export default function HomeContent({ articles, allTags }: HomeContentProps) {
 
+  const [isFeedbackOpen, setIsFeedbackOpen] = useState(false);
+
   return (
     <div className="flex flex-col min-h-screen overflow-auto">
       {/* <InteractiveGrainyHero /> */}
-      <section className="flex-grow-0 pt-[45vh] pl-[5%] sm:pl-[10%] 2xl:pl-[20%]">
+      <section className="flex-grow-0 pt-[40vh] pl-[5%] sm:pl-[10%] 2xl:pl-[20%]">
         <div className="relative ">
           <div className="relative z-10">
             <h4 className="text-[rgb(100,100,100)] text-base z-10">
@@ -39,14 +44,19 @@ export default function HomeContent({ articles, allTags }: HomeContentProps) {
                 sizes="(max-width: 768px) 100vw"
               />
             </div>
-            <p className="w-full pr-[20%] text-lg" style={{ fontFamily: 'var(--font-sf-mono)' }}>
-              I&apos;m a hacker, extrovert, nerd, and europatriot. I spend most of my time building ML models or apps, but also ventured into other domains such as computational genomics or like in 2023, when I spent half a year clearing freight containers in Sierra Leone. I studied statistics at ETH Zurich, <a href="https://openreview.net/forum?id=IbiiNw4oRj" >published at NeurIPS</a> and spent 2024 building ML pipelines as a freelancer. Now I&apos;m building general purpose ML models for robotic arms.
-            </p>
+            <div className="w-full pr-[20%] text-lg space-y-6" style={{ fontFamily: 'var(--font-sf-mono)' }}>
+              <p>
+                I&apos;m a hacker, extrovert, nerd, and europatriot. Life is about creating value for people who share your values. Builders and entrepreneurs, in my case. Making something physical is hard. Scaling it is even harder. What&apos;s missing is automation that works before you&apos;re huge, something anyone can configure intuitively without needing an engineer. That&apos;s why I&apos;m <a href="https://dream-machines.eu/" style={{ color: "inherit", textDecoration: "none" }} target="_blank" rel="noopener noreferrer">building ML models for robotic arms</a>.
+              </p>
+              <p>
+                My path here has been non-linear: from economics to maths &amp; statistics at ETH Zurich, computational genomics research, <a href="https://openreview.net/forum?id=IbiiNw4oRj" style={{ color: "inherit", textDecoration: "none" }} target="_blank" rel="noopener noreferrer">publishing on scaling laws at NeurIPS</a>, half a year clearing shipping containers in <a href="https://www.sierraleonehockey.org/" style={{ color: "inherit", textDecoration: "none" }} target="_blank" rel="noopener noreferrer">Sierra Leone</a>, and freelancing to build ML pipelines, which is now funding my v1 product.
+              </p>
+            </div>
           </div>
           <div className="pl-[30px] mt-2.5">
             <div className="w-9/12 font-['SF_Mono']">
               <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start">
-                <div className="flex space-x-[30px] sm:space-x-[20px] pb-10">
+                <div className="flex items-center space-x-[30px] sm:space-x-[20px] pb-10">
                   <a href="https://thisiscrispin.substack.com" target="_blank" rel="noopener noreferrer">
                     <svg width="20" height="20" viewBox="0 0 448 511.471" fill="#8E8E8E" className="w-5">
                       <path d="M0 0h448v62.804H0V0zm0 229.083h448v282.388L223.954 385.808 0 511.471V229.083zm0-114.542h448v62.804H0v-62.804z"/>
@@ -68,14 +78,32 @@ export default function HomeContent({ articles, allTags }: HomeContentProps) {
                       <path d="m236 0h46l-101 115 118 156h-92.6l-72.5-94.8-83 94.8h-46l107-123-113-148h94.9l65.5 86.6zm-16.1 244h25.5l-165-218h-27.4z"/>
                     </svg>
                   </a>
+                  <Link
+                    href="/shots"
+                    className="text-[#8E8E8E] text-sm font-ibm-plex-sans transition-colors duration-200 hover:text-[#6E6E6E]"
+                  >
+                    Photographs
+                  </Link>
                 </div>
                 {/* Photographs button - positioned to align with writings section */}
                 <div className="flex justify-end pb-10 pr-2">
-                  <Link href="/shots">
-                    <span className="text-[#8E8E8E] hover:text-[#6E6E6E] transition-colors duration-200 cursor-pointer text-sm font-ibm-plex-sans">
-                      Occasional Photography
-                    </span>
-                  </Link>
+                  <Dialog open={isFeedbackOpen} onOpenChange={setIsFeedbackOpen}>
+                    <DialogTrigger asChild>
+                      <button
+                        type="button"
+                        className="text-[#8E8E8E] transition-colors duration-200 cursor-pointer text-sm font-ibm-plex-sans hover:text-[#6E6E6E]"
+                      >
+                        Send me an anonymous note
+                      </button>
+                    </DialogTrigger>
+                    <DialogContent className="sm:max-w-xl p-8 sm:rounded-[20px]">
+                      <DialogHeader className="sr-only">
+                        <DialogTitle>Send anonymous feedback</DialogTitle>
+                        <DialogDescription>Share any thoughts you would like me to read.</DialogDescription>
+                      </DialogHeader>
+                      <FeedbackForm onSuccess={() => setIsFeedbackOpen(false)} />
+                    </DialogContent>
+                  </Dialog>
                 </div>
               </div>
             </div>
@@ -85,12 +113,12 @@ export default function HomeContent({ articles, allTags }: HomeContentProps) {
       {/* Blog Section */}
       <section className="px-[10%] 2xl:px-[20%] py-24">
         <h1 className="text-5xl font-bold mb-12">Writing</h1>
-        <BlogContent articles={articles} allTags={allTags} isTeaser={true} maxArticles={3} />
+        <BlogContent articles={articles} allTags={allTags} isTeaser={true} maxArticles={5} />
         
         <div className="mt-8 text-center">
           <Link href="/p">
             <Button variant="outline" size="lg">
-              See all posts
+              See all
             </Button>
           </Link>
         </div>
