@@ -90,8 +90,8 @@ export default function MarkdownEditor({
   
   // Initialize content from props
   useEffect(() => {
-    if (initialContent && initialContent !== value) {
-      setValue(initialContent);
+    if (typeof initialContent === "string") {
+      setValue((prev) => (initialContent !== prev ? initialContent : prev));
     }
   }, [initialContent]);
   

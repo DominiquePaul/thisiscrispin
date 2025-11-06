@@ -1,5 +1,6 @@
 "use client";
 
+import Image from 'next/image';
 import { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -67,10 +68,12 @@ export default function ContentfulImageUploader() {
         <div className="mb-4">
           <p className="mb-2 text-sm font-medium">Uploaded Image:</p>
           <div className="relative aspect-video w-full max-w-md overflow-hidden rounded-lg border">
-            <img 
-              src={uploadedImageUrl} 
-              alt="Uploaded image" 
-              className="object-cover w-full h-full"
+            <Image
+              src={uploadedImageUrl}
+              alt="Uploaded image"
+              fill
+              className="object-cover"
+              sizes="(max-width: 768px) 100vw, (max-width: 1024px) 75vw, 50vw"
             />
           </div>
           <p className="mt-2 text-xs text-gray-500 break-all">{uploadedImageUrl}</p>

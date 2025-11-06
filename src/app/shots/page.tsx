@@ -407,7 +407,7 @@ function ImageCarousel() {
   return (
     <>
       <div
-        className={`relative h-screen overflow-hidden transition-opacity duration-[900ms] ease-out ${
+        className={`relative h-screen overflow-hidden transition-opacity duration-700 ease-out ${
           isLoading ? 'opacity-0 pointer-events-none' : 'opacity-100'
         }`}
       >
@@ -509,7 +509,7 @@ function ImageCarousel() {
               </span>
             </div>
             <p className={`text-[0.6rem] md:text-xs tracking-[0.6em] text-white/60 ${questrial.className}`}>
-              Photography Portfolio
+              Occasional Photography
             </p>
           </div>
           <div className="flex flex-col items-center gap-3">

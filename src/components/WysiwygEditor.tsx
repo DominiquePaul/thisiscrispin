@@ -10,7 +10,7 @@ import { Separator } from "@/components/ui/separator";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { 
   Bold, Italic, Link, Heading2, Heading3, 
-  List, ListOrdered, Quote, Image, Code 
+  List, ListOrdered, Quote, Image as ImageIcon, Code 
 } from "lucide-react";
 
 interface WysiwygEditorProps {
@@ -238,7 +238,7 @@ export default function WysiwygEditor({
                 className="h-8 w-8"
                 onClick={handleImageUpload}
               >
-                <Image className="h-4 w-4" />
+                <ImageIcon className="h-4 w-4" />
               </Button>
             </TooltipTrigger>
             <TooltipContent>Add Image</TooltipContent>
