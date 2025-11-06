@@ -85,6 +85,17 @@ export default function FeedbackForm({ onSuccess }: FeedbackFormProps) {
           aria-label="Anonymous feedback"
           value={notes}
           onChange={(event) => setNotes(event.target.value)}
+          onKeyDown={(event) => {
+            if ((event.metaKey || event.ctrlKey) && event.key === "Enter") {
+              event.preventDefault();
+              if (isSubmitting) {
+                return;
+              }
+
+              const form = event.currentTarget.form;
+              form?.requestSubmit();
+            }
+          }}
           placeholder="Tell me what you see that I don’t. Bold ideas, honest criticism, raw thoughts."
           maxLength={maxCharacters}
           className="min-h-[220px] resize-none border border-slate-300 bg-white text-base leading-relaxed text-slate-900 focus-visible:ring-slate-900/20"
