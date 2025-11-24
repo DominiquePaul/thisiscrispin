@@ -11,6 +11,7 @@ export async function getArticles(): Promise<Article[]> {
     const response = await client.getEntries({
       content_type: 'markdownrtc',
       order: ['-sys.createdAt'],
+      include: 10, // Resolve up to 10 levels of linked entries/assets
     });
 
     const articles = response.items.map(item => ({
@@ -38,6 +39,7 @@ export async function getArticleBySlug(slug: string) {
     content_type: 'markdownrtc',
     'fields.slug': slug,
     limit: 1,
+    include: 10, // Resolve up to 10 levels of linked entries/assets
   });
 
   if (response.items.length === 0) {

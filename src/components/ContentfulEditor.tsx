@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect, useCallback } from 'react';
-import MDXEditor from './MDXEditor';
+import { useState, useEffect, useCallback, useMemo } from 'react';
+import ContentfulRichTextEditor from './ContentfulRichTextEditor';
 import TagSelector from './TagSelector';
 import { useAuth } from '@/lib/AuthContext';
 import { Button } from "@/components/ui/button";
@@ -11,6 +11,8 @@ import { IBM_Plex_Sans } from 'next/font/google';
 import Image from 'next/image';
 import AdminProtected from './AdminProtected';
 import { debounce } from 'lodash';
+import Router from 'next/router';
+import { Document, BLOCKS } from '@contentful/rich-text-types';
 
 const plexSans = IBM_Plex_Sans({ 
   subsets: ['latin'],
@@ -37,6 +39,62 @@ interface ContentfulEditorProps {
   onCancel?: () => void;
 }
 
+// Default empty Contentful Rich Text document
+const createEmptyDocument = (): Document => ({
+  nodeType: BLOCKS.DOCUMENT,
+  data: {},
+  content: [
+    {
+      nodeType: BLOCKS.PARAGRAPH,
+      data: {},
+      content: [
+        {
+          nodeType: 'text',
+          value: '',
+          marks: [],
+          data: {}
+        }
+      ]
+    }
+  ]
+});
+
+const normalizeContent = (value: any): Document => {
+  if (!value) {
+    return createEmptyDocument();
+  }
+
+  // If it's already a proper Contentful Rich Text document, return it
+  if (typeof value === 'object' && value.nodeType === BLOCKS.DOCUMENT) {
+    return value as Document;
+  }
+
+  // If it's a string, wrap it in a document structure
+  if (typeof value === 'string') {
+    return {
+      nodeType: BLOCKS.DOCUMENT,
+      data: {},
+      content: [
+        {
+          nodeType: BLOCKS.PARAGRAPH,
+          data: {},
+          content: [
+            {
+              nodeType: 'text',
+              value: value,
+              marks: [],
+              data: {}
+            }
+          ]
+        }
+      ]
+    };
+  }
+
+  console.error('Unexpected content format:', value);
+  return createEmptyDocument();
+};
+
 export default function ContentfulEditor({
   contentfulId,
   initialContent,
@@ -44,26 +102,49 @@ export default function ContentfulEditor({
   onSaved,
   onCancel
 }: ContentfulEditorProps) {
+  const normalizedInitialContent = useMemo(
+    () => normalizeContent(initialContent.content),
+    [contentfulId, initialContent.content]
+  );
+
   const [title, setTitle] = useState(initialContent.title || '');
-  // Store the rich text content; for now the editor is disabled
-  const [content, setContent] = useState(initialContent.content || '');
+  // Store the rich text content as a Contentful Document
+  const [content, setContent] = useState<Document>(normalizedInitialContent);
   const [coverImage, setCoverImage] = useState(initialContent.coverImage || '');
   const [excerpt, setExcerpt] = useState(initialContent.excerpt || '');
-  const [selectedTagIds, setSelectedTagIds] = useState<string[]>(initialTags);
+  const [selectedTagIds, setSelectedTagIds] = useState<string[]>(() => [...initialTags]);
+  const [lastSavedState, setLastSavedState] = useState(() => ({
+    title: initialContent.title || '',
+    content: normalizedInitialContent,
+    excerpt: initialContent.excerpt || '',
+    coverImage: initialContent.coverImage || '',
+    tags: [...initialTags],
+  }));
   const [availableTags, setAvailableTags] = useState<Tag[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [message, setMessage] = useState('');
   const [messageType, setMessageType] = useState<'success' | 'error'>('success');
-  const [autoSaveEnabled, setAutoSaveEnabled] = useState(() => {
-    // Load preference from localStorage if available
-    if (typeof window !== 'undefined') {
-      const savedPreference = localStorage.getItem('autoSaveEnabled');
-      return savedPreference === 'true';
-    }
-    return false;
-  });
+  const [autoSaveEnabled, setAutoSaveEnabled] = useState(false);
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
+  const hasUnsavedChanges = useMemo(() => {
+    const tagsChanged =
+      selectedTagIds.length !== lastSavedState.tags.length ||
+      selectedTagIds.some((tag, index) => tag !== lastSavedState.tags[index]);
+
+    // Compare content by stringifying since it's an object
+    const contentChanged = JSON.stringify(content) !== JSON.stringify(lastSavedState.content);
+
+    return (
+      title !== lastSavedState.title ||
+      contentChanged ||
+      excerpt !== lastSavedState.excerpt ||
+      coverImage !== lastSavedState.coverImage ||
+      tagsChanged
+    );
+  }, [title, content, excerpt, coverImage, selectedTagIds, lastSavedState]);
+
+  const initialTagsKey = useMemo(() => JSON.stringify(initialTags), [initialTags]);
   
   const { isAuthenticated } = useAuth();
 
@@ -94,6 +175,71 @@ export default function ContentfulEditor({
     fetchTags();
   }, [isAuthenticated]);
   
+  useEffect(() => {
+    const nextContent = normalizeContent(initialContent.content);
+    const nextTags = [...initialTags];
+
+    setTitle(initialContent.title || '');
+    setContent(nextContent);
+    setCoverImage(initialContent.coverImage || '');
+    setExcerpt(initialContent.excerpt || '');
+    setSelectedTagIds(nextTags);
+    setLastSavedState({
+      title: initialContent.title || '',
+      content: nextContent,
+      excerpt: initialContent.excerpt || '',
+      coverImage: initialContent.coverImage || '',
+      tags: nextTags,
+    });
+  }, [
+    contentfulId,
+    initialContent.title,
+    initialContent.content,
+    initialContent.coverImage,
+    initialContent.excerpt,
+    initialTagsKey,
+  ]);
+
+  useEffect(() => {
+    if (!hasUnsavedChanges) {
+      return;
+    }
+
+    const handleBeforeUnload = (event: BeforeUnloadEvent) => {
+      event.preventDefault();
+      event.returnValue = '';
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+    };
+  }, [hasUnsavedChanges]);
+
+  useEffect(() => {
+    const handleRouteChangeStart = (url: string) => {
+      if (!hasUnsavedChanges || Router.asPath === url) {
+        return;
+      }
+
+      const confirmLeave = window.confirm(
+        'You have unsaved changes. Are you sure you want to leave this page?'
+      );
+
+      if (!confirmLeave) {
+        Router.events.emit('routeChangeError');
+        throw new Error('Route change aborted due to unsaved changes.');
+      }
+    };
+
+    Router.events.on('routeChangeStart', handleRouteChangeStart);
+
+    return () => {
+      Router.events.off('routeChangeStart', handleRouteChangeStart);
+    };
+  }, [hasUnsavedChanges]);
+
   // Handler for creating new tags
   const handleCreateTag = async (name: string): Promise<Tag> => {
     const response = await fetch('/api/contentful/tags', {
@@ -117,7 +263,7 @@ export default function ContentfulEditor({
   };
   
   // Handler for uploading images
-  const handleUploadImage = async (file: File) => {
+  const handleUploadImage = useCallback(async (file: File) => {
     try {
       // Validate file type
       if (!file.type.startsWith('image/')) {
@@ -158,7 +304,8 @@ export default function ContentfulEditor({
       return {
         url: asset.url,
         width: asset.width || 0,
-        height: asset.height || 0
+        height: asset.height || 0,
+        id: asset.id // Include the Contentful asset ID
       };
     } catch (error) {
       // Show error message to user
@@ -169,7 +316,7 @@ export default function ContentfulEditor({
       // Return a default response with an empty URL to prevent editor from breaking
       return { url: '', width: 0, height: 0 };
     }
-  };
+  }, []);
   
   // Handler for setting cover image
   const handleCoverImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -207,7 +354,7 @@ export default function ContentfulEditor({
   };
   
   // Handler for saving changes
-  const handleSave = async (isAutoSave = false) => {
+  const handleSave = useCallback(async (isAutoSave = false) => {
     if (!title.trim()) {
       setMessage('Title is required');
       setMessageType('error');
@@ -222,10 +369,11 @@ export default function ContentfulEditor({
       const contentToSave = content;
       
       // Build fields object for update
-      // Only update non-body fields for now; leave Rich Text body to Contentful UI
+      // Now we can save the content because we're using a Rich Text editor!
       const fields: any = {
         title: title,
-        excerpt: excerpt
+        excerpt: excerpt,
+        content: contentToSave
       };
       
       // Add coverImage if present
@@ -287,6 +435,13 @@ export default function ContentfulEditor({
       setMessage('Changes saved successfully!');
       setMessageType('success');
       setLastSaved(new Date());
+      setLastSavedState({
+        title,
+        content: contentToSave,
+        excerpt,
+        coverImage,
+        tags: [...selectedTagIds],
+      });
       
       // Save the current state to component state to preserve after save
       // This ensures we don't lose data if the component re-renders
@@ -307,7 +462,7 @@ export default function ContentfulEditor({
     } finally {
       setIsSaving(false);
     }
-  };
+  }, [title, content, excerpt, coverImage, selectedTagIds, contentfulId, onSaved, initialContent.content]);
   
   // Create debounced version of save function for auto-save
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -319,7 +474,7 @@ export default function ContentfulEditor({
         });
       }
     }, 2000),
-    [title, content, excerpt, selectedTagIds, coverImage, autoSaveEnabled]
+    [autoSaveEnabled, handleSave]
   );
   
   // Effect to trigger auto-save when content changes
@@ -337,10 +492,6 @@ export default function ContentfulEditor({
   const handleToggleAutoSave = (e: React.ChangeEvent<HTMLInputElement>) => {
     const checked = e.target.checked;
     setAutoSaveEnabled(checked);
-    // Save preference to localStorage
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('autoSaveEnabled', checked.toString());
-    }
   };
   
   // Add a direct click handler function before the return statement
@@ -479,10 +630,13 @@ export default function ContentfulEditor({
           
           {/* Content Section */}
           <div className="space-y-2">
-            <MDXEditor
+            <label className="text-sm font-medium">
+              Content
+            </label>
+            <ContentfulRichTextEditor
               key={`editor-${contentfulId}`}
-              initialContent={content}
-              onChange={(newContent) => {
+              initialValue={content}
+              onChange={(newContent: Document) => {
                 setContent(newContent);
               }}
               onUploadImage={handleUploadImage}

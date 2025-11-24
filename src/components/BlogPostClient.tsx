@@ -3,13 +3,11 @@
 import { useState, useEffect } from 'react';
 import dynamic from 'next/dynamic';
 import BlogPostEditButton from './BlogPostEditButton';
-import ReactMarkdown from 'react-markdown';
-import remarkGfm from 'remark-gfm';
-import rehypeRaw from 'rehype-raw';
+import { documentToReactComponents } from '@contentful/rich-text-react-renderer';
+import { BLOCKS, INLINES, MARKS } from '@contentful/rich-text-types';
 import Image from 'next/image';
 import { IBM_Plex_Sans, IBM_Plex_Mono } from 'next/font/google';
 import VideoEmbed from './VideoEmbed';
-import { richTextToMarkdown } from '@/lib/utils';
 
 const plexSans = IBM_Plex_Sans({ 
   subsets: ['latin'],
@@ -150,94 +148,99 @@ export default function BlogPostClient({
           </div>
           <div className={`prose prose-md max-w-none ${plexSans.className}`}>
             {content ? (
-              <ReactMarkdown 
-                remarkPlugins={[remarkGfm]}
-                rehypePlugins={[rehypeRaw]}
-                skipHtml={false}
-                components={{
-                  p: ({node, children, ...props}) => {
-                    // Check if this paragraph contains only a video element
-                    if (node && node.children.length === 1) {
-                      const child = node.children[0];
-                      if (child.type === 'element' && child.tagName === 'img') {
-                        const imgSrc = child.properties?.src as string || '';
-                        const isVideoFile = /\.(mp4|m4v|webm|ogg|mov)(\?.*)?$/i.test(imgSrc);
-                        const isContentfulVideo = imgSrc.includes('ctfassets.net') && isVideoFile;
-                        const isYouTube = imgSrc.includes('youtube.com') || imgSrc.includes('youtu.be');
-                        const isVimeo = imgSrc.includes('vimeo.com');
-                        
-                        if (isVideoFile || isContentfulVideo || isYouTube || isVimeo) {
-                          return <>{children}</>;
-                        }
+              <>
+                {documentToReactComponents(content, {
+                  renderNode: {
+                    [BLOCKS.EMBEDDED_ASSET]: (node) => {
+                      const { file, title: assetTitle, description } = node.data.target.fields;
+                      const url = file?.['en-US']?.url || file?.url;
+                      
+                      if (!url) return null;
+                      
+                      const fullUrl = url.startsWith('//') ? `https:${url}` : url;
+                      const isVideo = /\.(mp4|m4v|webm|ogg|mov)(\?.*)?$/i.test(fullUrl);
+                      
+                      if (isVideo) {
+                        return <VideoEmbed url={fullUrl} title={assetTitle?.['en-US'] || assetTitle || 'Video'} />;
                       }
-                    }
-                    return <p {...props}>{children}</p>;
-                  },
-                  img: ({node, ...props}) => {
-                    let imgSrc = props.src || '';
-                    
-                    const isVideoFile = /\.(mp4|m4v|webm|ogg|mov)(\?.*)?$/i.test(imgSrc);
-                    const isContentfulVideo = imgSrc.includes('ctfassets.net') && isVideoFile;
-                    const isYouTube = imgSrc.includes('youtube.com') || imgSrc.includes('youtu.be');
-                    const isVimeo = imgSrc.includes('vimeo.com');
-                    
-                    if (isVideoFile || isContentfulVideo || isYouTube || isVimeo) {
-                      if (imgSrc.startsWith('//')) {
-                        imgSrc = `https:${imgSrc}`;
+                      
+                      const isGif = /\.(gif)(\?.*)?$/i.test(fullUrl);
+                      const alt = description?.['en-US'] || assetTitle?.['en-US'] || description || assetTitle || '';
+                      
+                      if (isGif) {
+                        return (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img
+                            src={fullUrl}
+                            alt={alt}
+                            className="my-4 w-full h-auto"
+                            style={{
+                              maxWidth: '100%',
+                              height: 'auto',
+                            }}
+                          />
+                        );
                       }
-                      return <VideoEmbed url={imgSrc} title={props.alt} />;
-                    }
-                    
-                    if (imgSrc.startsWith('//')) {
-                      imgSrc = `https:${imgSrc}`;
-                    } else if (!imgSrc.startsWith('http://') && !imgSrc.startsWith('https://') && !imgSrc.startsWith('/')) {
-                      imgSrc = `/${imgSrc}`;
-                    }
-                    
-                    const isGif = /\.(gif)(\?.*)?$/i.test(imgSrc);
-                    
-                    if (isGif) {
+                      
                       return (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img
-                          {...props}
-                          src={imgSrc}
-                          alt={props.alt || ''}
-                          className="my-4 w-full h-auto"
+                        <Image
+                          src={fullUrl}
+                          width={1200}
+                          height={0}
+                          sizes="(max-width: 768px) 100vw, 800px"
                           style={{
-                            maxWidth: '100%',
+                            width: '100%',
                             height: 'auto',
                           }}
+                          alt={alt}
+                          className="my-4"
                         />
                       );
-                    }
-                    
-                    return (
-                      <Image
-                        {...props} 
-                        src={imgSrc}
-                        width={1200}
-                        height={0}
-                        sizes="(max-width: 768px) 100vw, 800px"
-                        style={{
-                          width: '100%',
-                          height: 'auto',
-                        }}
-                        alt={props.alt || ''}
-                        className="my-4"
-                      />
-                    );
+                    },
+                    [BLOCKS.TABLE]: (node, children) => {
+                      return (
+                        <div className="overflow-x-auto my-6">
+                          <table className="min-w-full border-collapse border border-gray-300">
+                            <tbody>{children}</tbody>
+                          </table>
+                        </div>
+                      );
+                    },
+                    [BLOCKS.TABLE_ROW]: (node, children) => {
+                      return <tr className="border-b border-gray-300">{children}</tr>;
+                    },
+                    [BLOCKS.TABLE_CELL]: (node, children) => {
+                      return (
+                        <td className="border border-gray-300 px-4 py-2">
+                          {children}
+                        </td>
+                      );
+                    },
+                    [BLOCKS.TABLE_HEADER_CELL]: (node, children) => {
+                      return (
+                        <th className="border border-gray-300 px-4 py-2 bg-gray-100 font-semibold text-left">
+                          {children}
+                        </th>
+                      );
+                    },
+                    [INLINES.HYPERLINK]: (node, children) => {
+                      const url = node.data.uri;
+                      return (
+                        <a href={url} className="text-blue-600 hover:text-blue-800 underline">
+                          {children}
+                        </a>
+                      );
+                    },
                   },
-                  a: ({node, ...props}) => {
-                    return <a {...props} className="text-blue-600 hover:text-blue-800 underline" />;
+                  renderMark: {
+                    [MARKS.CODE]: (text) => (
+                      <code className={`${plexMono.className} bg-gray-100 rounded px-1`}>
+                        {text}
+                      </code>
+                    ),
                   },
-                  code: ({node, ...props}) => (
-                    <code className={`${plexMono.className} bg-gray-100 rounded px-1`} {...props} />
-                  ),
-                }}
-              >
-                {richTextToMarkdown(content)}
-              </ReactMarkdown>
+                })}
+              </>
             ) : (
               <div className="text-gray-600">No content available</div>
             )}
