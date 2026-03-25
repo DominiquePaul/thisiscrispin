@@ -1,14 +1,23 @@
-import { createClient } from 'contentful';
+import { createClient, ContentfulClientApi } from 'contentful';
 import { Article } from './types';
-const client = createClient({
-  space: process.env.CONTENTFUL_PUBLIC_SPACE_ID!,
-  accessToken: process.env.CONTENTFUL_ACCESS_TOKEN!,
-  environment: 'master',
-});
+
+let _client: ContentfulClientApi<undefined> | null = null;
+
+function getClient() {
+  if (!_client) {
+    const space = process.env.CONTENTFUL_PUBLIC_SPACE_ID;
+    const accessToken = process.env.CONTENTFUL_ACCESS_TOKEN;
+    if (!space || !accessToken) {
+      throw new Error('Contentful credentials not configured');
+    }
+    _client = createClient({ space, accessToken, environment: 'master' });
+  }
+  return _client;
+}
 
 export async function getArticles(): Promise<Article[]> {
   try {
-    const response = await client.getEntries({
+    const response = await getClient().getEntries({
       content_type: 'markdownrtc',
       order: ['-sys.createdAt'],
       include: 10, // Resolve up to 10 levels of linked entries/assets
@@ -30,34 +39,39 @@ export async function getArticles(): Promise<Article[]> {
     return articles;
   } catch (error) {
     console.error("Error fetching articles:", error);
-    throw error;
+    return [];
   }
 }
 
 export async function getArticleBySlug(slug: string) {
-  const response = await client.getEntries({
-    content_type: 'markdownrtc',
-    'fields.slug': slug,
-    limit: 1,
-    include: 10, // Resolve up to 10 levels of linked entries/assets
-  });
+  try {
+    const response = await getClient().getEntries({
+      content_type: 'markdownrtc',
+      'fields.slug': slug,
+      limit: 1,
+      include: 10, // Resolve up to 10 levels of linked entries/assets
+    });
 
-  if (response.items.length === 0) {
+    if (response.items.length === 0) {
+      return null;
+    }
+
+    const article = response.items[0];
+    const articleData = {
+      id: article.sys.id,
+      createdAt: article.sys.createdAt,
+      slug: article.fields.slug,
+      title: article.fields.title,
+      excerpt: article.fields.excerpt,
+      coverImage: article.fields.coverImage
+        ? `https:${(article.fields.coverImage as any).fields.file.url}`
+        : '/default-cover-image.jpg',
+      content: article.fields.content,
+    };
+
+    return articleData;
+  } catch (error) {
+    console.error("Error fetching article by slug:", error);
     return null;
   }
-
-  const article = response.items[0];
-  const articleData = {
-    id: article.sys.id,
-    createdAt: article.sys.createdAt,
-    slug: article.fields.slug,
-    title: article.fields.title,
-    excerpt: article.fields.excerpt,
-    coverImage: article.fields.coverImage 
-      ? `https:${(article.fields.coverImage as any).fields.file.url}`
-      : '/default-cover-image.jpg',
-    content: article.fields.content,
-  };
-
-  return articleData;
 }

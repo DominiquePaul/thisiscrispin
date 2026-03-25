@@ -152,50 +152,54 @@ export default function BlogPostClient({
                 {documentToReactComponents(content, {
                   renderNode: {
                     [BLOCKS.EMBEDDED_ASSET]: (node) => {
-                      const { file, title: assetTitle, description } = node.data.target.fields;
-                      const url = file?.['en-US']?.url || file?.url;
-                      
-                      if (!url) return null;
-                      
-                      const fullUrl = url.startsWith('//') ? `https:${url}` : url;
-                      const isVideo = /\.(mp4|m4v|webm|ogg|mov)(\?.*)?$/i.test(fullUrl);
-                      
-                      if (isVideo) {
-                        return <VideoEmbed url={fullUrl} title={assetTitle?.['en-US'] || assetTitle || 'Video'} />;
-                      }
-                      
-                      const isGif = /\.(gif)(\?.*)?$/i.test(fullUrl);
-                      const alt = description?.['en-US'] || assetTitle?.['en-US'] || description || assetTitle || '';
-                      
-                      if (isGif) {
+                      try {
+                        const { file, title: assetTitle, description } = node.data.target.fields;
+                        const url = file?.['en-US']?.url || file?.url;
+
+                        if (!url) return null;
+
+                        const fullUrl = url.startsWith('//') ? `https:${url}` : url;
+                        const isVideo = /\.(mp4|m4v|webm|ogg|mov)(\?.*)?$/i.test(fullUrl);
+
+                        if (isVideo) {
+                          return <VideoEmbed url={fullUrl} title={assetTitle?.['en-US'] || assetTitle || 'Video'} />;
+                        }
+
+                        const isGif = /\.(gif)(\?.*)?$/i.test(fullUrl);
+                        const alt = description?.['en-US'] || assetTitle?.['en-US'] || description || assetTitle || '';
+
+                        if (isGif) {
+                          return (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img
+                              src={fullUrl}
+                              alt={alt}
+                              className="my-4 w-full h-auto"
+                              style={{
+                                maxWidth: '100%',
+                                height: 'auto',
+                              }}
+                            />
+                          );
+                        }
+
                         return (
-                          // eslint-disable-next-line @next/next/no-img-element
-                          <img
+                          <Image
                             src={fullUrl}
-                            alt={alt}
-                            className="my-4 w-full h-auto"
+                            width={1200}
+                            height={0}
+                            sizes="(max-width: 768px) 100vw, 800px"
                             style={{
-                              maxWidth: '100%',
+                              width: '100%',
                               height: 'auto',
                             }}
+                            alt={alt}
+                            className="my-4"
                           />
                         );
+                      } catch {
+                        return null;
                       }
-                      
-                      return (
-                        <Image
-                          src={fullUrl}
-                          width={1200}
-                          height={0}
-                          sizes="(max-width: 768px) 100vw, 800px"
-                          style={{
-                            width: '100%',
-                            height: 'auto',
-                          }}
-                          alt={alt}
-                          className="my-4"
-                        />
-                      );
                     },
                     [BLOCKS.TABLE]: (node, children) => {
                       return (
@@ -230,6 +234,31 @@ export default function BlogPostClient({
                           {children}
                         </a>
                       );
+                    },
+                    [BLOCKS.EMBEDDED_ENTRY]: (node) => {
+                      // Prevent unhandled embedded entries from crashing the page
+                      return null;
+                    },
+                    [INLINES.EMBEDDED_ENTRY]: (node) => {
+                      return null;
+                    },
+                    [INLINES.ENTRY_HYPERLINK]: (node, children) => {
+                      return <span>{children}</span>;
+                    },
+                    [INLINES.ASSET_HYPERLINK]: (node, children) => {
+                      // Handle asset hyperlinks gracefully
+                      try {
+                        const url = node.data?.target?.fields?.file?.url;
+                        if (url) {
+                          const fullUrl = url.startsWith('//') ? `https:${url}` : url;
+                          return (
+                            <a href={fullUrl} className="text-blue-600 hover:text-blue-800 underline">
+                              {children}
+                            </a>
+                          );
+                        }
+                      } catch {}
+                      return <span>{children}</span>;
                     },
                   },
                   renderMark: {

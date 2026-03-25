@@ -104,7 +104,7 @@ export default function ContentfulEditor({
 }: ContentfulEditorProps) {
   const normalizedInitialContent = useMemo(
     () => normalizeContent(initialContent.content),
-    [contentfulId, initialContent.content]
+    [initialContent.content]
   );
 
   const [title, setTitle] = useState(initialContent.title || '');
@@ -191,6 +191,7 @@ export default function ContentfulEditor({
       coverImage: initialContent.coverImage || '',
       tags: nextTags,
     });
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- initialTagsKey is a stable proxy for initialTags
   }, [
     contentfulId,
     initialContent.title,

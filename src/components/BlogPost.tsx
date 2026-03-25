@@ -1,18 +1,15 @@
 import { createClient } from 'contentful';
-import ReactMarkdown from 'react-markdown';
-import remarkGfm from 'remark-gfm';
-import rehypeRaw from 'rehype-raw'; // Import rehype-raw
 import Image from 'next/image';
 import { IBM_Plex_Sans, IBM_Plex_Mono } from 'next/font/google';
 import BlogPostClient from './BlogPostClient';
 
-const plexSans = IBM_Plex_Sans({ 
+const plexSans = IBM_Plex_Sans({
   subsets: ['latin'],
   weight: ['400', '600'],
   display: 'swap',
 });
 
-const plexMono = IBM_Plex_Mono({ 
+const plexMono = IBM_Plex_Mono({
   subsets: ['latin'],
   weight: ['400'],
   display: 'swap',
@@ -20,16 +17,18 @@ const plexMono = IBM_Plex_Mono({
 
 const BlogPost: React.FC<{contentfulId: string}> = async ({ contentfulId }) => {
   try {
-    const client = createClient({
-      space: process.env.CONTENTFUL_PUBLIC_SPACE_ID!,
-      accessToken: process.env.CONTENTFUL_ACCESS_TOKEN!,
-      environment: 'master',
-    });
+    const space = process.env.CONTENTFUL_PUBLIC_SPACE_ID;
+    const accessToken = process.env.CONTENTFUL_ACCESS_TOKEN;
+    if (!space || !accessToken) {
+      throw new Error('Contentful credentials not configured');
+    }
+    const client = createClient({ space, accessToken, environment: 'master' });
 
     const entry = await client.getEntry(contentfulId);
     const title = entry.fields.title as string;
     // `content` is now Contentful Rich Text (object)
-    const content = entry.fields.content as any;
+    // JSON round-trip to ensure clean serialization across server/client boundary
+    const content = JSON.parse(JSON.stringify(entry.fields.content)) as any;
     const excerpt = entry.fields.excerpt as string || '';
     const createdAt = entry.sys.createdAt; // Extract creation date
     

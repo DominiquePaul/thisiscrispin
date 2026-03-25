@@ -110,19 +110,21 @@ export default function HomeContent({ articles, allTags }: HomeContentProps) {
           </div>
         </div>
       </section>
-      {/* Blog Section */}
-      <section className="px-[10%] 2xl:px-[20%] py-24">
-        <h1 className="text-5xl font-bold mb-12">Writing</h1>
-        <BlogContent articles={articles} allTags={allTags} isTeaser={true} maxArticles={5} />
-        
-        <div className="mt-8 text-center">
-          <Link href="/p">
-            <Button variant="outline" size="lg">
-              See all
-            </Button>
-          </Link>
-        </div>
-      </section>
+      {/* Blog Section - hidden when articles fail to load (e.g. rate limiting) */}
+      {articles.length > 0 && (
+        <section className="px-[10%] 2xl:px-[20%] py-24">
+          <h1 className="text-5xl font-bold mb-12">Writing</h1>
+          <BlogContent articles={articles} allTags={allTags} isTeaser={true} maxArticles={5} />
+
+          <div className="mt-8 text-center">
+            <Link href="/p">
+              <Button variant="outline" size="lg">
+                See all
+              </Button>
+            </Link>
+          </div>
+        </section>
+      )}
     </div>
   );
 }
