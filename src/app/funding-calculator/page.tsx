@@ -53,9 +53,11 @@ interface Snapshot {
 
 // --- Defaults ---
 const DEFAULT_ROUNDS: Round[] = [
-  { id: 1, name: "SAFE", type: "safe", amount: 500000, valCap: 15000000, discount: 0, preMoneyVal: 0, esopPct: 0 },
+  { id: 1, name: "SAFE", type: "safe", amount: 600000, valCap: 12000000, discount: 0, preMoneyVal: 0, esopPct: 0 },
   { id: 2, name: "Seed", type: "priced", amount: 8000000, valCap: 0, discount: 0, preMoneyVal: 35000000, esopPct: 15 },
   { id: 3, name: "Series A", type: "priced", amount: 40000000, valCap: 0, discount: 0, preMoneyVal: 140000000, esopPct: 10 },
+  { id: 4, name: "Series B", type: "priced", amount: 150000000, valCap: 0, discount: 0, preMoneyVal: 800000000, esopPct: 5 },
+  { id: 5, name: "Series C", type: "priced", amount: 300000000, valCap: 0, discount: 0, preMoneyVal: 3000000000, esopPct: 5 },
 ];
 
 const INTERNAL_FOUNDER_SHARES = 10000000;
