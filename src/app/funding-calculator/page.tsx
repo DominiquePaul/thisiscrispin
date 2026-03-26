@@ -155,20 +155,41 @@ function computeCapTable(rounds: Round[], founderShares: number, initialEsopPct:
       const preMoney = round.preMoneyVal;
       const ppsAtPreMoney = preMoney / totalShares;
 
+      // --- SAFE Conversion (simultaneous for all pending SAFEs) ---
+      // For post-money SAFEs, each gets exactly amount/cap ownership.
+      // With multiple SAFEs, solve simultaneously:
+      //   T_after = T_before / (1 - sum(p_i))  where p_i = amount_i / cap_i
+      //   safeShares_i = T_after * p_i
       let newSharesFromSafes = 0;
       const convertedSafes: ConvertedSafe[] = [];
+
+      // First pass: determine each SAFE's ownership fraction from its cap
+      const safeOwnershipFromCap: number[] = [];
       for (const safe of pendingSafes) {
-        const capShares =
-          safe.valCap > 0 ? Math.floor((totalShares * safe.amount) / (safe.valCap - safe.amount)) : 0;
+        safeOwnershipFromCap.push(safe.valCap > 0 ? safe.amount / safe.valCap : 0);
+      }
+      const totalSafeOwnership = safeOwnershipFromCap.reduce((a, b) => a + b, 0);
+
+      // T_after for simultaneous conversion (used for cap-based shares)
+      const tAfterSafe = totalSafeOwnership < 1 ? totalShares / (1 - totalSafeOwnership) : totalShares;
+
+      for (let si = 0; si < pendingSafes.length; si++) {
+        const safe = pendingSafes[si];
+        const capOwnership = safeOwnershipFromCap[si];
+
+        // Cap-based shares: simultaneous conversion so each SAFE gets exact ownership
+        const capShares = safe.valCap > 0 ? Math.floor(tAfterSafe * capOwnership) : 0;
+
+        // Discount-based shares (uses pre-SAFE PPS as reference price)
         const discountPrice = safe.discount > 0 ? ppsAtPreMoney * (1 - safe.discount / 100) : Infinity;
         const discountShares = safe.discount > 0 ? Math.floor(safe.amount / discountPrice) : 0;
-        const capOwnership = safe.valCap > 0 ? safe.amount / safe.valCap : 0;
 
         let safeShares: number;
         let capTriggered = false;
         let discountTriggered = false;
 
         if (safe.valCap > 0 && safe.discount > 0) {
+          // Investor-favorable: whichever gives MORE shares
           if (capShares >= discountShares) {
             safeShares = capShares;
             capTriggered = true;
@@ -204,10 +225,14 @@ function computeCapTable(rounds: Round[], founderShares: number, initialEsopPct:
       const ppsThisRound = preMoney / totalSharesAfterSafe;
       const roundShares = Math.floor(round.amount / ppsThisRound);
 
+      // --- ESOP: target-based (set pool TO x%, not add x%) ---
       let esopShares = 0;
       if (round.esopPct > 0) {
-        const totalBeforeEsop = totalSharesAfterSafe + roundShares;
-        esopShares = Math.floor((totalBeforeEsop * round.esopPct) / (100 - round.esopPct));
+        const totalBeforeNewEsop = totalSharesAfterSafe + roundShares;
+        const nonEsopShares = totalBeforeNewEsop - cumulativeEsopShares;
+        // Target: totalEsop / (nonEsopShares + totalEsop) = esopPct / 100
+        const targetTotalEsop = Math.floor((nonEsopShares * round.esopPct) / (100 - round.esopPct));
+        esopShares = Math.max(0, targetTotalEsop - cumulativeEsopShares);
       }
       cumulativeEsopShares += esopShares;
       totalShares = totalSharesAfterSafe + roundShares + esopShares;
