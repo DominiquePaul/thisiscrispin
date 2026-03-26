@@ -568,7 +568,7 @@ function Legend({ shareholders }: { shareholders: Shareholder[] }) {
   );
 }
 
-function SnapshotCard({ snapshot }: { snapshot: Snapshot }) {
+function SnapshotCard({ snapshot, isOpen, onToggle }: { snapshot: Snapshot; isOpen: boolean; onToggle: () => void }) {
   const isPriced = snapshot.roundType === "priced";
   const founders = snapshot.shareholders.find((s) => s.type === "founder");
   const esop = snapshot.shareholders.find((s) => s.type === "esop");
@@ -584,23 +584,42 @@ function SnapshotCard({ snapshot }: { snapshot: Snapshot }) {
       }}
     >
       <div
+        onClick={onToggle}
         style={{
           display: "flex",
           justifyContent: "space-between",
-          alignItems: "baseline",
-          marginBottom: 16,
+          alignItems: "center",
+          cursor: "pointer",
+          userSelect: "none",
           flexWrap: "wrap",
           gap: 8,
         }}
       >
-        <h3 style={{ margin: 0, fontSize: 20, fontWeight: 700, color: "var(--text)", fontFamily: "var(--sans)" }}>
-          After {snapshot.roundName}
-        </h3>
-        <span style={{ fontSize: 12, color: "var(--text-dim)", fontFamily: "var(--mono)" }}>
-          Total raised: {formatCurrency(snapshot.totalRaised)}
-        </span>
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          <span style={{
+            fontSize: 10,
+            color: "var(--text-dim)",
+            transition: "transform 0.2s",
+            transform: isOpen ? "rotate(90deg)" : "rotate(0deg)",
+            display: "inline-block",
+          }}>&#9654;</span>
+          <h3 style={{ margin: 0, fontSize: 20, fontWeight: 700, color: "var(--text)", fontFamily: "var(--sans)" }}>
+            After {snapshot.roundName}
+          </h3>
+        </div>
+        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+          {isPriced && founders && (
+            <span style={{ fontSize: 12, color: "var(--text-dim)", fontFamily: "var(--mono)" }}>
+              Founders: {formatPct(founders.ownership)}
+            </span>
+          )}
+          <span style={{ fontSize: 12, color: "var(--text-dim)", fontFamily: "var(--mono)" }}>
+            Raised: {formatCurrency(snapshot.totalRaised)}
+          </span>
+        </div>
       </div>
 
+      {isOpen && <div style={{ marginTop: 16 }}>
       {isPriced && (
         <div
           style={{
@@ -746,6 +765,240 @@ function SnapshotCard({ snapshot }: { snapshot: Snapshot }) {
           </div>
         </>
       )}
+      </div>}
+    </div>
+  );
+}
+
+// --- Chart Components ---
+function buildColorMap(snapshots: Snapshot[]): Map<string, string> {
+  const map = new Map<string, string>();
+  let investorIdx = 0;
+  const lastPriced = [...snapshots].reverse().find((s) => s.roundType === "priced");
+  if (lastPriced) {
+    for (const s of lastPriced.shareholders) {
+      if (map.has(s.name)) continue;
+      if (s.type === "founder") map.set(s.name, "#3b82f6");
+      else if (s.type === "esop") map.set(s.name, "#8b5cf6");
+      else {
+        map.set(s.name, INVESTOR_COLORS[investorIdx % INVESTOR_COLORS.length]);
+        investorIdx++;
+      }
+    }
+  }
+  return map;
+}
+
+function OwnershipChart({ pricedSnapshots, colorMap }: { pricedSnapshots: Snapshot[]; colorMap: Map<string, string> }) {
+  if (pricedSnapshots.length === 0) return null;
+  const allNames = Array.from(colorMap.keys());
+  const barH = 280;
+
+  return (
+    <div style={{ background: "var(--card-bg)", border: "1px solid var(--border)", borderRadius: 10, padding: 20 }}>
+      <h3 style={{ margin: "0 0 16px", fontSize: 16, fontWeight: 700, color: "var(--text)", fontFamily: "var(--sans)" }}>
+        Ownership % by Round
+      </h3>
+      <div style={{ display: "flex", gap: 2 }}>
+        {/* Y-axis */}
+        <div style={{ display: "flex", flexDirection: "column", justifyContent: "space-between", height: barH, paddingBottom: 0, marginRight: 8 }}>
+          {[100, 75, 50, 25, 0].map((v) => (
+            <span key={v} style={{ fontSize: 10, color: "var(--text-dim)", fontFamily: "var(--mono)", lineHeight: 1 }}>{v}%</span>
+          ))}
+        </div>
+        {/* Bars */}
+        <div style={{ display: "flex", flex: 1, gap: 8, alignItems: "flex-end" }}>
+          {pricedSnapshots.map((snap, si) => (
+            <div key={si} style={{ flex: 1, display: "flex", flexDirection: "column", height: barH }}>
+              {allNames.map((name) => {
+                const sh = snap.shareholders.find((s) => s.name === name);
+                const pct = sh ? sh.ownership * 100 : 0;
+                return (
+                  <div
+                    key={name}
+                    title={`${name}: ${pct.toFixed(1)}%`}
+                    style={{
+                      height: `${pct}%`,
+                      background: colorMap.get(name),
+                      minHeight: pct > 0.3 ? 1 : 0,
+                      transition: "height 0.4s ease",
+                    }}
+                  />
+                );
+              })}
+              <div style={{ textAlign: "center", marginTop: 8, fontSize: 11, color: "var(--text-dim)", fontFamily: "var(--mono)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                {snap.roundName}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+      {/* Legend */}
+      <div style={{ display: "flex", flexWrap: "wrap", gap: "6px 16px", marginTop: 14 }}>
+        {allNames.map((name) => (
+          <div key={name} style={{ display: "flex", alignItems: "center", gap: 5 }}>
+            <div style={{ width: 10, height: 10, borderRadius: 2, background: colorMap.get(name), flexShrink: 0 }} />
+            <span style={{ fontSize: 11, color: "var(--text-dim)", fontFamily: "var(--mono)" }}>{name}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function ValueChart({ pricedSnapshots, colorMap }: { pricedSnapshots: Snapshot[]; colorMap: Map<string, string> }) {
+  if (pricedSnapshots.length === 0) return null;
+  const allNames = Array.from(colorMap.keys());
+  const maxVal = Math.max(...pricedSnapshots.map((s) => s.postMoney || 0));
+  const barH = 280;
+
+  // Y-axis ticks
+  const yTicks: number[] = [];
+  if (maxVal > 0) {
+    for (let i = 0; i <= 4; i++) yTicks.push((maxVal * (4 - i)) / 4);
+  }
+
+  return (
+    <div style={{ background: "var(--card-bg)", border: "1px solid var(--border)", borderRadius: 10, padding: 20 }}>
+      <h3 style={{ margin: "0 0 16px", fontSize: 16, fontWeight: 700, color: "var(--text)", fontFamily: "var(--sans)" }}>
+        Implied Value by Round
+      </h3>
+      <div style={{ display: "flex", gap: 2 }}>
+        {/* Y-axis */}
+        <div style={{ display: "flex", flexDirection: "column", justifyContent: "space-between", height: barH, marginRight: 8, minWidth: 55 }}>
+          {yTicks.map((v, i) => (
+            <span key={i} style={{ fontSize: 10, color: "var(--text-dim)", fontFamily: "var(--mono)", lineHeight: 1, textAlign: "right" }}>{formatCurrency(v)}</span>
+          ))}
+        </div>
+        {/* Bars */}
+        <div style={{ display: "flex", flex: 1, gap: 8, alignItems: "flex-end" }}>
+          {pricedSnapshots.map((snap, si) => {
+            const total = snap.postMoney || 0;
+            const heightPct = maxVal > 0 ? (total / maxVal) * 100 : 0;
+            return (
+              <div key={si} style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "flex-end", height: barH }}>
+                <div style={{ display: "flex", flexDirection: "column", height: `${heightPct}%`, transition: "height 0.4s ease" }}>
+                  {allNames.map((name) => {
+                    const sh = snap.shareholders.find((s) => s.name === name);
+                    const val = sh?.impliedValue || 0;
+                    const pct = total > 0 ? (val / total) * 100 : 0;
+                    return (
+                      <div
+                        key={name}
+                        title={`${name}: ${formatCurrency(val)}`}
+                        style={{
+                          height: `${pct}%`,
+                          background: colorMap.get(name),
+                          minHeight: pct > 0.3 ? 1 : 0,
+                        }}
+                      />
+                    );
+                  })}
+                </div>
+                <div style={{ textAlign: "center", marginTop: 8, fontSize: 11, color: "var(--text-dim)", fontFamily: "var(--mono)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                  {snap.roundName}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function DilutionChart({ pricedSnapshots }: { pricedSnapshots: Snapshot[] }) {
+  if (pricedSnapshots.length === 0) return null;
+
+  const points = pricedSnapshots.map((snap) => {
+    const founder = snap.shareholders.find((s) => s.type === "founder");
+    return { ownership: founder?.ownership || 0, name: snap.roundName, postMoney: snap.postMoney || 0 };
+  });
+
+  const chartW = 800;
+  const chartH = 260;
+  const padL = 55;
+  const padR = 20;
+  const padT = 20;
+  const padB = 45;
+  const plotW = chartW - padL - padR;
+  const plotH = chartH - padT - padB;
+
+  const maxOwnership = Math.max(...points.map((p) => p.ownership), 0.5);
+  const yMax = Math.ceil(maxOwnership * 10) / 10; // round up to nearest 10%
+
+  const getX = (i: number) => padL + (points.length === 1 ? plotW / 2 : (i / (points.length - 1)) * plotW);
+  const getY = (ownership: number) => padT + (1 - ownership / yMax) * plotH;
+
+  const linePath = points.map((p, i) => `${i === 0 ? "M" : "L"}${getX(i)},${getY(p.ownership)}`).join(" ");
+
+  // Area path (fill under line)
+  const areaPath = `${linePath} L${getX(points.length - 1)},${padT + plotH} L${getX(0)},${padT + plotH} Z`;
+
+  // Y-axis ticks
+  const yTicks: number[] = [];
+  for (let v = 0; v <= yMax; v += yMax / 4) yTicks.push(v);
+
+  return (
+    <div style={{ background: "var(--card-bg)", border: "1px solid var(--border)", borderRadius: 10, padding: 20 }}>
+      <h3 style={{ margin: "0 0 16px", fontSize: 16, fontWeight: 700, color: "var(--text)", fontFamily: "var(--sans)" }}>
+        Founder Ownership Over Rounds
+      </h3>
+      <svg viewBox={`0 0 ${chartW} ${chartH}`} style={{ width: "100%", height: "auto" }}>
+        {/* Grid lines */}
+        {yTicks.map((v, i) => (
+          <g key={i}>
+            <line x1={padL} y1={getY(v)} x2={chartW - padR} y2={getY(v)} stroke="var(--border)" strokeWidth="1" />
+            <text x={padL - 8} y={getY(v) + 4} textAnchor="end" fill="var(--text-dim)" fontSize="11" fontFamily="var(--mono)">
+              {(v * 100).toFixed(0)}%
+            </text>
+          </g>
+        ))}
+        {/* Area fill */}
+        <path d={areaPath} fill="#3b82f6" opacity="0.1" />
+        {/* Line */}
+        <path d={linePath} fill="none" stroke="#3b82f6" strokeWidth="2.5" strokeLinejoin="round" />
+        {/* Points + labels */}
+        {points.map((p, i) => (
+          <g key={i}>
+            <circle cx={getX(i)} cy={getY(p.ownership)} r="5" fill="#3b82f6" stroke="var(--card-bg)" strokeWidth="2" />
+            <text
+              x={getX(i)}
+              y={getY(p.ownership) - 14}
+              textAnchor="middle"
+              fill="var(--text)"
+              fontSize="12"
+              fontWeight="700"
+              fontFamily="var(--mono)"
+            >
+              {formatPct(p.ownership)}
+            </text>
+            {/* X-axis label */}
+            <text
+              x={getX(i)}
+              y={padT + plotH + 20}
+              textAnchor="middle"
+              fill="var(--text-dim)"
+              fontSize="12"
+              fontFamily="var(--mono)"
+            >
+              {p.name}
+            </text>
+            {/* Valuation below round name */}
+            <text
+              x={getX(i)}
+              y={padT + plotH + 36}
+              textAnchor="middle"
+              fill="var(--text-dim)"
+              fontSize="10"
+              fontFamily="var(--mono)"
+              opacity="0.7"
+            >
+              {formatCurrency(p.postMoney)}
+            </text>
+          </g>
+        ))}
+      </svg>
     </div>
   );
 }
@@ -756,6 +1009,7 @@ export default function CapTable() {
   const [initialEsopPct, setInitialEsopPct] = useState(DEFAULT_INITIAL_ESOP);
   const [copied, setCopied] = useState(false);
   const [initialized, setInitialized] = useState(false);
+  const [openSnapshots, setOpenSnapshots] = useState<Set<number>>(new Set());
 
   // Load state from URL on mount
   useEffect(() => {
@@ -776,6 +1030,25 @@ export default function CapTable() {
     () => computeCapTable(rounds, INTERNAL_FOUNDER_SHARES, initialEsopPct),
     [rounds, initialEsopPct]
   );
+
+  const pricedSnapshots = useMemo(() => snapshots.filter((s) => s.roundType === "priced"), [snapshots]);
+  const colorMap = useMemo(() => buildColorMap(snapshots), [snapshots]);
+
+  const toggleSnapshot = useCallback((index: number) => {
+    setOpenSnapshots((prev) => {
+      const next = new Set(prev);
+      if (next.has(index)) next.delete(index);
+      else next.add(index);
+      return next;
+    });
+  }, []);
+
+  const toggleAllSnapshots = useCallback(() => {
+    setOpenSnapshots((prev) => {
+      if (prev.size === snapshots.length) return new Set();
+      return new Set(snapshots.map((_, i) => i));
+    });
+  }, [snapshots]);
 
   const updateRound = useCallback(
     (index: number, updated: Round) => {
@@ -868,9 +1141,6 @@ export default function CapTable() {
             <h1 style={{ fontSize: 28, fontWeight: 700, margin: 0, letterSpacing: "-0.02em" }}>
               Cap Table Simulator
             </h1>
-            <p style={{ fontSize: 13, color: "var(--text-dim)", margin: "6px 0 0", fontFamily: "var(--mono)" }}>
-              SAFE conversions · priced rounds · ESOP pools · dilution &amp; returns
-            </p>
           </div>
           <div style={{ display: "flex", gap: 8 }}>
             <button
@@ -977,21 +1247,40 @@ export default function CapTable() {
 
         {/* Snapshots */}
         <div style={{ marginTop: 36 }}>
-          <h2
-            style={{
-              fontSize: 15,
-              fontWeight: 700,
-              color: "var(--text-dim)",
-              textTransform: "uppercase",
-              letterSpacing: "0.08em",
-              marginBottom: 14,
-              fontFamily: "var(--mono)",
-            }}
-          >
-            Cap Table Snapshots
-          </h2>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
+            <h2
+              style={{
+                fontSize: 15,
+                fontWeight: 700,
+                color: "var(--text-dim)",
+                textTransform: "uppercase",
+                letterSpacing: "0.08em",
+                margin: 0,
+                fontFamily: "var(--mono)",
+              }}
+            >
+              Cap Table Snapshots
+            </h2>
+            {snapshots.length > 0 && (
+              <button
+                onClick={toggleAllSnapshots}
+                style={{
+                  background: "var(--input-bg)",
+                  border: "1px solid var(--border)",
+                  borderRadius: 5,
+                  color: "var(--text-dim)",
+                  fontSize: 11,
+                  padding: "4px 10px",
+                  cursor: "pointer",
+                  fontFamily: "var(--mono)",
+                }}
+              >
+                {openSnapshots.size === snapshots.length ? "Collapse All" : "Expand All"}
+              </button>
+            )}
+          </div>
           {snapshots.map((snap, i) => (
-            <SnapshotCard key={i} snapshot={snap} />
+            <SnapshotCard key={i} snapshot={snap} isOpen={openSnapshots.has(i)} onToggle={() => toggleSnapshot(i)} />
           ))}
           {snapshots.length === 0 && (
             <div
@@ -1007,6 +1296,30 @@ export default function CapTable() {
             </div>
           )}
         </div>
+
+        {/* Charts */}
+        {pricedSnapshots.length > 0 && (
+          <div style={{ marginTop: 36 }}>
+            <h2
+              style={{
+                fontSize: 15,
+                fontWeight: 700,
+                color: "var(--text-dim)",
+                textTransform: "uppercase",
+                letterSpacing: "0.08em",
+                marginBottom: 14,
+                fontFamily: "var(--mono)",
+              }}
+            >
+              Charts
+            </h2>
+            <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+              <DilutionChart pricedSnapshots={pricedSnapshots} />
+              <OwnershipChart pricedSnapshots={pricedSnapshots} colorMap={colorMap} />
+              <ValueChart pricedSnapshots={pricedSnapshots} colorMap={colorMap} />
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
