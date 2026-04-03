@@ -222,20 +222,31 @@ function computeCapTable(rounds: Round[], founderShares: number, initialEsopPct:
       }
 
       const totalSharesAfterSafe = totalShares + newSharesFromSafes;
-      const ppsThisRound = preMoney / totalSharesAfterSafe;
-      const roundShares = Math.floor(round.amount / ppsThisRound);
 
-      // --- ESOP: target-based (set pool TO x%, not add x%) ---
+      // --- ESOP: target-based, carved out of pre-money ---
+      // The ESOP must be calculated BEFORE the round PPS so the investor
+      // gets exactly amount/(preMoney + amount) ownership. The ESOP target
+      // is a % of post-money, solved simultaneously:
+      //   T = F * preMoney / (preMoney*(1-p) - p*amount)
+      // where F = non-ESOP shares, p = ESOP target fraction
       let esopShares = 0;
       if (round.esopPct > 0) {
-        const totalBeforeNewEsop = totalSharesAfterSafe + roundShares;
-        const nonEsopShares = totalBeforeNewEsop - cumulativeEsopShares;
-        // Target: totalEsop / (nonEsopShares + totalEsop) = esopPct / 100
-        const targetTotalEsop = Math.floor((nonEsopShares * round.esopPct) / (100 - round.esopPct));
-        esopShares = Math.max(0, targetTotalEsop - cumulativeEsopShares);
+        const p = round.esopPct / 100;
+        const F = totalSharesAfterSafe - cumulativeEsopShares; // non-ESOP shares
+        const denominator = preMoney * (1 - p) - p * round.amount;
+        if (denominator > 0) {
+          const T = F * preMoney / denominator; // total pre-round shares needed
+          const targetTotalEsop = Math.floor(T - F);
+          esopShares = Math.max(0, targetTotalEsop - cumulativeEsopShares);
+        }
       }
       cumulativeEsopShares += esopShares;
-      totalShares = totalSharesAfterSafe + roundShares + esopShares;
+
+      // PPS includes ESOP shares (ESOP is carved out of pre-money)
+      const totalPreRound = totalSharesAfterSafe + esopShares;
+      const ppsThisRound = preMoney / totalPreRound;
+      const roundShares = Math.floor(round.amount / ppsThisRound);
+      totalShares = totalPreRound + roundShares;
 
       const nonEsopShareholders = shareholders.filter((s) => s.type !== "esop");
       const newShareholders: typeof shareholders = [
