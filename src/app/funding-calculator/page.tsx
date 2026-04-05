@@ -1046,6 +1046,7 @@ export default function CapTable() {
   const [copied, setCopied] = useState(false);
   const [initialized, setInitialized] = useState(false);
   const [openSnapshots, setOpenSnapshots] = useState<Set<number>>(new Set());
+  const [showExplainer, setShowExplainer] = useState(false);
 
   // Load state from URL on mount
   useEffect(() => {
@@ -1177,6 +1178,52 @@ export default function CapTable() {
             <h1 style={{ fontSize: 28, fontWeight: 700, margin: 0, letterSpacing: "-0.02em" }}>
               Cap Table Simulator
             </h1>
+            <button
+              onClick={() => setShowExplainer(!showExplainer)}
+              style={{
+                background: "none",
+                border: "none",
+                color: "var(--text-dim)",
+                fontSize: 12,
+                fontFamily: "var(--mono)",
+                cursor: "pointer",
+                padding: "4px 0",
+                marginTop: 4,
+                display: "flex",
+                alignItems: "center",
+                gap: 4,
+              }}
+            >
+              <span style={{ display: "inline-block", transform: showExplainer ? "rotate(90deg)" : "rotate(0deg)", transition: "transform 0.2s", fontSize: 10 }}>&#9654;</span>
+              How does this work?
+            </button>
+            {showExplainer && (
+              <div style={{
+                marginTop: 8,
+                padding: 16,
+                background: "var(--input-bg)",
+                border: "1px solid var(--border)",
+                borderRadius: 8,
+                fontSize: 13,
+                lineHeight: 1.6,
+                color: "var(--text-dim)",
+                fontFamily: "var(--mono)",
+                maxWidth: 640,
+              }}>
+                <p style={{ margin: "0 0 8px" }}>
+                  Model how your cap table evolves across funding rounds. Add SAFEs and priced rounds, adjust valuations and ESOP pools, and see exactly how ownership dilutes at each stage.
+                </p>
+                <p style={{ margin: "0 0 8px" }}>
+                  <span style={{ color: "var(--accent-safe)", fontWeight: 600 }}>SAFEs</span> are post-money: the investor&apos;s ownership = amount&nbsp;/&nbsp;cap. Multiple SAFEs convert simultaneously at the next priced round, each getting their exact stated percentage.
+                </p>
+                <p style={{ margin: "0 0 8px" }}>
+                  <span style={{ color: "var(--accent-priced)", fontWeight: 600 }}>ESOP pools</span> are target-based and carved out of pre-money. &quot;15% ESOP&quot; means the total pool is set to 15% of post-money &mdash; existing pool shares count toward the target. The cost is borne by existing shareholders, not the new investor.
+                </p>
+                <p style={{ margin: 0 }}>
+                  Each priced round investor gets exactly <span style={{ color: "var(--text)" }}>amount&nbsp;/&nbsp;(pre-money&nbsp;+&nbsp;amount)</span> ownership, with a 1.00x entry multiple. Use <span style={{ color: "var(--text)" }}>Copy Link</span> to share a specific scenario.
+                </p>
+              </div>
+            )}
           </div>
           <div style={{ display: "flex", gap: 8 }}>
             <button
