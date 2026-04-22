@@ -410,6 +410,10 @@ export default function PiModelsPage() {
           border: 1px solid var(--border);
           border-radius: 10px;
         }
+        .pm-synthesis-top {
+          margin-top: 0;
+          margin-bottom: 2rem;
+        }
         .pm-synthesis h2 {
           font-size: 0.7rem;
           font-weight: 600;
@@ -460,6 +464,22 @@ export default function PiModelsPage() {
             </p>
           </header>
 
+          <div className="pm-synthesis pm-synthesis-top">
+            <h2>Quick synthesis</h2>
+            <p>
+              <strong>Backbone:</strong> Gemma 2B → 2.6B → 4B (and stabilizes at 4B). <strong>Action expert:</strong> 300M → 300M → <strong>860M</strong> (big jump at π<sub>0.6</sub>).
+            </p>
+            <p>
+              <strong>Training recipe:</strong> pure flow matching (π<sub>0</sub>) → hybrid FAST + flow, two-stage (π<sub>0.5</sub>) → <strong>Knowledge Insulation with stop-gradient</strong> (π<sub>0.6</sub>+). KI is the structural backbone for everything after.
+            </p>
+            <p>
+              <strong>Supervision evolution:</strong> demos-only → + hierarchy/verbal/web → + metadata → + RL reward + advantage conditioning + interventions → + subgoal images + diverse &ldquo;how&rdquo; metadata + autonomous/failure data + egocentric human video.
+            </p>
+            <p>
+              <strong>Philosophy shift per generation:</strong> &ldquo;can we generalize to new homes?&rdquo; → &ldquo;can we get specialist-level out-of-box performance?&rdquo; → &ldquo;can VLAs learn from experience via RL?&rdquo; → &ldquo;can we get compositional generalization via rich prompting?&rdquo;
+            </p>
+          </div>
+
           <div className="pm-table-wrapper">
             <table>
               <thead>
@@ -490,22 +510,6 @@ export default function PiModelsPage() {
           </div>
 
           <div className="pm-scroll-hint">← scroll horizontally to compare →</div>
-
-          <div className="pm-synthesis">
-            <h2>Quick synthesis</h2>
-            <p>
-              <strong>Backbone:</strong> Gemma 2B → 2.6B → 4B (and stabilizes at 4B). <strong>Action expert:</strong> 300M → 300M → <strong>860M</strong> (big jump at π<sub>0.6</sub>).
-            </p>
-            <p>
-              <strong>Training recipe:</strong> pure flow matching (π<sub>0</sub>) → hybrid FAST + flow, two-stage (π<sub>0.5</sub>) → <strong>Knowledge Insulation with stop-gradient</strong> (π<sub>0.6</sub>+). KI is the structural backbone for everything after.
-            </p>
-            <p>
-              <strong>Supervision evolution:</strong> demos-only → + hierarchy/verbal/web → + metadata → + RL reward + advantage conditioning + interventions → + subgoal images + diverse &ldquo;how&rdquo; metadata + autonomous/failure data + egocentric human video.
-            </p>
-            <p>
-              <strong>Philosophy shift per generation:</strong> &ldquo;can we generalize to new homes?&rdquo; → &ldquo;can we get specialist-level out-of-box performance?&rdquo; → &ldquo;can VLAs learn from experience via RL?&rdquo; → &ldquo;can we get compositional generalization via rich prompting?&rdquo;
-            </p>
-          </div>
         </div>
       </div>
     </>
