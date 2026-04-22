@@ -70,7 +70,7 @@ const MODELS: Model[] = [
     ),
     keyIdeas: (
       <>
-        <strong>Heterogeneous co-training</strong>: mobile (400h, only 2.4–3.4%), non-mobile diverse env (ME), lab cross-embod (CE), high-level subtask (HL), verbal instructions (VI), web data (WD). <strong>Hierarchical inference in one unified model</strong>. <strong>Hybrid training</strong>: FAST discrete tokens in pre-training, flow matching in post-training.
+        <strong>Heterogeneous co-training</strong>: mobile (~400&nbsp;h, ~2.4% of pre-training mixture), non-mobile diverse env (ME), lab cross-embod (CE), high-level subtask (HL), verbal instructions (VI), web data (WD). <strong>Hierarchical inference in one unified model</strong>. <strong>Hybrid training</strong>: FAST discrete tokens in pre-training, flow matching in post-training.
       </>
     ),
     contributions: (
@@ -136,14 +136,14 @@ const MODELS: Model[] = [
       <>
         <strong>π<sub>0.6</sub> vs π<sub>0.5</sub>:</strong> Gemma 2.6B → 4B. Action expert 300M → 860M (~3×). Metadata conditioning. Full KI recipe.
         <br />
-        <strong>π*<sub>0.6</sub> vs π<sub>0.6</sub>:</strong> adds advantage indicator + value function + full RL training loop. Same policy architecture; RECAP distills specialist behaviors into the generalist via metadata + autonomous data.
+        <strong>π*<sub>0.6</sub> vs π<sub>0.6</sub>:</strong> adds advantage indicator token in the prompt + 670M value function + full RL training loop (offline RL pre-train → SFT → K iterations of rollouts + retraining). Policy architecture identical; different checkpoint produces task-specific RL specialists.
       </>
     ),
     appendix: (
       <>
         <strong>π<sub>0.6</sub> card:</strong> no formal appendix — 4-page card. Image tokens bidirectional, text tokens now causal.
         <br /><br />
-        <strong>π*<sub>0.6</sub>:</strong> advantage dropout 30% for test-time CFG. β ∈ [1.5, 2.5] — high β pushes actions to support boundaries (aggressive). PPO baseline needed SPO-style constraint with η=0.01 for stability. Detailed flow-matching ELBO decomposition (AR + diffusion). Laundry used only autonomous data; box assembly used 600 auto + 360 correction eps/iter on 3 robots.
+        <strong>π*<sub>0.6</sub>:</strong> advantage dropout 30% for test-time CFG. β ∈ [1.5, 2.5] — high β pushes actions to support boundaries (aggressive). PPO baseline needed SPO-style constraint with η=0.01 for stability. Detailed flow-matching ELBO decomposition (AR + diffusion). Data per task: T-shirt laundry uses autonomous-only data (no corrections); diverse laundry uses 450 autonomous + 287 correction eps; box assembly uses 600 autonomous + 360 correction eps/iter on 3 robots; cafe uses 414 autonomous + 429 correction eps.
       </>
     ),
   },
@@ -198,7 +198,7 @@ const MODELS: Model[] = [
     ),
     appendix: (
       <>
-        Subgoal sampling: 25% of examples have subgoal images; within those, 25% use end-of-segment, 75% sample 0–4s ahead uniformly. Subtask instruction dropped 30% when image is present. Metadata dropped 15% entirely; each component +5% individually. State uses <strong>linear projection, not text tokenization</strong> (change from π<sub>0.6</sub>). Minimal variant: 38&nbsp;ms/chunk on single H100; 127&nbsp;ms with MEM + subgoal. World model: 4×H100 tensor-parallel, 8-bit matmuls, SageAttention → 1.25&nbsp;s per subgoal, 25 denoising steps. <strong>EE control showed no clear advantage over joint control</strong> in cross-embodiment experiments (contradicts some prior intuitions).
+        Subgoal sampling: 25% of examples have subgoal images; within those, 25% use end-of-segment, 75% sample 0–4s ahead uniformly. Subtask instruction dropped 30% when image is present. Metadata dropped 15% entirely; each component +5% individually. State uses <strong>linear projection, not text tokenization</strong> (change from π<sub>0.6</sub>). Minimal variant: 38&nbsp;ms/chunk on single H100; 127&nbsp;ms with MEM + subgoal. World model: 4×H100 tensor-parallel, 8-bit matmuls, SageAttention → 1.25&nbsp;s per subgoal, 25 denoising steps. Ablation on <strong>prior models</strong> (π<sub>0.5</sub>, π<sub>0.6</sub>): EE control showed no substantial advantage over joint control on cross-embodiment tasks, so main cross-embodiment experiments use joint-space control.
       </>
     ),
   },
@@ -256,7 +256,7 @@ const PARAM_TABLE: ParamSection[] = [
   {
     section: "Data",
     rows: [
-      { label: "Own robot data",          values: ["~10,000 h / 903M timesteps / 7 robot configs / 68 tasks", "~400 h mobile manipulation (2.4% of mixture) + diverse non-mobile + lab cross-embodiment", <>&ldquo;largely inherits&rdquo; π0.5 composition. {RL("")} adds on-policy rollouts (laundry: 450 eval + 287 correction eps; box: 600 auto + 360 correction eps/iter on 3 robots)</>,                                                                                "demonstrations + autonomous rollouts (incl. π*0.6 RL data) + failures + egocentric human video"] },
+      { label: "Own robot data",          values: ["~10,000 h / 903M timesteps / 7 robot configs / 68 tasks", "~400 h mobile manipulation (2.4% of pre-training mixture) + diverse non-mobile + lab cross-embodiment", <>&ldquo;largely inherits&rdquo; π0.5 composition. {RL("")} adds on-policy rollouts per task: diverse laundry (450 auto + 287 correction), box (600 auto + 360 correction / iter on 3 robots), cafe (414 auto + 429 correction); T-shirt laundry is auto-only</>, "demonstrations + autonomous rollouts (incl. π*0.6 RL data) + failures + egocentric human video"] },
       { label: "External data",           values: ["OXE (9.1%), Bridge v2, DROID",                           "OXE + multimodal web",                                                    "same as π0.5 (per card)",                                                                                                                                                                                                                                                   "same + open-source image-editing + open video datasets (for world model)"] },
       { label: "Web co-training tasks",   values: ["—",                                                      "captioning, VQA, object localization (bounding box / keypoint)",          "bounding box + keypoint prediction + general multi-modal web",                                                                                                                                                                                                              "same + video captioning (robot + web)"] },
       { label: "Metadata in prompt",      values: ["—",                                                      "—",                                                                       <>&ldquo;conditioning metadata&rdquo; in prompt (content not specified in card). {RL("")} adds binarized advantage indicator I<sub>t</sub></>,                                                                                                                                       <>overall speed (500-step bins, e.g. &ldquo;2000&rdquo;) + quality (1–5) + mistake (bool) + control mode (joint/ee)</>] },
