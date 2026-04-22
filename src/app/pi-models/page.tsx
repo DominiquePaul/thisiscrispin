@@ -256,65 +256,67 @@ type ParamSection = {
   rows: { label: string; values: (string | React.ReactNode)[] }[];
 };
 
+const NS = <span className="pm-ns">not stated</span>;
+
 const PARAM_TABLE: ParamSection[] = [
   {
     section: "Architecture",
     rows: [
-      { label: "Total params",            values: ["3.3B",                    "~3.3B",                   "~5.3B",                     "5.3B + 670M VF",             "~5B + 14B world model"] },
-      { label: "VLM backbone",            values: ["PaliGemma 3B",             "SigLIP 400M + Gemma 2.6B", "SigLIP 400M + Gemma 3 4B",   "SigLIP 400M + Gemma 3 4B",   "SigLIP 400M + Gemma 3 4B"] },
-      { label: "Action expert",           values: ["300M",                     "300M",                    "860M",                      "860M",                       "860M"] },
-      { label: "Action expert config",    values: ["w=1024, mlp=4096",         "w=1024, mlp=4096",        "same depth as backbone",    "same depth as backbone",     "same depth as backbone"] },
-      { label: "Image resolution",        values: ["224×224 (PaliGemma)",      "224×224",                 "448×448",                   "448×448",                    "448×448"] },
-      { label: "Max cameras",             values: ["2–3",                      "4 (front/back/2 wrist)",  "4 (base/2 wrist/back)",     "3 (base + 2 wrist)",         "4 cameras + 3 subgoal images"] },
-      { label: "History frames",          values: ["—",                        "—",                       "—",                         "—",                          "6 @ 1s stride (MEM encoder)"] },
-      { label: "State encoding",          values: ["linear projection",        "discrete FAST tokens",    "discrete text tokens",      "discrete text tokens",       "linear projection"] },
-      { label: "Attention pattern",       values: ["blockwise causal, 3 blocks", "prefix mask + AR FAST + bidir action", "bidir images, causal text, bidir action", "same as π0.6 + advantage token", "block-causal obs+subgoal, causal text"] },
-      { label: "Action horizon H",        values: ["50",                       "49",                      "50",                        "50",                         "50 (exec 15–25)"] },
-      { label: "Control frequency",       values: ["up to 50 Hz",              "50 Hz",                   "50 Hz",                     "50 Hz",                      "50 Hz (20 Hz on UR5e)"] },
+      { label: "Total params",            values: ["3.3B",                    "400M + 2.6B + 300M (total not stated)",  "400M + 4B + 860M (total not stated)", "π0.6 policy + 670M value function", "~5B + separate 14B world model"] },
+      { label: "VLM backbone",            values: [<>PaliGemma 3B (SigLIP 400M + Gemma 2B)</>, <>SigLIP 400M + Gemma 2.6B</>, <>Gemma 3 4B</>, "same as π0.6", <>Gemma 3 4B (incl. 400M SigLIP)</>] },
+      { label: "Action expert",           values: ["300M",                    "300M",                    "860M (same depth as backbone)", "same as π0.6",     "860M"] },
+      { label: "Action expert config",    values: ["width=1024, mlp_dim=4096", "width=1024, mlp_dim=4096", NS,                          NS,                            NS] },
+      { label: "Image resolution",        values: [NS,                         NS,                        "448×448",                    "same as π0.6",               "448×448 (VAE inputs 512×384 in WM)"] },
+      { label: "Max cameras",             values: ["2–3 per robot",            "up to 4 (front/back/2× wrist)", "up to 4 (base/2× wrist/optional back)", "3 (base + 2× wrist)", "up to 4 + up to 3 subgoal images"] },
+      { label: "History frames",          values: ["—",                        "—",                       "—",                          "—",                          "6 @ 1s stride (MEM encoder)"] },
+      { label: "State encoding",          values: ["linear projection",        "discretized text tokens", "discretized text tokens",    "same as π0.6",               "linear projection"] },
+      { label: "Attention pattern",       values: ["blockwise causal, 3 blocks: [images+text] [state] [actions]", "prefix mask on images/prompt/state; FAST causal on prefix + prior FAST; action expert bidir on prefix, no attend to FAST", "bidir images, causal text, bidir action tokens", "same as π0.6 (advantage token added in prompt)", "block-causal: obs + subgoal bidir within; goal images attend obs; text causal"] },
+      { label: "Action chunk length",     values: ["50 (H=50 in paper)",       "50 (H=49 in paper)",      NS,                           NS,                            "50 (exec 15–25 steps per chunk)"] },
+      { label: "Control frequency",       values: ["up to 50 Hz (20 Hz on UR5e/Franka)", "50 Hz",          NS,                           "50 Hz (static bimanual, joint)", "50 Hz (20 Hz on UR5e)"] },
     ],
   },
   {
     section: "Training recipe",
     rows: [
-      { label: "Objective",               values: ["flow matching only",       "hybrid: FAST (pre) + flow (post)", "Knowledge Insulation (FAST + flow, stop-grad)", "KI + advantage-conditioning (CFGRL)", "KI + diverse prompt dropout"] },
-      { label: "Stages",                  values: ["pre-train + post-train",   "pre-train 280k + post-train 80k", "KI end-to-end",         "offline RL pretrain → SFT → K iterations", "single stage with dropout"] },
-      { label: "Timestep distribution",   values: [<>Beta(1.5, 1), s=0.999</>, <>Beta(α=1.5, β=1), s=0.999</>, "inherited from π0.5",      "inherited from π0.6",         "inherited from π0.6"] },
-      { label: "Timestep injection",      values: ["MLP fusion into input",    "adaptive RMSNorm",        "adaptive RMSNorm",          "adaptive RMSNorm",           "adaptive RMSNorm"] },
-      { label: "Loss weight α (post)",    values: ["—",                        "10.0",                    "—",                         "—",                          "—"] },
-      { label: "Image aug",               values: ["—",                        "crop 0.95×, rot ±5°, jitter (0.3/0.4/0.5)", "inherited",     "inherited",                  "inherited"] },
-      { label: "Action normalization",    values: ["[−1, 1] via 1/99% quantile", "[−1, 1] via 1/99% quantile", "inherited",            "inherited",                  "inherited"] },
+      { label: "Objective",               values: ["conditional flow matching", "hybrid: FAST tokens (pre) + flow matching (post)", "Knowledge Insulation (FAST in VLM, flow in action expert, stop-grad)", "KI + advantage-conditioned policy (CFGRL-style)", "KI + diverse prompt dropout"] },
+      { label: "Stages",                  values: ["pre-train + task-specific post-train", "pre-train 280k (discrete only, α=0) + post-train 80k (adds flow, α=10)", "single-stage KI",            "offline RL pre-train → SFT → K iterations of {collect, train V, train π}", NS] },
+      { label: "Timestep distribution",   values: [<>Beta((s−τ)/s; 1.5, 1), s=0.999</>, "same as π0",     NS,                           NS,                            NS] },
+      { label: "Timestep injection",      values: ["MLP fused into action token embedding", "separate MLP + adaptive RMSNorm per layer", NS,                 NS,                            "adaptive RMSNorm"] },
+      { label: "Loss weight α (post)",    values: ["—",                        "10.0",                    "—",                          "—",                          "—"] },
+      { label: "Image augmentation",      values: [NS,                         "RandomCrop 0.95×, Rotate ±5°, ColorJitter(0.3/0.4/0.5)", NS, NS,                      NS] },
+      { label: "Action normalization",    values: [NS,                         "[−1, 1] via 1/99% quantile per dim", NS,              NS,                            NS] },
     ],
   },
   {
     section: "Data",
     rows: [
-      { label: "Own robot data",          values: ["~10,000 h / 903M steps / 7 configs / 68 tasks", "+ ~400 h mobile (2.4–3.4% of mix)", "inherited from π0.5 + more", "inherited + on-policy rollouts + interventions", "+ autonomous rollouts (incl. π*0.6 RL data) + failures + egocentric human video"] },
-      { label: "External data",           values: ["OXE, Bridge v2, DROID (9.1%)", "OXE + web (captioning, VQA, localization)", "inherited",            "inherited",                  "inherited + web image editing + open video"] },
-      { label: "Web co-training",         values: ["—",                        "captioning, VQA, bounding box, keypoint", "same",                "same",                       "same + more video-language"] },
-      { label: "Metadata in prompt",      values: ["—",                        "—",                       "yes (task-level)",          "yes + advantage indicator",  "speed (500-step bins) + quality (1–5) + mistake + control mode"] },
-      { label: "Language supervision",    values: ["task name + 2s segments",  "+ subtask labels + verbal instructions", "same",                 "same",                       "+ detailed labels + step-by-step coaching"] },
+      { label: "Own robot data",          values: ["~10,000 h / 903M timesteps / 7 robot configs / 68 tasks", "~400 h mobile manipulation (2.4% of mixture) + diverse non-mobile + lab cross-embodiment", <>&ldquo;largely inherits&rdquo; π0.5 composition</>, <>same as π0.6 + on-policy rollouts (laundry: 450 eval + 287 correction eps; box: 600 auto + 360 correction eps/iter on 3 robots)</>, <>demonstrations + autonomous rollouts (incl. π*0.6 RL data) + failures + egocentric human video</>] },
+      { label: "External data",           values: ["OXE (9.1%), Bridge v2, DROID", "OXE + multimodal web", "same as π0.5 (per card)",   "same as π0.6",               "same + open-source image-editing + open video datasets (for world model)"] },
+      { label: "Web co-training tasks",   values: ["—",                        "captioning, VQA, object localization (bounding box / keypoint)", "bounding box + keypoint prediction + general multi-modal web", "same as π0.6", "same + video captioning (robot + web)"] },
+      { label: "Metadata in prompt",      values: ["—",                        "—",                       <>&ldquo;conditioning metadata&rdquo; in prompt (content not specified in card)</>, "same as π0.6 + binarized advantage indicator I₍t₎", "overall speed (500-step bins, e.g. &ldquo;2000&rdquo;) + quality (1–5) + mistake (bool) + control mode (joint/ee)"] },
+      { label: "Language supervision",    values: ["task names + ~2s segment annotations", "+ high-level subtask labels + verbal instructions", NS,                "same as π0.6",               "+ more detailed language + step-by-step human coaching"] },
     ],
   },
   {
     section: "Inference",
     rows: [
-      { label: "Denoising steps",         values: ["10",                       "10",                      "5",                         "5",                          "5"] },
-      { label: "Chunk execution",         values: ["open-loop every 0.5–0.8s", "open-loop",               "open-loop",                 "open-loop",                  "async w/ training-time RTC (0–12 step delays)"] },
-      { label: "Latency (GPU)",           values: ["73 ms on RTX 4090 (onboard)", "—",                    "63 ms on H100",             "63 ms on H100",              "38 ms minimal / 127 ms w/ MEM + subgoal on H100"] },
-      { label: "Classifier-free guidance",values: ["—",                        "—",                       "—",                         <>β ∈ [1.5, 2.5]</>,          <>β ∈ {"{"}1.3, 1.7, 2.2{"}"}</>] },
+      { label: "Denoising steps",         values: ["10",                       "10",                      "5",                          "same as π0.6",               "5"] },
+      { label: "Chunk execution",         values: [<>open-loop; inference every 0.8&nbsp;s at 20&nbsp;Hz (after 16 actions) / every 0.5&nbsp;s at 50&nbsp;Hz (after 25 actions); temporal ensembling was tried and hurt performance</>, NS, NS, NS, "async with training-time RTC (0–12 step delay, up to 240 ms on 50 Hz robot)"] },
+      { label: "Latency",                 values: ["73 ms onboard / 86 ms off-board (RTX 4090, 3 cams)", NS, "63 ms on single H100 (3 cams, 5 denoising steps)", NS,  "38 ms minimal variant / 127 ms w/ MEM + subgoals (single H100)"] },
+      { label: "Classifier-free guidance",values: ["—",                        "—",                       "—",                          <>β ∈ [1.5, 2.5] on episode metadata</>, <>β ∈ {"{"}1.3, 1.7, 2.2{"}"} (moderate values) on any part of prompt</>] },
     ],
   },
   {
     section: "RL / world model (where applicable)",
     rows: [
-      { label: "Value function",          values: ["—",                        "—",                       "—",                         "670M distributional, Gemma 3 + value head, 201 bins", "—"] },
-      { label: "Reward",                  values: ["—",                        "—",                       "—",                         <>0 success, −C<sub>fail</sub> failure, −1/step</>, "—"] },
-      { label: "Advantage estimation",    values: ["—",                        "—",                       "—",                         "N=50 lookahead (post-train); T for pretrain", "—"] },
-      { label: "Advantage threshold",     values: ["—",                        "—",                       "—",                         "30% (pretrain) / 40% (fine-tune) / 10% (T-shirt)", "—"] },
-      { label: "Advantage dropout",       values: ["—",                        "—",                       "—",                         "30% for test-time CFG",      "—"] },
-      { label: "World model",             values: ["—",                        "—",                       "—",                         "—",                          "14B BAGEL-init (7B ViT-LLM + 7B VAE-gen), 25 steps, 1.25s/subgoal on 4×H100 + 8-bit + SageAttention"] },
-      { label: "Subgoal sampling",        values: ["—",                        "—",                       "—",                         "—",                          "25% of examples have subgoals; 25% end-of-seg, 75% uniform 0–4s"] },
-      { label: "Dropout rates",           values: ["—",                        "—",                       "—",                         "—",                          "subtask 30% (w/ image) · metadata 15% · per-component +5% · history 30% · rear view 30%"] },
+      { label: "Value function",          values: ["—",                        "—",                       "—",                          "670M VLM (Gemma 3 + SigLIP 400M) + value head, 201 discretized return bins, co-trained on web data", "—"] },
+      { label: "Reward",                  values: ["—",                        "—",                       "—",                          <>r<sub>t</sub> = 0 (success step T) / −C<sub>fail</sub> (fail step T) / −1 otherwise; value normalized to [−1, 0] per task</>, "—"] },
+      { label: "Advantage estimation",    values: ["—",                        "—",                       "—",                          "N=50 step lookahead (post-train); full trajectory T-step (pre-train)", "—"] },
+      { label: "Advantage threshold ε_ℓ", values: ["—",                        "—",                       "—",                          "~30th percentile (pre-train) / ~40th (fine-tune) / 10th (strict T-shirt task)", "—"] },
+      { label: "Advantage dropout",       values: ["—",                        "—",                       "—",                          "30% (enables test-time CFG)", "—"] },
+      { label: "World model",             values: ["—",                        "—",                       "—",                          "—",                          "14B BAGEL-init (7B LLM backbone + 7B generation backbone, ViT 448×336, VAE 512×384), 25 denoising steps, 1.25 s/subgoal on 4× H100 w/ 8-bit matmuls + SageAttention"] },
+      { label: "Subgoal sampling",        values: ["—",                        "—",                       "—",                          "—",                          "25% of training examples include subgoal images; within those, 25% use end-of-segment, 75% sample uniformly 0–4 s ahead. Subgoals refreshed every Δ=4 s or on subtask change."] },
+      { label: "Prompt dropout (π0.7)",   values: ["—",                        "—",                       "—",                          "—",                          "subtask instruction: 30% (when image present) · entire metadata: 15% · each metadata component: +5% · history frames: 30% · rear view: 30%"] },
     ],
   },
 ];
@@ -558,6 +560,14 @@ export default function PiModelsPage() {
           color: var(--text-primary);
           padding: 0.7rem 0.9rem !important;
         }
+        .pm-ns {
+          font-family: 'DM Sans', sans-serif;
+          font-style: italic;
+          font-weight: 400;
+          color: var(--text-tertiary);
+          font-size: 0.72rem;
+        }
+
         .pm-params-section-row td {
           background: #F5F4F0 !important;
           font-size: 0.65rem !important;
