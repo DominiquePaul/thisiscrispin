@@ -11,6 +11,7 @@ interface Model {
   display: React.ReactNode;
   year: string;
   tagline: string;
+  tooltip?: string;
   size: React.ReactNode;
   keyIdeas: React.ReactNode;
   contributions: React.ReactNode;
@@ -101,6 +102,8 @@ const MODELS: Model[] = [
     display: <>π<sub>0.6</sub> <span style={{ color: "#9C9A93" }}>/</span> π*<sub>0.6</sub></>,
     year: "Nov 2025",
     tagline: "Specialist-level out of the box + RECAP RL recipe",
+    tooltip:
+      "Two separate papers, same policy architecture. π0.6 (Nov 17) is the base model trained with supervised KI. π*0.6 (Nov 19) takes π0.6's weights and further trains them with RECAP — offline RL pre-train → SFT → iterative rollouts + interventions, plus a training-only 670M value function. Different checkpoints, but one release cycle.",
     size: (
       <>
         SigLIP 400M + <strong>Gemma 3 4B</strong> + <strong>860M action expert</strong> (same depth as backbone).
@@ -545,6 +548,75 @@ export default function PiModelsPage() {
         }
         .pm-rl-tag sub { font-size: 0.75em; }
 
+        .pm-info {
+          position: relative;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          margin-left: 6px;
+          vertical-align: middle;
+          cursor: help;
+          outline: none;
+        }
+        .pm-info-icon {
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          width: 14px;
+          height: 14px;
+          border-radius: 50%;
+          background: var(--border-strong);
+          color: var(--text-secondary);
+          font-family: 'JetBrains Mono', monospace;
+          font-size: 0.6rem;
+          font-weight: 600;
+          font-style: italic;
+          line-height: 1;
+          transition: background 0.12s, color 0.12s;
+        }
+        .pm-info:hover .pm-info-icon,
+        .pm-info:focus .pm-info-icon {
+          background: var(--accent);
+          color: #fff;
+        }
+        .pm-info-tip {
+          position: absolute;
+          top: calc(100% + 8px);
+          left: 50%;
+          transform: translateX(-50%);
+          width: 300px;
+          max-width: 85vw;
+          padding: 0.7rem 0.85rem;
+          background: var(--text-primary);
+          color: #fff;
+          font-family: 'DM Sans', sans-serif;
+          font-size: 0.72rem;
+          font-weight: 400;
+          line-height: 1.5;
+          letter-spacing: normal;
+          text-transform: none;
+          border-radius: 6px;
+          box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+          opacity: 0;
+          pointer-events: none;
+          transition: opacity 0.15s ease;
+          z-index: 10;
+          white-space: normal;
+        }
+        .pm-info-tip::before {
+          content: '';
+          position: absolute;
+          bottom: 100%;
+          left: 50%;
+          transform: translateX(-50%);
+          border: 5px solid transparent;
+          border-bottom-color: var(--text-primary);
+        }
+        .pm-info:hover .pm-info-tip,
+        .pm-info:focus .pm-info-tip {
+          opacity: 1;
+        }
+
         .pm-params-section-row td {
           background: #F5F4F0 !important;
           font-size: 0.65rem !important;
@@ -612,6 +684,12 @@ export default function PiModelsPage() {
                       <div>
                         <span className="pm-model-name">{m.display}</span>
                         <span className="pm-model-year">{m.year}</span>
+                        {m.tooltip && (
+                          <span className="pm-info" tabIndex={0} aria-label={m.tooltip}>
+                            <span className="pm-info-icon">i</span>
+                            <span className="pm-info-tip">{m.tooltip}</span>
+                          </span>
+                        )}
                       </div>
                       <div className="pm-model-tagline">{m.tagline}</div>
                     </th>
