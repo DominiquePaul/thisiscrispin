@@ -250,6 +250,75 @@ const ROWS: { label: string; field: keyof Pick<Model, "size" | "keyIdeas" | "con
   { label: "Appendix",               field: "appendix" },
 ];
 
+/* ── parameter table data ─────────────────────────────────────────── */
+type ParamSection = {
+  section: string;
+  rows: { label: string; values: (string | React.ReactNode)[] }[];
+};
+
+const PARAM_TABLE: ParamSection[] = [
+  {
+    section: "Architecture",
+    rows: [
+      { label: "Total params",            values: ["3.3B",                    "~3.3B",                   "~5.3B",                     "5.3B + 670M VF",             "~5B + 14B world model"] },
+      { label: "VLM backbone",            values: ["PaliGemma 3B",             "SigLIP 400M + Gemma 2.6B", "SigLIP 400M + Gemma 3 4B",   "SigLIP 400M + Gemma 3 4B",   "SigLIP 400M + Gemma 3 4B"] },
+      { label: "Action expert",           values: ["300M",                     "300M",                    "860M",                      "860M",                       "860M"] },
+      { label: "Action expert config",    values: ["w=1024, mlp=4096",         "w=1024, mlp=4096",        "same depth as backbone",    "same depth as backbone",     "same depth as backbone"] },
+      { label: "Image resolution",        values: ["224×224 (PaliGemma)",      "224×224",                 "448×448",                   "448×448",                    "448×448"] },
+      { label: "Max cameras",             values: ["2–3",                      "4 (front/back/2 wrist)",  "4 (base/2 wrist/back)",     "3 (base + 2 wrist)",         "4 cameras + 3 subgoal images"] },
+      { label: "History frames",          values: ["—",                        "—",                       "—",                         "—",                          "6 @ 1s stride (MEM encoder)"] },
+      { label: "State encoding",          values: ["linear projection",        "discrete FAST tokens",    "discrete text tokens",      "discrete text tokens",       "linear projection"] },
+      { label: "Attention pattern",       values: ["blockwise causal, 3 blocks", "prefix mask + AR FAST + bidir action", "bidir images, causal text, bidir action", "same as π0.6 + advantage token", "block-causal obs+subgoal, causal text"] },
+      { label: "Action horizon H",        values: ["50",                       "49",                      "50",                        "50",                         "50 (exec 15–25)"] },
+      { label: "Control frequency",       values: ["up to 50 Hz",              "50 Hz",                   "50 Hz",                     "50 Hz",                      "50 Hz (20 Hz on UR5e)"] },
+    ],
+  },
+  {
+    section: "Training recipe",
+    rows: [
+      { label: "Objective",               values: ["flow matching only",       "hybrid: FAST (pre) + flow (post)", "Knowledge Insulation (FAST + flow, stop-grad)", "KI + advantage-conditioning (CFGRL)", "KI + diverse prompt dropout"] },
+      { label: "Stages",                  values: ["pre-train + post-train",   "pre-train 280k + post-train 80k", "KI end-to-end",         "offline RL pretrain → SFT → K iterations", "single stage with dropout"] },
+      { label: "Timestep distribution",   values: [<>Beta(1.5, 1), s=0.999</>, <>Beta(α=1.5, β=1), s=0.999</>, "inherited from π0.5",      "inherited from π0.6",         "inherited from π0.6"] },
+      { label: "Timestep injection",      values: ["MLP fusion into input",    "adaptive RMSNorm",        "adaptive RMSNorm",          "adaptive RMSNorm",           "adaptive RMSNorm"] },
+      { label: "Loss weight α (post)",    values: ["—",                        "10.0",                    "—",                         "—",                          "—"] },
+      { label: "Image aug",               values: ["—",                        "crop 0.95×, rot ±5°, jitter (0.3/0.4/0.5)", "inherited",     "inherited",                  "inherited"] },
+      { label: "Action normalization",    values: ["[−1, 1] via 1/99% quantile", "[−1, 1] via 1/99% quantile", "inherited",            "inherited",                  "inherited"] },
+    ],
+  },
+  {
+    section: "Data",
+    rows: [
+      { label: "Own robot data",          values: ["~10,000 h / 903M steps / 7 configs / 68 tasks", "+ ~400 h mobile (2.4–3.4% of mix)", "inherited from π0.5 + more", "inherited + on-policy rollouts + interventions", "+ autonomous rollouts (incl. π*0.6 RL data) + failures + egocentric human video"] },
+      { label: "External data",           values: ["OXE, Bridge v2, DROID (9.1%)", "OXE + web (captioning, VQA, localization)", "inherited",            "inherited",                  "inherited + web image editing + open video"] },
+      { label: "Web co-training",         values: ["—",                        "captioning, VQA, bounding box, keypoint", "same",                "same",                       "same + more video-language"] },
+      { label: "Metadata in prompt",      values: ["—",                        "—",                       "yes (task-level)",          "yes + advantage indicator",  "speed (500-step bins) + quality (1–5) + mistake + control mode"] },
+      { label: "Language supervision",    values: ["task name + 2s segments",  "+ subtask labels + verbal instructions", "same",                 "same",                       "+ detailed labels + step-by-step coaching"] },
+    ],
+  },
+  {
+    section: "Inference",
+    rows: [
+      { label: "Denoising steps",         values: ["10",                       "10",                      "5",                         "5",                          "5"] },
+      { label: "Chunk execution",         values: ["open-loop every 0.5–0.8s", "open-loop",               "open-loop",                 "open-loop",                  "async w/ training-time RTC (0–12 step delays)"] },
+      { label: "Latency (GPU)",           values: ["73 ms on RTX 4090 (onboard)", "—",                    "63 ms on H100",             "63 ms on H100",              "38 ms minimal / 127 ms w/ MEM + subgoal on H100"] },
+      { label: "Classifier-free guidance",values: ["—",                        "—",                       "—",                         <>β ∈ [1.5, 2.5]</>,          <>β ∈ {"{"}1.3, 1.7, 2.2{"}"}</>] },
+    ],
+  },
+  {
+    section: "RL / world model (where applicable)",
+    rows: [
+      { label: "Value function",          values: ["—",                        "—",                       "—",                         "670M distributional, Gemma 3 + value head, 201 bins", "—"] },
+      { label: "Reward",                  values: ["—",                        "—",                       "—",                         <>0 success, −C<sub>fail</sub> failure, −1/step</>, "—"] },
+      { label: "Advantage estimation",    values: ["—",                        "—",                       "—",                         "N=50 lookahead (post-train); T for pretrain", "—"] },
+      { label: "Advantage threshold",     values: ["—",                        "—",                       "—",                         "30% (pretrain) / 40% (fine-tune) / 10% (T-shirt)", "—"] },
+      { label: "Advantage dropout",       values: ["—",                        "—",                       "—",                         "30% for test-time CFG",      "—"] },
+      { label: "World model",             values: ["—",                        "—",                       "—",                         "—",                          "14B BAGEL-init (7B ViT-LLM + 7B VAE-gen), 25 steps, 1.25s/subgoal on 4×H100 + 8-bit + SageAttention"] },
+      { label: "Subgoal sampling",        values: ["—",                        "—",                       "—",                         "—",                          "25% of examples have subgoals; 25% end-of-seg, 75% uniform 0–4s"] },
+      { label: "Dropout rates",           values: ["—",                        "—",                       "—",                         "—",                          "subtask 30% (w/ image) · metadata 15% · per-component +5% · history 30% · rear view 30%"] },
+    ],
+  },
+];
+
 /* ── component ────────────────────────────────────────────────────── */
 export default function PiModelsPage() {
   return (
@@ -438,6 +507,72 @@ export default function PiModelsPage() {
           text-align: right;
         }
 
+        .pm-params-header {
+          margin-top: 3rem;
+          margin-bottom: 1.25rem;
+          padding-bottom: 1rem;
+          border-bottom: 1px solid var(--border);
+        }
+        .pm-params-header h2 {
+          font-size: 1.15rem;
+          font-weight: 700;
+          letter-spacing: -0.01em;
+          color: var(--text-primary);
+          margin-bottom: 0;
+          text-transform: none;
+        }
+        .pm-params-header p {
+          font-size: 0.82rem;
+          color: var(--text-secondary);
+          margin-top: 0.4rem;
+          max-width: 780px;
+        }
+
+        .pm-params-wrapper table {
+          font-size: 0.76rem;
+        }
+        .pm-params-table thead th {
+          min-width: 200px;
+          max-width: 240px;
+        }
+        .pm-params-table thead th.pm-row-header {
+          min-width: 200px;
+          max-width: 200px;
+        }
+        .pm-params-table .pm-row-label {
+          min-width: 200px !important;
+          max-width: 200px !important;
+          font-size: 0.74rem;
+          letter-spacing: 0.03em;
+          text-transform: none;
+          font-weight: 500;
+          color: var(--text-secondary);
+          padding-top: 0.75rem !important;
+        }
+        .pm-params-cell {
+          min-width: 200px;
+          max-width: 240px;
+          font-size: 0.76rem;
+          font-family: 'JetBrains Mono', monospace;
+          line-height: 1.5;
+          color: var(--text-primary);
+          padding: 0.7rem 0.9rem !important;
+        }
+        .pm-params-section-row td {
+          background: #F5F4F0 !important;
+          font-size: 0.65rem !important;
+          font-weight: 600 !important;
+          letter-spacing: 0.1em !important;
+          text-transform: uppercase !important;
+          color: var(--text-tertiary) !important;
+          padding: 0.55rem 0.9rem !important;
+          border-bottom: 1px solid var(--border-strong) !important;
+          border-right: none !important;
+          font-family: 'DM Sans', sans-serif !important;
+          position: sticky;
+          left: 0;
+        }
+
         @media (max-width: 640px) {
           .pm-root { padding: 1rem 0.75rem; }
           .pm-header h1 { font-size: 1.25rem; }
@@ -504,6 +639,47 @@ export default function PiModelsPage() {
                       <td key={m.key}>{m[row.field]}</td>
                     ))}
                   </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          <div className="pm-scroll-hint">← scroll horizontally to compare →</div>
+
+          <div className="pm-params-header">
+            <h2>Model & training parameters</h2>
+            <p>
+              Concrete numbers pulled from each paper: architecture configs, training recipe, data composition, inference latency, and RL/world-model specifics. Dashes mean the component doesn&rsquo;t exist for that generation.
+            </p>
+          </div>
+
+          <div className="pm-table-wrapper pm-params-wrapper">
+            <table className="pm-params-table">
+              <thead>
+                <tr>
+                  <th className="pm-row-header" />
+                  {MODELS.map((m) => (
+                    <th key={m.key}>
+                      <span className="pm-model-name">{m.display}</span>
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {PARAM_TABLE.map((section) => (
+                  <React.Fragment key={section.section}>
+                    <tr className="pm-params-section-row">
+                      <td colSpan={MODELS.length + 1}>{section.section}</td>
+                    </tr>
+                    {section.rows.map((row) => (
+                      <tr key={row.label}>
+                        <td className="pm-row-label">{row.label}</td>
+                        {row.values.map((val, i) => (
+                          <td key={i} className="pm-params-cell">{val}</td>
+                        ))}
+                      </tr>
+                    ))}
+                  </React.Fragment>
                 ))}
               </tbody>
             </table>
