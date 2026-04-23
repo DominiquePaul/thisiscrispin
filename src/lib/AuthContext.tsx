@@ -35,17 +35,16 @@ export function AuthProvider({ children }: AuthProviderProps) {
   // Check authentication status on initial load and periodically
   const checkAuthStatus = async () => {
     try {
-      // Simple request to see if authentication cookies are valid
-      const response = await fetch('/api/contentful/tags', {
+      const response = await fetch('/api/auth/status', {
         method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
       });
-      
-      // If we get a 200 response, we're authenticated
-      // If we get a 401, we're not
-      setIsAuthenticated(response.status === 200);
+      if (!response.ok) {
+        setIsAuthenticated(false);
+        return;
+      }
+      const data = await response.json();
+      setIsAuthenticated(Boolean(data?.authenticated));
     } catch (error) {
       console.error('Auth check error:', error);
     }
