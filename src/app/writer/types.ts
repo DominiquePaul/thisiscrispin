@@ -3,7 +3,10 @@ export interface InlineComment {
   start: number;
   end: number;
   quoted: string;
+  contextBefore?: string;
+  contextAfter?: string;
   text: string;
+  kind?: "note" | "preserve";
   createdAt: number;
 }
 

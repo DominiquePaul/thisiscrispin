@@ -3,13 +3,14 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ShieldCheck, KeyRound, ExternalLink, Loader2 } from "lucide-react";
+import { ShieldCheck, KeyRound, ExternalLink, Loader2, ArrowLeft } from "lucide-react";
 
 interface Props {
   onSubmit: (key: string) => Promise<void> | void;
+  onCancel?: () => void;
 }
 
-export function TokenGate({ onSubmit }: Props) {
+export function TokenGate({ onSubmit, onCancel }: Props) {
   const [value, setValue] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
@@ -37,6 +38,15 @@ export function TokenGate({ onSubmit }: Props) {
   return (
     <div className="min-h-screen flex items-center justify-center px-6 py-16 bg-[#F2F2F2]">
       <div className="max-w-xl w-full bg-white border border-neutral-200 rounded-lg p-8 shadow-sm">
+        {onCancel && (
+          <button
+            onClick={onCancel}
+            className="inline-flex items-center gap-1 text-xs text-neutral-500 hover:text-neutral-900 mb-4"
+          >
+            <ArrowLeft size={12} />
+            Back to writer
+          </button>
+        )}
         <div className="flex items-center gap-2 text-neutral-500 text-xs uppercase tracking-widest mb-1">
           <KeyRound size={14} />
           API key

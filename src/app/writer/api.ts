@@ -36,10 +36,17 @@ export interface EditRequest {
 export async function requestEdits(req: EditRequest): Promise<string> {
   const commentsBlock = req.comments.length
     ? req.comments
-        .map(
-          (c, i) =>
-            `Comment ${i + 1}\n  Quoted passage: """${c.quoted}"""\n  Writer's note: ${c.text}`
-        )
+        .map((c, i) => {
+          const hasContext = c.contextBefore != null || c.contextAfter != null;
+          const before = c.contextBefore ?? "";
+          const after = c.contextAfter ?? "";
+          const ellipsisL = before && req.draft.indexOf(before) > 0 ? "…" : "";
+          const ellipsisR = after && req.draft.endsWith(after) ? "" : "…";
+          const contextLine = hasContext
+            ? `  Exact occurrence (⟦⟧ marks the target — there may be similar phrases elsewhere; address only this one):\n  ${ellipsisL}${before}⟦${c.quoted}⟧${after}${ellipsisR}`
+            : `  Quoted passage: """${c.quoted}"""`;
+          return `Comment ${i + 1}\n${contextLine}\n  Writer's note: ${c.text}`;
+        })
         .join("\n\n")
     : "(no inline comments; give a light copyedit pass only)";
 

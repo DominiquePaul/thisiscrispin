@@ -10,7 +10,6 @@ import {
 import {
   Clock,
   LogOut,
-  MessageSquarePlus,
   Play,
   Sparkles,
   Square,
@@ -24,6 +23,9 @@ import {
   Lightbulb,
   PanelLeftOpen,
   KeyRound,
+  ThumbsUp,
+  MessageSquareText,
+  Settings as SettingsIcon,
 } from "lucide-react";
 import type { User } from "@supabase/supabase-js";
 import { Button } from "@/components/ui/button";
@@ -49,7 +51,8 @@ import {
 } from "./db";
 import type { DiffSegment, Idea, InlineComment, Mode, ModelId } from "./types";
 
-const DEFAULT_MODEL: ModelId = "claude-sonnet-4-6";
+const DEFAULT_MODEL: ModelId = "claude-opus-4-7";
+const CONTEXT_CHARS = 60;
 const SAMPLE_DRAFT = `Write your first draft here. Don't stop to edit — just get the ideas down.
 
 When you're ready, select a passage, click "Comment", and tell Claude what to change. Then hit "Get edits" to see redlines you can accept or reject one by one.`;
@@ -91,10 +94,18 @@ export default function WriterPage() {
   const [focusMinutes, setFocusMinutes] = useState(10);
 
   const [selection, setSelection] = useState<{ start: number; end: number } | null>(null);
-  const [draftingComment, setDraftingComment] = useState<{ start: number; end: number; quoted: string } | null>(null);
+  const [popover, setPopover] = useState<{ x: number; y: number } | null>(null);
+  const [draftingComment, setDraftingComment] = useState<{
+    start: number;
+    end: number;
+    quoted: string;
+    contextBefore: string;
+    contextAfter: string;
+  } | null>(null);
   const [commentText, setCommentText] = useState("");
 
   const [showApiKeyPrompt, setShowApiKeyPrompt] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const loadingEssayRef = useRef(false);
@@ -240,23 +251,114 @@ export default function WriterPage() {
     return { pct, mmss: formatMs(focus.remaining) };
   }, [focus]);
 
-  const onSelectionChange = useCallback(() => {
+  const captureContext = useCallback(
+    (start: number, end: number) => ({
+      contextBefore: draft.slice(Math.max(0, start - CONTEXT_CHARS), start),
+      contextAfter: draft.slice(end, Math.min(draft.length, end + CONTEXT_CHARS)),
+    }),
+    [draft]
+  );
+
+  const updateSelectionAndPopover = useCallback(
+    (mouseX?: number, mouseY?: number) => {
+      const el = textareaRef.current;
+      if (!el) return;
+      const start = el.selectionStart;
+      const end = el.selectionEnd;
+      if (start === end) {
+        setSelection(null);
+        setPopover(null);
+        return;
+      }
+      setSelection({ start, end });
+      if (mouseX != null && mouseY != null) {
+        setPopover({ x: mouseX, y: mouseY });
+      } else {
+        const rect = el.getBoundingClientRect();
+        setPopover({ x: rect.left + rect.width / 2, y: rect.top + 40 });
+      }
+    },
+    []
+  );
+
+  const onTextareaMouseUp = useCallback(
+    (e: React.MouseEvent<HTMLTextAreaElement>) => {
+      updateSelectionAndPopover(e.clientX, e.clientY);
+    },
+    [updateSelectionAndPopover]
+  );
+
+  const onTextareaKeyUp = useCallback(() => {
+    updateSelectionAndPopover();
+  }, [updateSelectionAndPopover]);
+
+  const onTextareaSelect = useCallback(() => {
     const el = textareaRef.current;
     if (!el) return;
-    const start = el.selectionStart;
-    const end = el.selectionEnd;
-    if (start !== end) {
-      setSelection({ start, end });
-    } else {
+    if (el.selectionStart === el.selectionEnd) {
       setSelection(null);
+      setPopover(null);
     }
   }, []);
+
+  useEffect(() => {
+    if (!popover) return;
+    const handler = (e: MouseEvent) => {
+      const t = e.target as Element | null;
+      if (t?.closest("[data-popover='selection']")) return;
+      if (t?.closest("textarea")) return;
+      setPopover(null);
+      setSelection(null);
+    };
+    const keyHandler = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        setPopover(null);
+        setSelection(null);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    document.addEventListener("keydown", keyHandler);
+    return () => {
+      document.removeEventListener("mousedown", handler);
+      document.removeEventListener("keydown", keyHandler);
+    };
+  }, [popover]);
 
   const startCommentOnSelection = () => {
     if (!selection) return;
     const quoted = draft.slice(selection.start, selection.end);
-    setDraftingComment({ start: selection.start, end: selection.end, quoted });
+    const ctx = captureContext(selection.start, selection.end);
+    setDraftingComment({
+      start: selection.start,
+      end: selection.end,
+      quoted,
+      contextBefore: ctx.contextBefore,
+      contextAfter: ctx.contextAfter,
+    });
     setCommentText("");
+    setPopover(null);
+  };
+
+  const quickLike = () => {
+    if (!selection) return;
+    const quoted = draft.slice(selection.start, selection.end);
+    const ctx = captureContext(selection.start, selection.end);
+    setComments((prev) => [
+      ...prev,
+      {
+        id: crypto.randomUUID(),
+        start: selection.start,
+        end: selection.end,
+        quoted,
+        contextBefore: ctx.contextBefore,
+        contextAfter: ctx.contextAfter,
+        text: "Keep this passage exactly as written — don't edit it.",
+        kind: "preserve",
+        createdAt: Date.now(),
+      },
+    ]);
+    setSelection(null);
+    setPopover(null);
   };
 
   const saveComment = () => {
@@ -268,7 +370,10 @@ export default function WriterPage() {
         start: draftingComment.start,
         end: draftingComment.end,
         quoted: draftingComment.quoted,
+        contextBefore: draftingComment.contextBefore,
+        contextAfter: draftingComment.contextAfter,
         text: commentText.trim(),
+        kind: "note",
         createdAt: Date.now(),
       },
     ]);
@@ -503,8 +608,17 @@ export default function WriterPage() {
     );
   }
 
-  if (!settings?.anthropic_key || showApiKeyPrompt) {
+  if (!settings?.anthropic_key) {
     return <TokenGate onSubmit={handleSaveApiKey} />;
+  }
+
+  if (showApiKeyPrompt) {
+    return (
+      <TokenGate
+        onSubmit={handleSaveApiKey}
+        onCancel={() => setShowApiKeyPrompt(false)}
+      />
+    );
   }
 
   const canEdit = mode !== "review" && !loading;
@@ -529,11 +643,25 @@ export default function WriterPage() {
         }}
         sidebarOpen={sidebarOpen}
         onToggleSidebar={() => setSidebarOpen((s) => !s)}
-        email={auth.user.email ?? ""}
         saving={saving}
-        onChangeApiKey={() => setShowApiKeyPrompt(true)}
-        onSignOut={handleSignOut}
+        onOpenSettings={() => setSettingsOpen(true)}
       />
+
+      {settingsOpen && (
+        <SettingsModal
+          email={auth.user.email ?? ""}
+          keyMasked={maskKey(settings.anthropic_key)}
+          onChangeApiKey={() => {
+            setSettingsOpen(false);
+            setShowApiKeyPrompt(true);
+          }}
+          onSignOut={async () => {
+            setSettingsOpen(false);
+            await handleSignOut();
+          }}
+          onClose={() => setSettingsOpen(false)}
+        />
+      )}
 
       {mode === "focus" && focusProgress && (
         <FocusBanner
@@ -617,15 +745,9 @@ export default function WriterPage() {
                 ) : (
                   <div className="p-4">
                     <div className="flex flex-wrap items-center gap-2 mb-3">
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        disabled={!selection || mode === "focus"}
-                        onClick={startCommentOnSelection}
-                      >
-                        <MessageSquarePlus size={14} className="mr-1.5" />
-                        Comment on selection
-                      </Button>
+                      <div className="text-xs text-neutral-400 italic mr-2 hidden md:inline">
+                        Select text to like or comment →
+                      </div>
                       {mode !== "focus" ? (
                         <Button
                           size="sm"
@@ -651,7 +773,7 @@ export default function WriterPage() {
                             max={120}
                             value={focusMinutes}
                             onChange={(e) => setFocusMinutes(Math.max(1, parseInt(e.target.value || "1", 10)))}
-                            className="w-12 h-7 px-2 border border-neutral-300 rounded text-sm"
+                            className="w-16 h-7 px-2 border border-neutral-300 rounded text-sm"
                           />
                           <span>min</span>
                         </div>
@@ -677,13 +799,22 @@ export default function WriterPage() {
                       value={draft}
                       onChange={handleTextareaChange}
                       onKeyDown={handleTextareaKey}
-                      onSelect={onSelectionChange}
-                      onMouseUp={onSelectionChange}
-                      onKeyUp={onSelectionChange}
+                      onSelect={onTextareaSelect}
+                      onMouseUp={onTextareaMouseUp}
+                      onKeyUp={onTextareaKeyUp}
                       readOnly={!canEdit}
                       placeholder="Start writing…"
                       className="min-h-[480px] leading-relaxed text-[15px] font-[var(--font-segoe-ui)] resize-y border-neutral-200 focus-visible:ring-neutral-400"
                     />
+
+                    {popover && selection && mode !== "focus" && canEdit && (
+                      <SelectionPopover
+                        x={popover.x}
+                        y={popover.y}
+                        onLike={quickLike}
+                        onNote={startCommentOnSelection}
+                      />
+                    )}
 
                     {draftingComment && (
                       <div className="mt-3 border border-neutral-200 rounded p-3 bg-neutral-50">
@@ -826,22 +957,32 @@ export default function WriterPage() {
                     </div>
                   ) : (
                     <ul className="divide-y divide-neutral-100">
-                      {comments.map((c) => (
-                        <li key={c.id} className="p-3 text-sm group">
-                          <div className="text-[11px] text-neutral-400 uppercase tracking-widest mb-1 italic">
-                            on &ldquo;{c.quoted.slice(0, 80)}
-                            {c.quoted.length > 80 && "…"}&rdquo;
-                          </div>
-                          <div className="text-neutral-800">{c.text}</div>
-                          <button
-                            onClick={() => removeComment(c.id)}
-                            className="mt-1 text-[11px] text-neutral-400 hover:text-rose-600 inline-flex items-center gap-1"
-                          >
-                            <Trash2 size={11} />
-                            remove
-                          </button>
-                        </li>
-                      ))}
+                      {comments.map((c) => {
+                        const isLike = c.kind === "preserve";
+                        return (
+                          <li key={c.id} className="p-3 text-sm group">
+                            <div className="text-[11px] text-neutral-400 uppercase tracking-widest mb-1 italic inline-flex items-center gap-1">
+                              {isLike && <ThumbsUp size={11} className="text-emerald-600" />}
+                              on &ldquo;{c.quoted.slice(0, 80)}
+                              {c.quoted.length > 80 && "…"}&rdquo;
+                            </div>
+                            {isLike ? (
+                              <div className="text-emerald-700 text-xs italic">
+                                Marked as liked — Claude will preserve it verbatim.
+                              </div>
+                            ) : (
+                              <div className="text-neutral-800">{c.text}</div>
+                            )}
+                            <button
+                              onClick={() => removeComment(c.id)}
+                              className="mt-1 text-[11px] text-neutral-400 hover:text-rose-600 inline-flex items-center gap-1"
+                            >
+                              <Trash2 size={11} />
+                              remove
+                            </button>
+                          </li>
+                        );
+                      })}
                     </ul>
                   )}
                 </div>
@@ -859,19 +1000,15 @@ function TopBar({
   onModelChange,
   sidebarOpen,
   onToggleSidebar,
-  email,
   saving,
-  onChangeApiKey,
-  onSignOut,
+  onOpenSettings,
 }: {
   model: ModelId;
   onModelChange: (m: ModelId) => void;
   sidebarOpen: boolean;
   onToggleSidebar: () => void;
-  email: string;
   saving: boolean;
-  onChangeApiKey: () => void;
-  onSignOut: () => void;
+  onOpenSettings: () => void;
 }) {
   return (
     <div className="border-b border-neutral-200 bg-white sticky top-0 z-20">
@@ -904,15 +1041,131 @@ function TopBar({
               <SelectItem value="claude-haiku-4-5">Haiku 4.5 (fast)</SelectItem>
             </SelectContent>
           </Select>
-          <div className="text-xs text-neutral-400 hidden md:inline">{email}</div>
-          <Button variant="outline" size="sm" onClick={onChangeApiKey} title="Change API key">
-            <KeyRound size={13} className="mr-1.5" />
-            API key
+          <Button variant="outline" size="sm" onClick={onOpenSettings} title="Settings">
+            <SettingsIcon size={14} className="mr-1.5" />
+            Settings
           </Button>
-          <Button variant="outline" size="sm" onClick={onSignOut}>
-            <LogOut size={14} className="mr-1.5" />
-            Sign out
-          </Button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function SelectionPopover({
+  x,
+  y,
+  onLike,
+  onNote,
+}: {
+  x: number;
+  y: number;
+  onLike: () => void;
+  onNote: () => void;
+}) {
+  const POPOVER_W = 200;
+  const POPOVER_H = 40;
+  const left = Math.min(
+    Math.max(8, x - POPOVER_W / 2),
+    typeof window !== "undefined" ? window.innerWidth - POPOVER_W - 8 : x
+  );
+  const top = Math.max(8, y - POPOVER_H - 12);
+  return (
+    <div
+      data-popover="selection"
+      className="fixed z-30 bg-neutral-900 text-white rounded-md shadow-lg flex items-center overflow-hidden"
+      style={{ left, top, width: POPOVER_W }}
+      onMouseDown={(e) => e.preventDefault()}
+    >
+      <button
+        onClick={onLike}
+        className="flex-1 px-3 py-2 text-xs inline-flex items-center justify-center gap-1.5 hover:bg-neutral-800 transition-colors"
+      >
+        <ThumbsUp size={13} className="text-emerald-400" />
+        Like this
+      </button>
+      <div className="w-px h-5 bg-neutral-700" />
+      <button
+        onClick={onNote}
+        className="flex-1 px-3 py-2 text-xs inline-flex items-center justify-center gap-1.5 hover:bg-neutral-800 transition-colors"
+      >
+        <MessageSquareText size={13} />
+        Add note
+      </button>
+    </div>
+  );
+}
+
+function maskKey(key: string | null | undefined) {
+  if (!key) return "—";
+  if (key.length <= 10) return "•••••";
+  return `${key.slice(0, 7)}…${key.slice(-4)}`;
+}
+
+function SettingsModal({
+  email,
+  keyMasked,
+  onChangeApiKey,
+  onSignOut,
+  onClose,
+}: {
+  email: string;
+  keyMasked: string;
+  onChangeApiKey: () => void;
+  onSignOut: () => void;
+  onClose: () => void;
+}) {
+  return (
+    <div
+      className="fixed inset-0 z-40 bg-black/30 flex items-center justify-center p-4"
+      onClick={onClose}
+    >
+      <div
+        className="bg-white rounded-lg shadow-xl max-w-md w-full border border-neutral-200"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-center justify-between px-5 py-3 border-b border-neutral-200">
+          <div className="inline-flex items-center gap-2">
+            <SettingsIcon size={14} className="text-neutral-500" />
+            <div className="font-medium text-sm text-neutral-800">Settings</div>
+          </div>
+          <button
+            onClick={onClose}
+            className="p-1 text-neutral-400 hover:text-neutral-900 rounded"
+          >
+            <X size={15} />
+          </button>
+        </div>
+
+        <div className="p-5 space-y-5">
+          <div>
+            <div className="text-[11px] uppercase tracking-widest text-neutral-500 mb-1">
+              Signed in as
+            </div>
+            <div className="text-sm text-neutral-800 font-mono">{email}</div>
+          </div>
+
+          <div>
+            <div className="text-[11px] uppercase tracking-widest text-neutral-500 mb-1">
+              Anthropic API key
+            </div>
+            <div className="flex items-center gap-3">
+              <div className="text-sm text-neutral-800 font-mono flex-1">{keyMasked}</div>
+              <Button size="sm" variant="outline" onClick={onChangeApiKey}>
+                <KeyRound size={13} className="mr-1.5" />
+                Change
+              </Button>
+            </div>
+            <p className="text-xs text-neutral-500 mt-1.5">
+              Stored in your account. Calls go browser → Anthropic directly.
+            </p>
+          </div>
+
+          <div className="pt-2 border-t border-neutral-100">
+            <Button variant="outline" size="sm" onClick={onSignOut} className="w-full">
+              <LogOut size={13} className="mr-1.5" />
+              Sign out
+            </Button>
+          </div>
         </div>
       </div>
     </div>

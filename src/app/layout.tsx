@@ -1,12 +1,11 @@
 import type { Metadata } from "next";
 import { IBM_Plex_Sans } from "next/font/google";
 import localFont from 'next/font/local';
-import Image from 'next/image';
-import Link from "next/link";
 import "./globals.css";
 import { Analytics } from "@vercel/analytics/react"
 import { AuthProvider } from '@/lib/AuthContext';
 import AdminPanel from '@/components/AdminPanel';
+import SiteLogo from '@/components/SiteLogo';
 import { Toaster } from "@/components/ui/toaster";
 
 const ibmPlexSans = IBM_Plex_Sans({ 
@@ -63,11 +62,7 @@ export default function RootLayout({
     <html lang="en">
       <body className={`${ibmPlexSans.className} ${ibmPlexSans.variable} ${segoeUI.variable} ${sfMono.variable} bg-[#F2F2F2]`}>
         <AuthProvider>
-          <div className="absolute top-4 left-4 z-10">
-            <Link href="/">
-              <Image src="/logo_large.png" alt="Logo" width={64} height={64} />
-            </Link>
-          </div>
+          <SiteLogo />
           <AdminPanel />
           {children}
           <Toaster />
