@@ -3,17 +3,18 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ShieldCheck, KeyRound, ExternalLink } from "lucide-react";
+import { ShieldCheck, KeyRound, ExternalLink, Loader2 } from "lucide-react";
 
 interface Props {
-  onSubmit: (key: string) => void;
+  onSubmit: (key: string) => Promise<void> | void;
 }
 
 export function TokenGate({ onSubmit }: Props) {
   const [value, setValue] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
 
-  const handle = () => {
+  const handle = async () => {
     const trimmed = value.trim();
     if (!trimmed) {
       setError("Paste your key first.");
@@ -23,7 +24,14 @@ export function TokenGate({ onSubmit }: Props) {
       setError("That doesn't look like an Anthropic API key (should start with sk-).");
       return;
     }
-    onSubmit(trimmed);
+    setSaving(true);
+    try {
+      await onSubmit(trimmed);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
@@ -37,10 +45,9 @@ export function TokenGate({ onSubmit }: Props) {
           Paste your Anthropic API key
         </h1>
         <p className="text-sm text-neutral-600 mb-6">
-          This app talks to Claude directly from your browser. Your key stays in this
-          tab&apos;s memory — it is never sent to a server I control, never written to{" "}
-          <code className="px-1 py-0.5 bg-neutral-100 rounded text-[12px]">localStorage</code>, and it&apos;s
-          gone the moment you close the tab or hit <em>Clear key</em>.
+          Saved to your account so you don&rsquo;t have to re-enter it. Requests go
+          directly from your browser to Anthropic — the key is only used to sign those
+          calls.
         </p>
 
         <div className="mb-5 bg-amber-50 border border-amber-200 rounded-md px-4 py-3 text-sm text-amber-900">
@@ -84,9 +91,18 @@ export function TokenGate({ onSubmit }: Props) {
 
         <div className="flex items-center justify-between mt-6">
           <p className="text-xs text-neutral-500">
-            Kept in memory only. Reload = gone.
+            Stored in Supabase behind row-level security.
           </p>
-          <Button onClick={handle}>Continue</Button>
+          <Button onClick={handle} disabled={saving}>
+            {saving ? (
+              <>
+                <Loader2 size={14} className="mr-1.5 animate-spin" />
+                Saving…
+              </>
+            ) : (
+              "Save key"
+            )}
+          </Button>
         </div>
       </div>
     </div>
