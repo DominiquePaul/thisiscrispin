@@ -26,6 +26,10 @@ import {
   ThumbsUp,
   MessageSquareText,
   Settings as SettingsIcon,
+  Bold,
+  Italic,
+  Heading as HeadingIcon,
+  Pencil,
 } from "lucide-react";
 import type { User } from "@supabase/supabase-js";
 import { Button } from "@/components/ui/button";
@@ -37,8 +41,9 @@ import { AuthGate } from "./AuthGate";
 import { TokenGate } from "./TokenGate";
 import { DiffView } from "./DiffView";
 import { EssaySidebar } from "./EssaySidebar";
+import { MarkedEditor, type HoverState } from "./MarkedEditor";
 import { parseEditResponse, applyDecisions, pendingCount, changeCount } from "./diff";
-import { requestEdits } from "./api";
+import { requestEdits, type Question } from "./api";
 import {
   listEssays,
   createEssay,
@@ -55,7 +60,9 @@ const DEFAULT_MODEL: ModelId = "claude-opus-4-7";
 const CONTEXT_CHARS = 60;
 const SAMPLE_DRAFT = `Write your first draft here. Don't stop to edit — just get the ideas down.
 
-When you're ready, select a passage, click "Comment", and tell Claude what to change. Then hit "Get edits" to see redlines you can accept or reject one by one.`;
+When you're ready, select a passage and choose "Like this" (green underline — Claude will preserve it) or "Add note" (orange underline — write what you want changed). Then hit "Next draft" and Claude will revise.
+
+Markdown shortcuts: **bold**, *italic*, # heading. Cmd/Ctrl+B and Cmd/Ctrl+I wrap your selection.`;
 
 type FocusState =
   | { active: false }
@@ -65,6 +72,43 @@ type AuthState =
   | { status: "loading" }
   | { status: "unauthenticated" }
   | { status: "authenticated"; user: User };
+
+/**
+ * When the draft text changes, shift mark start/end so underlines follow the
+ * same characters after insertion/deletion.
+ */
+function shiftComments(
+  oldDraft: string,
+  newDraft: string,
+  comments: InlineComment[]
+): InlineComment[] {
+  if (oldDraft === newDraft) return comments;
+  let lo = 0;
+  const oldLen = oldDraft.length;
+  const newLen = newDraft.length;
+  const maxLo = Math.min(oldLen, newLen);
+  while (lo < maxLo && oldDraft[lo] === newDraft[lo]) lo++;
+  let oldHi = oldLen;
+  let newHi = newLen;
+  while (
+    oldHi > lo &&
+    newHi > lo &&
+    oldDraft[oldHi - 1] === newDraft[newHi - 1]
+  ) {
+    oldHi--;
+    newHi--;
+  }
+  const delta = newHi - oldHi; // +N inserted or -N removed
+  return comments
+    .map((c) => {
+      if (c.end <= lo) return c; // fully before edit
+      if (c.start >= oldHi) return { ...c, start: c.start + delta, end: c.end + delta }; // fully after
+      // Overlaps the edit: shift the end only; if mark collapsed to zero length, drop it later
+      const newEnd = Math.max(c.start, c.end + delta);
+      return { ...c, end: newEnd };
+    })
+    .filter((c) => c.end > c.start);
+}
 
 export default function WriterPage() {
   const [auth, setAuth] = useState<AuthState>({ status: "loading" });
@@ -83,7 +127,7 @@ export default function WriterPage() {
   const [styleNotes, setStyleNotes] = useState("");
   const [styleOpen, setStyleOpen] = useState(false);
   const [ideas, setIdeas] = useState<Idea[]>([]);
-  const [ideasOpen, setIdeasOpen] = useState(true);
+  const [ideasOpen, setIdeasOpen] = useState(false);
 
   const [mode, setMode] = useState<Mode>("write");
   const [segments, setSegments] = useState<DiffSegment[] | null>(null);
@@ -95,21 +139,24 @@ export default function WriterPage() {
 
   const [selection, setSelection] = useState<{ start: number; end: number } | null>(null);
   const [popover, setPopover] = useState<{ x: number; y: number } | null>(null);
-  const [draftingComment, setDraftingComment] = useState<{
-    start: number;
-    end: number;
-    quoted: string;
-    contextBefore: string;
-    contextAfter: string;
+  const [noteEditor, setNoteEditor] = useState<{
+    markId: string;
+    x: number;
+    y: number;
   } | null>(null);
-  const [commentText, setCommentText] = useState("");
+  const [hovered, setHovered] = useState<HoverState | null>(null);
 
   const [showApiKeyPrompt, setShowApiKeyPrompt] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
 
+  const [questions, setQuestions] = useState<Question[] | null>(null);
+  const [answers, setAnswers] = useState<Record<string, string>>({});
+
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const loadingEssayRef = useRef(false);
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const isZen = focus.active;
 
   // ── Auth subscription ─────────────────────────────────────────────
   useEffect(() => {
@@ -179,7 +226,12 @@ export default function WriterPage() {
     setMode("write");
     setFocus({ active: false });
     setError(null);
-    // flush on next tick so the edit effect doesn't fire for the load
+    setSelection(null);
+    setPopover(null);
+    setNoteEditor(null);
+    setHovered(null);
+    setQuestions(null);
+    setAnswers({});
     setTimeout(() => {
       loadingEssayRef.current = false;
     }, 0);
@@ -324,21 +376,6 @@ export default function WriterPage() {
     };
   }, [popover]);
 
-  const startCommentOnSelection = () => {
-    if (!selection) return;
-    const quoted = draft.slice(selection.start, selection.end);
-    const ctx = captureContext(selection.start, selection.end);
-    setDraftingComment({
-      start: selection.start,
-      end: selection.end,
-      quoted,
-      contextBefore: ctx.contextBefore,
-      contextAfter: ctx.contextAfter,
-    });
-    setCommentText("");
-    setPopover(null);
-  };
-
   const quickLike = () => {
     if (!selection) return;
     const quoted = draft.slice(selection.start, selection.end);
@@ -361,28 +398,52 @@ export default function WriterPage() {
     setPopover(null);
   };
 
-  const saveComment = () => {
-    if (!draftingComment || !commentText.trim()) return;
+  const startAddNote = () => {
+    if (!selection || !popover) return;
+    const quoted = draft.slice(selection.start, selection.end);
+    const ctx = captureContext(selection.start, selection.end);
+    const id = crypto.randomUUID();
     setComments((prev) => [
       ...prev,
       {
-        id: crypto.randomUUID(),
-        start: draftingComment.start,
-        end: draftingComment.end,
-        quoted: draftingComment.quoted,
-        contextBefore: draftingComment.contextBefore,
-        contextAfter: draftingComment.contextAfter,
-        text: commentText.trim(),
+        id,
+        start: selection.start,
+        end: selection.end,
+        quoted,
+        contextBefore: ctx.contextBefore,
+        contextAfter: ctx.contextAfter,
+        text: "",
         kind: "note",
         createdAt: Date.now(),
       },
     ]);
-    setDraftingComment(null);
-    setCommentText("");
+    setNoteEditor({ markId: id, x: popover.x, y: popover.y });
+    setSelection(null);
+    setPopover(null);
   };
 
-  const removeComment = (id: string) => {
+  const updateNoteText = (id: string, text: string) => {
+    setComments((prev) => prev.map((c) => (c.id === id ? { ...c, text } : c)));
+  };
+
+  const closeNoteEditor = () => {
+    if (!noteEditor) return;
+    const mark = comments.find((c) => c.id === noteEditor.markId);
+    if (mark && !mark.text.trim()) {
+      setComments((prev) => prev.filter((c) => c.id !== noteEditor.markId));
+    }
+    setNoteEditor(null);
+  };
+
+  const openNoteEditorForMark = (markId: string, rect: DOMRect) => {
+    setNoteEditor({ markId, x: rect.left + rect.width / 2, y: rect.bottom + 8 });
+    setHovered(null);
+  };
+
+  const removeMark = (id: string) => {
     setComments((prev) => prev.filter((c) => c.id !== id));
+    if (noteEditor?.markId === id) setNoteEditor(null);
+    setHovered(null);
   };
 
   const addIdea = () => {
@@ -401,51 +462,66 @@ export default function WriterPage() {
     setIdeas((prev) => prev.filter((i) => i.id !== id));
   };
 
-  const promoteIdeaToComment = (id: string) => {
-    const idea = ideas.find((i) => i.id === id);
-    if (!idea || !idea.text.trim()) return;
-    setComments((prev) => [
-      ...prev,
-      {
-        id: crypto.randomUUID(),
-        start: 0,
-        end: 0,
-        quoted: "(from idea buffer)",
-        text: `Consider weaving in this idea where it fits: ${idea.text.trim()}`,
-        createdAt: Date.now(),
-      },
-    ]);
-  };
-
-  const requestAiEdits = async () => {
-    if (!settings?.anthropic_key) {
-      setShowApiKeyPrompt(true);
-      return;
-    }
-    setLoading(true);
-    setError(null);
-    try {
-      const response = await requestEdits({
-        apiKey: settings.anthropic_key,
-        model,
-        draft,
-        comments,
-        styleNotes,
-        ideas,
-      });
-      const parsed = parseEditResponse(response);
-      if (changeCount(parsed) === 0) {
-        setError("Claude returned no changes. Try sharpening your comments or asking for specific revisions.");
-        setLoading(false);
+  const runEditRequest = useCallback(
+    async (answersPayload?: { question: string; answer: string }[]) => {
+      if (!settings?.anthropic_key) {
+        setShowApiKeyPrompt(true);
         return;
       }
-      setSegments(parsed);
-      setMode("review");
-    } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
-    } finally {
-      setLoading(false);
-    }
+      setLoading(true);
+      setError(null);
+      setQuestions(null);
+      try {
+        const result = await requestEdits({
+          apiKey: settings.anthropic_key,
+          model,
+          draft,
+          comments,
+          styleNotes,
+          ideas,
+          answers: answersPayload,
+        });
+        if (result.kind === "questions") {
+          setQuestions(result.questions);
+          const base: Record<string, string> = {};
+          for (const q of result.questions) base[q.id] = "";
+          setAnswers(base);
+          setLoading(false);
+          return;
+        }
+        const parsed = parseEditResponse(result.text);
+        if (changeCount(parsed) === 0) {
+          setError("Claude returned no changes. Try sharpening your notes or asking for specific revisions.");
+          setLoading(false);
+          return;
+        }
+        setSegments(parsed);
+        setMode("review");
+      } catch (e) {
+        setError(e instanceof Error ? e.message : String(e));
+      } finally {
+        setLoading(false);
+      }
+    },
+    [settings?.anthropic_key, model, draft, comments, styleNotes, ideas]
+  );
+
+  const handleNextDraft = () => {
+    runEditRequest();
+  };
+
+  const handleSubmitAnswers = () => {
+    if (!questions) return;
+    const payload = questions.map((q) => ({
+      question: q.text,
+      answer: (answers[q.id] ?? "").trim(),
+    }));
+    runEditRequest(payload);
+  };
+
+  const handleCancelQuestions = () => {
+    setQuestions(null);
+    setAnswers({});
   };
 
   const decideSegment = (id: string, decision: "accepted" | "rejected") => {
@@ -491,6 +567,10 @@ export default function WriterPage() {
       remaining: durationMs,
     });
     setMode("focus");
+    setSelection(null);
+    setPopover(null);
+    setNoteEditor(null);
+    setHovered(null);
     setTimeout(() => {
       textareaRef.current?.focus();
       const el = textareaRef.current;
@@ -503,7 +583,7 @@ export default function WriterPage() {
     setMode("write");
   };
 
-  const handleTextareaKey = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+  const handleEditorKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (!focus.active) return;
     const el = e.currentTarget;
     const blocked = e.key === "Backspace" || e.key === "Delete";
@@ -519,19 +599,20 @@ export default function WriterPage() {
       el.setSelectionRange(el.selectionEnd, el.selectionEnd);
       return;
     }
-    if (insideLocked && e.key.length === 1) {
+    if (insideLocked && e.key.length === 1 && !e.metaKey && !e.ctrlKey) {
       e.preventDefault();
       el.setSelectionRange(el.value.length, el.value.length);
     }
   };
 
-  const handleTextareaChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    const next = e.target.value;
+  const handleDraftChange = (next: string) => {
     if (focus.active) {
       if (next.length < focus.lockedLength) return;
       if (next.slice(0, focus.lockedLength) !== draft.slice(0, focus.lockedLength)) return;
     }
+    const shifted = shiftComments(draft, next, comments);
     setDraft(next);
+    if (shifted !== comments) setComments(shifted);
   };
 
   // ── Essay management ──────────────────────────────────────────────
@@ -563,7 +644,6 @@ export default function WriterPage() {
 
   const handleSelectEssay = (id: string) => {
     if (id === activeEssayId) return;
-    // Flush pending autosave synchronously by letting the cleanup trigger; just switch.
     setActiveEssayId(id);
   };
 
@@ -585,6 +665,39 @@ export default function WriterPage() {
   const handleSignOut = async () => {
     const sb = getSupabaseBrowserClient();
     await sb.auth.signOut();
+  };
+
+  const applyFormatting = (left: string, right: string = left) => {
+    const ta = textareaRef.current;
+    if (!ta) return;
+    const s = ta.selectionStart;
+    const e = ta.selectionEnd;
+    const sel = draft.slice(s, e);
+    const next = draft.slice(0, s) + left + sel + right + draft.slice(e);
+    handleDraftChange(next);
+    requestAnimationFrame(() => {
+      ta.focus();
+      ta.selectionStart = s + left.length;
+      ta.selectionEnd = e + left.length;
+    });
+  };
+
+  const applyHeading = () => {
+    const ta = textareaRef.current;
+    if (!ta) return;
+    const s = ta.selectionStart;
+    // Find line start
+    const lineStart = draft.lastIndexOf("\n", s - 1) + 1;
+    const rest = draft.slice(lineStart);
+    const alreadyHeading = /^#+\s/.test(rest);
+    if (alreadyHeading) return;
+    const next = draft.slice(0, lineStart) + "# " + draft.slice(lineStart);
+    handleDraftChange(next);
+    requestAnimationFrame(() => {
+      ta.focus();
+      ta.selectionStart = s + 2;
+      ta.selectionEnd = s + 2;
+    });
   };
 
   // ── Early returns for auth flow ───────────────────────────────────
@@ -625,27 +738,34 @@ export default function WriterPage() {
   const hasActiveEssay = activeEssayId !== null;
 
   return (
-    <div className="min-h-screen bg-[#F2F2F2] text-neutral-900">
-      <TopBar
-        model={model}
-        onModelChange={async (m) => {
-          setModel(m);
-          if (auth.user) {
-            try {
-              await upsertUserSettings(auth.user.id, { default_model: m });
-              setSettings((prev) =>
-                prev ? { ...prev, default_model: m } : prev
-              );
-            } catch {
-              /* non-fatal */
+    <div
+      className={
+        "min-h-screen text-neutral-900 transition-colors duration-500 " +
+        (isZen ? "bg-[#0f0f0f]" : "bg-[#F2F2F2]")
+      }
+    >
+      {!isZen && (
+        <TopBar
+          model={model}
+          onModelChange={async (m) => {
+            setModel(m);
+            if (auth.user) {
+              try {
+                await upsertUserSettings(auth.user.id, { default_model: m });
+                setSettings((prev) =>
+                  prev ? { ...prev, default_model: m } : prev
+                );
+              } catch {
+                /* non-fatal */
+              }
             }
-          }
-        }}
-        sidebarOpen={sidebarOpen}
-        onToggleSidebar={() => setSidebarOpen((s) => !s)}
-        saving={saving}
-        onOpenSettings={() => setSettingsOpen(true)}
-      />
+          }}
+          sidebarOpen={sidebarOpen}
+          onToggleSidebar={() => setSidebarOpen((s) => !s)}
+          saving={saving}
+          onOpenSettings={() => setSettingsOpen(true)}
+        />
+      )}
 
       {settingsOpen && (
         <SettingsModal
@@ -663,8 +783,19 @@ export default function WriterPage() {
         />
       )}
 
-      {mode === "focus" && focusProgress && (
-        <FocusBanner
+      {questions && (
+        <QuestionsPanel
+          questions={questions}
+          answers={answers}
+          onAnswer={(id, v) => setAnswers((prev) => ({ ...prev, [id]: v }))}
+          onSubmit={handleSubmitAnswers}
+          onCancel={handleCancelQuestions}
+          submitting={loading}
+        />
+      )}
+
+      {isZen && focusProgress && (
+        <ZenHeader
           mmss={focusProgress.mmss}
           pct={focusProgress.pct}
           wordCount={wordCount}
@@ -673,7 +804,7 @@ export default function WriterPage() {
       )}
 
       <div className="flex">
-        {sidebarOpen && (
+        {!isZen && sidebarOpen && (
           <EssaySidebar
             essays={essays}
             activeEssayId={activeEssayId}
@@ -700,8 +831,21 @@ export default function WriterPage() {
           {!hasActiveEssay ? (
             <EmptyState onCreate={handleCreateEssay} />
           ) : (
-            <div className="max-w-6xl mx-auto px-6 py-6 grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-6">
-              <div className="bg-white border border-neutral-200 rounded-lg">
+            <div
+              className={
+                isZen
+                  ? "max-w-3xl mx-auto px-6 py-10"
+                  : "max-w-6xl mx-auto px-6 py-6 grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-6"
+              }
+            >
+              <div
+                className={
+                  "bg-white rounded-lg transition-shadow " +
+                  (isZen
+                    ? "border border-neutral-800 shadow-[0_0_80px_rgba(0,0,0,0.5)]"
+                    : "border border-neutral-200")
+                }
+              >
                 <div className="flex items-center gap-2 px-4 py-2.5 border-b border-neutral-200">
                   <FileText size={14} className="text-neutral-500 shrink-0" />
                   <Input
@@ -745,25 +889,30 @@ export default function WriterPage() {
                 ) : (
                   <div className="p-4">
                     <div className="flex flex-wrap items-center gap-2 mb-3">
-                      <div className="text-xs text-neutral-400 italic mr-2 hidden md:inline">
-                        Select text to like or comment →
-                      </div>
-                      {mode !== "focus" ? (
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={startFocus}
-                          disabled={loading}
-                        >
-                          <Play size={14} className="mr-1.5" />
-                          Focus mode
-                        </Button>
-                      ) : (
-                        <Button size="sm" variant="outline" onClick={exitFocus}>
-                          <Square size={14} className="mr-1.5" />
-                          Exit focus
-                        </Button>
+                      {mode !== "focus" && (
+                        <FormattingToolbar
+                          onBold={() => applyFormatting("**")}
+                          onItalic={() => applyFormatting("*")}
+                          onHeading={applyHeading}
+                        />
                       )}
+                      {!isZen &&
+                        (mode !== "focus" ? (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={startFocus}
+                            disabled={loading}
+                          >
+                            <Play size={14} className="mr-1.5" />
+                            Focus mode
+                          </Button>
+                        ) : (
+                          <Button size="sm" variant="outline" onClick={exitFocus}>
+                            <Square size={14} className="mr-1.5" />
+                            Exit focus
+                          </Button>
+                        ))}
                       {mode !== "focus" && (
                         <div className="flex items-center gap-1.5 text-xs text-neutral-600">
                           <Clock size={14} />
@@ -781,7 +930,7 @@ export default function WriterPage() {
                       <div className="ml-auto">
                         <Button
                           size="sm"
-                          onClick={requestAiEdits}
+                          onClick={handleNextDraft}
                           disabled={loading || mode === "focus" || !draft.trim()}
                         >
                           {loading ? (
@@ -789,208 +938,165 @@ export default function WriterPage() {
                           ) : (
                             <Sparkles size={14} className="mr-1.5" />
                           )}
-                          {loading ? "Thinking…" : "Get edits"}
+                          {loading ? "Thinking…" : "Next draft"}
                         </Button>
                       </div>
                     </div>
 
-                    <Textarea
+                    <MarkedEditor
                       ref={textareaRef}
                       value={draft}
-                      onChange={handleTextareaChange}
-                      onKeyDown={handleTextareaKey}
+                      onChange={handleDraftChange}
+                      onKeyDown={handleEditorKeyDown}
                       onSelect={onTextareaSelect}
                       onMouseUp={onTextareaMouseUp}
                       onKeyUp={onTextareaKeyUp}
+                      onHoverChange={setHovered}
                       readOnly={!canEdit}
                       placeholder="Start writing…"
-                      className="min-h-[480px] leading-relaxed text-[15px] font-[var(--font-segoe-ui)] resize-y border-neutral-200 focus-visible:ring-neutral-400"
+                      marks={comments}
+                      minHeight={isZen ? 600 : 480}
                     />
 
-                    {popover && selection && mode !== "focus" && canEdit && (
-                      <SelectionPopover
-                        x={popover.x}
-                        y={popover.y}
-                        onLike={quickLike}
-                        onNote={startCommentOnSelection}
-                      />
-                    )}
-
-                    {draftingComment && (
-                      <div className="mt-3 border border-neutral-200 rounded p-3 bg-neutral-50">
-                        <div className="text-xs text-neutral-500 uppercase tracking-widest mb-1">
-                          Comment on passage
-                        </div>
-                        <div className="text-sm text-neutral-800 italic mb-2 border-l-2 border-neutral-300 pl-2">
-                          &ldquo;{draftingComment.quoted.slice(0, 200)}
-                          {draftingComment.quoted.length > 200 && "…"}&rdquo;
-                        </div>
-                        <Textarea
-                          value={commentText}
-                          onChange={(e) => setCommentText(e.target.value)}
-                          placeholder="What should Claude do with this? e.g. 'make it tighter', 'preserve this exactly', 'expand on the idea of X'"
-                          className="text-sm"
-                          rows={3}
-                          autoFocus
-                        />
-                        <div className="flex justify-end gap-2 mt-2">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => {
-                              setDraftingComment(null);
-                              setCommentText("");
-                            }}
-                          >
-                            Cancel
-                          </Button>
-                          <Button size="sm" onClick={saveComment} disabled={!commentText.trim()}>
-                            Save comment
-                          </Button>
-                        </div>
-                      </div>
-                    )}
+                    <div className="mt-3 flex items-center gap-4 text-[11px] text-neutral-400">
+                      <span className="inline-flex items-center gap-1.5">
+                        <span className="w-4 h-0.5 bg-[#f97316] rounded" />
+                        note
+                      </span>
+                      <span className="inline-flex items-center gap-1.5">
+                        <span className="w-4 h-0.5 bg-[#10b981] rounded" />
+                        liked
+                      </span>
+                      <span className="italic ml-auto">
+                        hover marks to edit or remove · Cmd/Ctrl+B for bold · Cmd/Ctrl+I for italic
+                      </span>
+                    </div>
                   </div>
                 )}
               </div>
 
-              <div className="space-y-4">
-                <div className="bg-white border border-neutral-200 rounded-lg">
-                  <button
-                    className="w-full flex items-center gap-2 px-4 py-2.5 border-b border-neutral-200 text-xs uppercase tracking-widest text-neutral-500"
-                    onClick={() => setStyleOpen((o) => !o)}
-                  >
-                    Voice / style notes
-                    <span className="ml-auto text-neutral-400">{styleOpen ? "–" : "+"}</span>
-                  </button>
-                  {styleOpen && (
-                    <div className="p-3">
-                      <Textarea
-                        value={styleNotes}
-                        onChange={(e) => setStyleNotes(e.target.value)}
-                        rows={5}
-                        placeholder="e.g. short sentences, no jargon, dry humour, prefer concrete examples over abstractions"
-                        className="text-sm"
-                      />
-                    </div>
-                  )}
-                </div>
-
-                <div className="bg-white border border-neutral-200 rounded-lg">
-                  <div className="flex items-center gap-2 px-4 py-2.5 border-b border-neutral-200 text-xs uppercase tracking-widest text-neutral-500">
+              {!isZen && (
+                <div className="space-y-4">
+                  <div className="bg-white border border-neutral-200 rounded-lg">
                     <button
-                      className="flex items-center gap-1.5 flex-1 text-left"
-                      onClick={() => setIdeasOpen((o) => !o)}
+                      className="w-full flex items-center gap-2 px-4 py-2.5 border-b border-neutral-200 text-xs uppercase tracking-widest text-neutral-500"
+                      onClick={() => setStyleOpen((o) => !o)}
                     >
-                      <Lightbulb size={13} />
-                      Idea buffer
-                      <span className="ml-1 text-neutral-400 normal-case tracking-normal">
-                        {ideas.length}
-                      </span>
-                      <span className="ml-auto text-neutral-400">{ideasOpen ? "–" : "+"}</span>
+                      Voice / style notes
+                      <span className="ml-auto text-neutral-400">{styleOpen ? "–" : "+"}</span>
                     </button>
+                    {styleOpen && (
+                      <div className="p-3">
+                        <Textarea
+                          value={styleNotes}
+                          onChange={(e) => setStyleNotes(e.target.value)}
+                          rows={5}
+                          placeholder="e.g. short sentences, no jargon, dry humour, prefer concrete examples over abstractions"
+                          className="text-sm"
+                        />
+                      </div>
+                    )}
                   </div>
-                  {ideasOpen && (
-                    <div className="p-3 space-y-2">
-                      {ideas.length === 0 && (
-                        <p className="text-xs text-neutral-500 leading-relaxed">
-                          A scratch pad for half-formed thoughts. Stuff you&apos;re still
-                          debating, parked ideas, things too raw for the draft. Claude sees
-                          these as context on edit, but won&apos;t force them in unless you
-                          ask.
-                        </p>
-                      )}
-                      {ideas.map((idea) => (
-                        <div
-                          key={idea.id}
-                          className="border border-neutral-200 rounded p-2 bg-neutral-50/60"
-                        >
-                          <Textarea
-                            value={idea.text}
-                            onChange={(e) => updateIdea(idea.id, e.target.value)}
-                            placeholder="jot a thought — contradict it, argue with it, park it…"
-                            rows={2}
-                            className="text-sm bg-white resize-y min-h-[48px]"
-                          />
-                          <div className="flex items-center justify-end gap-1 mt-1.5">
-                            <button
-                              onClick={() => promoteIdeaToComment(idea.id)}
-                              className="text-[11px] text-neutral-500 hover:text-emerald-700"
-                              title="Ask Claude to weave this into the next edit"
-                              disabled={!idea.text.trim()}
-                            >
-                              → weave in
-                            </button>
-                            <span className="text-neutral-300">·</span>
-                            <button
-                              onClick={() => removeIdea(idea.id)}
-                              className="text-[11px] text-neutral-400 hover:text-rose-600 inline-flex items-center gap-1"
-                            >
-                              <Trash2 size={10} />
-                              remove
-                            </button>
-                          </div>
-                        </div>
-                      ))}
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={addIdea}
-                        className="w-full"
-                      >
-                        <Plus size={13} className="mr-1" />
-                        Add idea
-                      </Button>
-                    </div>
-                  )}
-                </div>
 
-                <div className="bg-white border border-neutral-200 rounded-lg">
-                  <div className="flex items-center px-4 py-2.5 border-b border-neutral-200 text-xs uppercase tracking-widest text-neutral-500">
-                    Comments
-                    <span className="ml-auto text-neutral-400">{comments.length}</span>
-                  </div>
-                  {comments.length === 0 ? (
-                    <div className="p-4 text-sm text-neutral-500">
-                      Select text in the draft and click <em>Comment on selection</em>. Your notes
-                      go to Claude with the next round of edits.
+                  <div className="bg-white border border-neutral-200 rounded-lg">
+                    <div className="flex items-center gap-2 px-4 py-2.5 border-b border-neutral-200 text-xs uppercase tracking-widest text-neutral-500">
+                      <button
+                        className="flex items-center gap-1.5 flex-1 text-left"
+                        onClick={() => setIdeasOpen((o) => !o)}
+                      >
+                        <Lightbulb size={13} />
+                        Idea buffer
+                        <span className="ml-1 text-neutral-400 normal-case tracking-normal">
+                          {ideas.length}
+                        </span>
+                        <span className="ml-auto text-neutral-400">{ideasOpen ? "–" : "+"}</span>
+                      </button>
                     </div>
-                  ) : (
-                    <ul className="divide-y divide-neutral-100">
-                      {comments.map((c) => {
-                        const isLike = c.kind === "preserve";
-                        return (
-                          <li key={c.id} className="p-3 text-sm group">
-                            <div className="text-[11px] text-neutral-400 uppercase tracking-widest mb-1 italic inline-flex items-center gap-1">
-                              {isLike && <ThumbsUp size={11} className="text-emerald-600" />}
-                              on &ldquo;{c.quoted.slice(0, 80)}
-                              {c.quoted.length > 80 && "…"}&rdquo;
+                    {ideasOpen && (
+                      <div className="p-3 space-y-2">
+                        {ideas.length === 0 && (
+                          <p className="text-xs text-neutral-500 leading-relaxed">
+                            A scratch pad for half-formed thoughts. Claude sees these as context
+                            on edit, but won&apos;t force them in unless you ask.
+                          </p>
+                        )}
+                        {ideas.map((idea) => (
+                          <div
+                            key={idea.id}
+                            className="border border-neutral-200 rounded p-2 bg-neutral-50/60"
+                          >
+                            <Textarea
+                              value={idea.text}
+                              onChange={(e) => updateIdea(idea.id, e.target.value)}
+                              placeholder="jot a thought — contradict it, argue with it, park it…"
+                              rows={2}
+                              className="text-sm bg-white resize-y min-h-[48px]"
+                            />
+                            <div className="flex items-center justify-end gap-1 mt-1.5">
+                              <button
+                                onClick={() => removeIdea(idea.id)}
+                                className="text-[11px] text-neutral-400 hover:text-rose-600 inline-flex items-center gap-1"
+                              >
+                                <Trash2 size={10} />
+                                remove
+                              </button>
                             </div>
-                            {isLike ? (
-                              <div className="text-emerald-700 text-xs italic">
-                                Marked as liked — Claude will preserve it verbatim.
-                              </div>
-                            ) : (
-                              <div className="text-neutral-800">{c.text}</div>
-                            )}
-                            <button
-                              onClick={() => removeComment(c.id)}
-                              className="mt-1 text-[11px] text-neutral-400 hover:text-rose-600 inline-flex items-center gap-1"
-                            >
-                              <Trash2 size={11} />
-                              remove
-                            </button>
-                          </li>
-                        );
-                      })}
-                    </ul>
-                  )}
+                          </div>
+                        ))}
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={addIdea}
+                          className="w-full"
+                        >
+                          <Plus size={13} className="mr-1" />
+                          Add idea
+                        </Button>
+                      </div>
+                    )}
+                  </div>
                 </div>
-              </div>
+              )}
             </div>
           )}
         </div>
       </div>
+
+      {popover && selection && mode !== "focus" && canEdit && (
+        <SelectionPopover
+          x={popover.x}
+          y={popover.y}
+          onLike={quickLike}
+          onNote={startAddNote}
+        />
+      )}
+
+      {noteEditor && (() => {
+        const mark = comments.find((c) => c.id === noteEditor.markId);
+        if (!mark) return null;
+        return (
+          <NoteInput
+            x={noteEditor.x}
+            y={noteEditor.y}
+            value={mark.text}
+            quoted={mark.quoted}
+            onChange={(v) => updateNoteText(mark.id, v)}
+            onClose={closeNoteEditor}
+            onRemove={() => removeMark(mark.id)}
+          />
+        );
+      })()}
+
+      {hovered && !noteEditor && mode !== "focus" && (
+        <MarkTooltip
+          rect={hovered.rect}
+          markIds={hovered.markIds}
+          comments={comments}
+          onEdit={(id) => openNoteEditorForMark(id, hovered.rect)}
+          onRemove={removeMark}
+          onClose={() => setHovered(null)}
+        />
+      )}
     </div>
   );
 }
@@ -1051,6 +1157,44 @@ function TopBar({
   );
 }
 
+function FormattingToolbar({
+  onBold,
+  onItalic,
+  onHeading,
+}: {
+  onBold: () => void;
+  onItalic: () => void;
+  onHeading: () => void;
+}) {
+  return (
+    <div className="inline-flex items-center border border-neutral-200 rounded overflow-hidden">
+      <button
+        onClick={onBold}
+        className="px-2 py-1 text-neutral-600 hover:bg-neutral-100 inline-flex items-center"
+        title="Bold (Cmd/Ctrl+B)"
+      >
+        <Bold size={13} />
+      </button>
+      <div className="w-px h-4 bg-neutral-200" />
+      <button
+        onClick={onItalic}
+        className="px-2 py-1 text-neutral-600 hover:bg-neutral-100 inline-flex items-center"
+        title="Italic (Cmd/Ctrl+I)"
+      >
+        <Italic size={13} />
+      </button>
+      <div className="w-px h-4 bg-neutral-200" />
+      <button
+        onClick={onHeading}
+        className="px-2 py-1 text-neutral-600 hover:bg-neutral-100 inline-flex items-center"
+        title="Heading"
+      >
+        <HeadingIcon size={13} />
+      </button>
+    </div>
+  );
+}
+
 function SelectionPopover({
   x,
   y,
@@ -1072,7 +1216,7 @@ function SelectionPopover({
   return (
     <div
       data-popover="selection"
-      className="fixed z-30 bg-neutral-900 text-white rounded-md shadow-lg flex items-center overflow-hidden"
+      className="fixed z-40 bg-neutral-900 text-white rounded-md shadow-lg flex items-center overflow-hidden"
       style={{ left, top, width: POPOVER_W }}
       onMouseDown={(e) => e.preventDefault()}
     >
@@ -1091,6 +1235,245 @@ function SelectionPopover({
         <MessageSquareText size={13} />
         Add note
       </button>
+    </div>
+  );
+}
+
+function NoteInput({
+  x,
+  y,
+  value,
+  quoted,
+  onChange,
+  onClose,
+  onRemove,
+}: {
+  x: number;
+  y: number;
+  value: string;
+  quoted: string;
+  onChange: (v: string) => void;
+  onClose: () => void;
+  onRemove: () => void;
+}) {
+  const BOX_W = 300;
+  const left = Math.min(
+    Math.max(8, x - BOX_W / 2),
+    typeof window !== "undefined" ? window.innerWidth - BOX_W - 8 : x
+  );
+  const top = y + 6;
+  const ref = useRef<HTMLTextAreaElement>(null);
+  useEffect(() => {
+    ref.current?.focus();
+    ref.current?.select();
+  }, []);
+  return (
+    <div
+      className="fixed z-40 bg-white rounded-md shadow-xl border border-neutral-200 p-3"
+      style={{ left, top, width: BOX_W }}
+      onMouseDown={(e) => e.stopPropagation()}
+    >
+      <div className="text-[10px] text-neutral-500 uppercase tracking-widest mb-1.5 flex items-center gap-1.5">
+        <span className="w-3 h-0.5 bg-[#f97316] rounded" />
+        note on passage
+      </div>
+      <div className="text-[11px] text-neutral-500 italic mb-2 border-l-2 border-[#f97316]/40 pl-2 line-clamp-2">
+        &ldquo;{quoted.slice(0, 160)}
+        {quoted.length > 160 && "…"}&rdquo;
+      </div>
+      <textarea
+        ref={ref}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === "Escape") {
+            e.preventDefault();
+            onClose();
+          }
+          if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
+            e.preventDefault();
+            onClose();
+          }
+        }}
+        placeholder="What should Claude do here? e.g. 'make this tighter', 'expand on X'"
+        className="w-full text-sm text-neutral-800 border border-neutral-200 rounded px-2 py-1.5 resize-y min-h-[64px] focus:outline-none focus:ring-2 focus:ring-neutral-300"
+      />
+      <div className="flex items-center gap-2 mt-2">
+        <button
+          onClick={onRemove}
+          className="text-[11px] text-neutral-400 hover:text-rose-600 inline-flex items-center gap-1"
+        >
+          <Trash2 size={11} />
+          remove mark
+        </button>
+        <div className="ml-auto flex items-center gap-2">
+          <span className="text-[10px] text-neutral-400">Cmd/Ctrl+Enter to close</span>
+          <Button size="sm" onClick={onClose}>
+            Done
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function MarkTooltip({
+  rect,
+  markIds,
+  comments,
+  onEdit,
+  onRemove,
+  onClose,
+}: {
+  rect: DOMRect;
+  markIds: string[];
+  comments: InlineComment[];
+  onEdit: (id: string) => void;
+  onRemove: (id: string) => void;
+  onClose: () => void;
+}) {
+  const active = markIds
+    .map((id) => comments.find((c) => c.id === id))
+    .filter((c): c is InlineComment => !!c);
+  if (active.length === 0) return null;
+
+  const BOX_W = 280;
+  const left = Math.min(
+    Math.max(8, rect.left + rect.width / 2 - BOX_W / 2),
+    typeof window !== "undefined" ? window.innerWidth - BOX_W - 8 : rect.left
+  );
+  const top = rect.bottom + 6;
+
+  return (
+    <div
+      className="fixed z-30 bg-neutral-900 text-neutral-100 rounded-md shadow-xl border border-neutral-800 p-2.5"
+      style={{ left, top, width: BOX_W }}
+      onMouseEnter={(e) => e.stopPropagation()}
+      onMouseLeave={onClose}
+    >
+      <div className="space-y-2">
+        {active.map((c) => {
+          const isLike = c.kind === "preserve";
+          return (
+            <div key={c.id} className="flex items-start gap-2 text-xs">
+              <span
+                className={
+                  "mt-0.5 inline-block w-2.5 h-2.5 rounded-full shrink-0 " +
+                  (isLike ? "bg-emerald-400" : "bg-orange-400")
+                }
+              />
+              <div className="flex-1 min-w-0">
+                {isLike ? (
+                  <div className="text-emerald-300 italic">Liked — preserved verbatim</div>
+                ) : (
+                  <div className="text-neutral-100 whitespace-pre-wrap">
+                    {c.text || <span className="text-neutral-500 italic">(empty note)</span>}
+                  </div>
+                )}
+              </div>
+              <div className="flex items-center gap-1 shrink-0">
+                {!isLike && (
+                  <button
+                    onClick={() => onEdit(c.id)}
+                    className="p-1 text-neutral-400 hover:text-neutral-100 rounded"
+                    title="Edit note"
+                  >
+                    <Pencil size={11} />
+                  </button>
+                )}
+                <button
+                  onClick={() => onRemove(c.id)}
+                  className="p-1 text-neutral-400 hover:text-rose-400 rounded"
+                  title="Remove"
+                >
+                  <X size={12} />
+                </button>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function QuestionsPanel({
+  questions,
+  answers,
+  onAnswer,
+  onSubmit,
+  onCancel,
+  submitting,
+}: {
+  questions: Question[];
+  answers: Record<string, string>;
+  onAnswer: (id: string, v: string) => void;
+  onSubmit: () => void;
+  onCancel: () => void;
+  submitting: boolean;
+}) {
+  return (
+    <div
+      className="fixed inset-0 z-40 bg-black/40 flex items-center justify-center p-4"
+      onClick={onCancel}
+    >
+      <div
+        className="bg-white rounded-lg shadow-xl max-w-lg w-full border border-neutral-200"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="px-5 py-3 border-b border-neutral-200 flex items-center gap-2">
+          <Sparkles size={14} className="text-amber-500" />
+          <div className="font-medium text-sm text-neutral-800">
+            Claude has a few questions before the next draft
+          </div>
+          <button
+            onClick={onCancel}
+            className="ml-auto p-1 text-neutral-400 hover:text-neutral-900 rounded"
+          >
+            <X size={15} />
+          </button>
+        </div>
+        <div className="p-5 space-y-4 max-h-[60vh] overflow-y-auto">
+          <p className="text-xs text-neutral-500">
+            Answer what you can. Skip anything with &ldquo;use your judgment&rdquo; — Claude will decide.
+          </p>
+          {questions.map((q, i) => (
+            <div key={q.id}>
+              <div className="text-xs uppercase tracking-widest text-neutral-500 mb-1">
+                Question {i + 1}
+              </div>
+              <div className="text-sm text-neutral-800 mb-1.5">{q.text}</div>
+              <Textarea
+                value={answers[q.id] ?? ""}
+                onChange={(e) => onAnswer(q.id, e.target.value)}
+                rows={2}
+                placeholder="Your answer (or leave blank for Claude to decide)"
+                className="text-sm"
+              />
+            </div>
+          ))}
+        </div>
+        <div className="px-5 py-3 border-t border-neutral-200 flex items-center gap-2">
+          <Button variant="ghost" size="sm" onClick={onCancel}>
+            Cancel
+          </Button>
+          <div className="ml-auto">
+            <Button size="sm" onClick={onSubmit} disabled={submitting}>
+              {submitting ? (
+                <>
+                  <Loader2 size={13} className="mr-1.5 animate-spin" />
+                  Generating…
+                </>
+              ) : (
+                <>
+                  <Sparkles size={13} className="mr-1.5" />
+                  Generate next draft
+                </>
+              )}
+            </Button>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
@@ -1178,7 +1561,7 @@ function EmptyState({ onCreate }: { onCreate: () => void }) {
       <FileText size={32} className="mx-auto text-neutral-300 mb-3" />
       <h2 className="text-lg font-medium text-neutral-800 mb-1">No essays yet</h2>
       <p className="text-sm text-neutral-500 mb-5">
-        Each essay keeps its own draft, comments, ideas, and style notes. Switching
+        Each essay keeps its own draft, notes, ideas, and style guide. Switching
         between them swaps the full context — nothing leaks across.
       </p>
       <Button onClick={onCreate}>
@@ -1189,7 +1572,7 @@ function EmptyState({ onCreate }: { onCreate: () => void }) {
   );
 }
 
-function FocusBanner({
+function ZenHeader({
   mmss,
   pct,
   wordCount,
@@ -1201,19 +1584,27 @@ function FocusBanner({
   onExit: () => void;
 }) {
   return (
-    <div className="border-b border-amber-200 bg-amber-50">
-      <div className="max-w-6xl mx-auto px-6 py-2 flex items-center gap-3 text-sm">
-        <Clock size={14} className="text-amber-700" />
-        <span className="font-mono text-amber-900">{mmss}</span>
-        <div className="flex-1 h-1.5 bg-amber-200 rounded overflow-hidden">
+    <div className="fixed top-0 left-0 right-0 z-30 bg-[#0f0f0f]/80 backdrop-blur-sm border-b border-neutral-800">
+      <div className="max-w-3xl mx-auto px-6 py-3 flex items-center gap-3 text-sm">
+        <Clock size={14} className="text-amber-400" />
+        <span className="font-mono text-amber-200">{mmss}</span>
+        <div className="flex-1 h-1 bg-neutral-800 rounded overflow-hidden">
           <div
-            className="h-full bg-amber-600 transition-[width] duration-200"
+            className="h-full bg-amber-400 transition-[width] duration-200"
             style={{ width: `${Math.min(100, Math.max(0, pct * 100))}%` }}
           />
         </div>
-        <span className="text-amber-900">{wordCount} words</span>
-        <span className="text-amber-800 italic hidden sm:inline">keep going — no edits until the timer runs out</span>
-        <button onClick={onExit} className="text-amber-900 underline text-xs">exit</button>
+        <span className="text-neutral-400 text-xs">{wordCount} words</span>
+        <span className="text-neutral-500 italic hidden sm:inline text-xs">
+          no edits, no deletes — just write
+        </span>
+        <button
+          onClick={onExit}
+          className="text-neutral-300 hover:text-white text-xs inline-flex items-center gap-1 border border-neutral-700 rounded px-2 py-1"
+        >
+          <Square size={11} />
+          exit
+        </button>
       </div>
     </div>
   );
