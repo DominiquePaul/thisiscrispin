@@ -327,8 +327,12 @@ export const MarkedEditor = forwardRef<HTMLTextAreaElement, Props>(function Mark
       style.fontStyle = "italic";
     }
     if (isSyntax) {
-      // Fade the ** / * / # markers so they recede but stay visible for editing.
-      style.color = "#c9c5bc";
+      // Hide the ** / * / # markers. They still occupy character-width in
+      // layout (needed to keep the textarea underneath in sync), so you'll
+      // see small gaps around bolded/italicised words until we move to a
+      // contenteditable engine.
+      style.color = "transparent";
+      style.WebkitTextFillColor = "transparent";
     }
     if (isHeading && !isSyntax) {
       // Slightly darker for visual weight on headings.

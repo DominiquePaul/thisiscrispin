@@ -34,7 +34,7 @@ export function EssaySidebar({
         <button
           onClick={onCollapse}
           className="p-1 rounded hover:bg-neutral-100 text-neutral-400 hover:text-neutral-700"
-          title="Hide sidebar"
+          title="Hide sidebar (⌘\)"
         >
           <PanelLeftClose size={14} />
         </button>

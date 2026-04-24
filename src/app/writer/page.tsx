@@ -279,6 +279,18 @@ export default function WriterPage() {
     };
   }, [title, draft, comments, ideas, styleNotes, model, activeEssayId]);
 
+  // ── Global keyboard shortcut: Cmd/Ctrl+\ toggles the essay sidebar ───
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === "\\") {
+        e.preventDefault();
+        setSidebarOpen((s) => !s);
+      }
+    };
+    document.addEventListener("keydown", handler);
+    return () => document.removeEventListener("keydown", handler);
+  }, []);
+
   // ── Focus timer ───────────────────────────────────────────────────
   useEffect(() => {
     if (!focus.active) return;
@@ -800,114 +812,27 @@ export default function WriterPage() {
 
           {!hasActiveEssay ? (
             <EmptyState onCreate={handleCreateEssay} />
-          ) : (
-            <div
-              className={
-                isZen
-                  ? "max-w-3xl mx-auto px-6 py-10"
-                  : "max-w-6xl mx-auto px-6 py-6 grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-6"
-              }
-            >
-              <div
-                className={
-                  "bg-white rounded-lg transition-shadow " +
-                  (isZen
-                    ? "border border-neutral-800 shadow-[0_0_80px_rgba(0,0,0,0.5)]"
-                    : "")
-                }
-              >
-                <div className="flex items-center gap-2 px-4 py-2 opacity-60 hover:opacity-100 transition-opacity">
-                  <FileText size={13} className="text-neutral-400 shrink-0" />
-                  <Input
-                    value={title}
-                    onChange={(e) => setTitle(e.target.value)}
-                    placeholder="Untitled"
-                    className="h-7 border-0 shadow-none focus-visible:ring-0 px-0 text-sm font-medium text-neutral-800 bg-transparent"
-                  />
-                  <div className="ml-auto text-xs text-neutral-400">
-                    {mode === "review" ? "Review edits" : mode === "focus" ? "Focus draft" : "Draft"}
-                    {" · "}
-                    {wordCount} words
-                    {" · "}
-                    {readingTime}
-                  </div>
-                </div>
-
+          ) : isZen ? (
+            <div className="max-w-3xl mx-auto px-6 py-10">
+              <div className="bg-white rounded-lg border border-neutral-800 shadow-[0_0_80px_rgba(0,0,0,0.5)]">
+                <EssayTitleBar
+                  title={title}
+                  setTitle={setTitle}
+                  mode={mode}
+                  wordCount={wordCount}
+                  readingTime={readingTime}
+                />
                 {mode === "review" && segments ? (
-                  <div className="p-6">
-                    <div className="mb-4 flex flex-wrap items-center gap-2">
-                      <div className="text-sm text-neutral-600">
-                        {changeCount(segments)} changes · {pendingCount(segments)} undecided
-                      </div>
-                      <div className="ml-auto flex gap-2">
-                        <Button size="sm" variant="outline" onClick={rejectAll}>
-                          Reject all
-                        </Button>
-                        <Button size="sm" variant="outline" onClick={acceptAll}>
-                          Accept all
-                        </Button>
-                        <Button size="sm" variant="ghost" onClick={discardReview}>
-                          <Undo2 size={14} className="mr-1" />
-                          Discard
-                        </Button>
-                        <Button size="sm" onClick={applyChanges}>
-                          <Check size={14} className="mr-1" />
-                          Apply to draft
-                        </Button>
-                      </div>
-                    </div>
-                    <DiffView segments={segments} onDecide={decideSegment} />
-                  </div>
+                  <DiffReview
+                    segments={segments}
+                    onReject={rejectAll}
+                    onAccept={acceptAll}
+                    onDiscard={discardReview}
+                    onApply={applyChanges}
+                    onDecide={decideSegment}
+                  />
                 ) : (
                   <div className="p-4">
-                    <div className="flex flex-wrap items-center gap-2 mb-3">
-                      {!isZen &&
-                        (mode !== "focus" ? (
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={startFocus}
-                            disabled={loading}
-                          >
-                            <Play size={14} className="mr-1.5" />
-                            Focus mode
-                          </Button>
-                        ) : (
-                          <Button size="sm" variant="outline" onClick={exitFocus}>
-                            <Square size={14} className="mr-1.5" />
-                            Exit focus
-                          </Button>
-                        ))}
-                      {mode !== "focus" && (
-                        <div className="flex items-center gap-1.5 text-xs text-neutral-600">
-                          <Clock size={14} />
-                          <input
-                            type="number"
-                            min={1}
-                            max={120}
-                            value={focusMinutes}
-                            onChange={(e) => setFocusMinutes(Math.max(1, parseInt(e.target.value || "1", 10)))}
-                            className="w-16 h-7 px-2 border border-neutral-300 rounded text-sm"
-                          />
-                          <span>min</span>
-                        </div>
-                      )}
-                      <div className="ml-auto">
-                        <Button
-                          size="sm"
-                          onClick={handleNextDraft}
-                          disabled={loading || mode === "focus" || !draft.trim()}
-                        >
-                          {loading ? (
-                            <Loader2 size={14} className="mr-1.5 animate-spin" />
-                          ) : (
-                            <FastForward size={14} className="mr-1.5 fill-current" />
-                          )}
-                          {loading ? "Thinking…" : "Next draft"}
-                        </Button>
-                      </div>
-                    </div>
-
                     <MarkedEditor
                       ref={textareaRef}
                       value={draft}
@@ -920,28 +845,116 @@ export default function WriterPage() {
                       readOnly={!canEdit}
                       placeholder="Start writing…"
                       marks={comments}
-                      minHeight={isZen ? 600 : 480}
+                      minHeight={600}
                     />
-
-                    <div className="mt-3 flex items-center gap-4 text-[11px] text-neutral-400">
-                      <span className="inline-flex items-center gap-1.5">
-                        <span className="w-4 h-0.5 bg-[#f97316] rounded" />
-                        note
-                      </span>
-                      <span className="inline-flex items-center gap-1.5">
-                        <span className="w-4 h-0.5 bg-[#10b981] rounded" />
-                        liked
-                      </span>
-                      <span className="italic ml-auto">
-                        hover marks to edit or remove · Cmd/Ctrl+B for bold · Cmd/Ctrl+I for italic
-                      </span>
-                    </div>
                   </div>
                 )}
               </div>
+            </div>
+          ) : (
+            <div className="px-6 py-6">
+              <div className="mx-auto grid grid-cols-1 lg:grid-cols-[280px_minmax(0,720px)_280px] gap-6 lg:justify-center">
+                <div className="hidden lg:block" />
 
-              {!isZen && (
-                <div className="space-y-4">
+                <main className="min-w-0">
+                  <EssayTitleBar
+                    title={title}
+                    setTitle={setTitle}
+                    mode={mode}
+                    wordCount={wordCount}
+                    readingTime={readingTime}
+                  />
+                  {mode === "review" && segments ? (
+                    <div className="mt-2">
+                      <DiffReview
+                        segments={segments}
+                        onReject={rejectAll}
+                        onAccept={acceptAll}
+                        onDiscard={discardReview}
+                        onApply={applyChanges}
+                        onDecide={decideSegment}
+                      />
+                    </div>
+                  ) : (
+                    <div className="mt-2">
+                      <MarkedEditor
+                        ref={textareaRef}
+                        value={draft}
+                        onChange={handleDraftChange}
+                        onKeyDown={handleEditorKeyDown}
+                        onSelect={onTextareaSelect}
+                        onMouseUp={onTextareaMouseUp}
+                        onKeyUp={onTextareaKeyUp}
+                        onHoverChange={setHovered}
+                        readOnly={!canEdit}
+                        placeholder="Start writing…"
+                        marks={comments}
+                        minHeight={480}
+                      />
+                      <div className="mt-3 flex items-center gap-4 text-[11px] text-neutral-400">
+                        <span className="inline-flex items-center gap-1.5">
+                          <span className="w-4 h-0.5 bg-[#f97316] rounded" />
+                          note
+                        </span>
+                        <span className="inline-flex items-center gap-1.5">
+                          <span className="w-4 h-0.5 bg-[#10b981] rounded" />
+                          liked
+                        </span>
+                        <span className="italic ml-auto hidden md:inline">
+                          hover marks to edit or remove · Cmd/Ctrl+B bold · Cmd/Ctrl+I italic
+                        </span>
+                      </div>
+                    </div>
+                  )}
+                </main>
+
+                <aside className="space-y-4">
+                  <Button
+                    onClick={handleNextDraft}
+                    disabled={loading || mode === "focus" || !draft.trim()}
+                    className="w-full"
+                  >
+                    {loading ? (
+                      <Loader2 size={14} className="mr-1.5 animate-spin" />
+                    ) : (
+                      <FastForward size={14} className="mr-1.5 fill-current" />
+                    )}
+                    {loading ? "Thinking…" : "Next draft"}
+                  </Button>
+
+                  <div className="flex items-center gap-2">
+                    {mode !== "focus" ? (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={startFocus}
+                        disabled={loading}
+                      >
+                        <Play size={14} className="mr-1.5" />
+                        Focus
+                      </Button>
+                    ) : (
+                      <Button size="sm" variant="outline" onClick={exitFocus}>
+                        <Square size={14} className="mr-1.5" />
+                        Exit focus
+                      </Button>
+                    )}
+                    {mode !== "focus" && (
+                      <div className="flex items-center gap-1.5 text-xs text-neutral-600">
+                        <Clock size={14} />
+                        <input
+                          type="number"
+                          min={1}
+                          max={120}
+                          value={focusMinutes}
+                          onChange={(e) => setFocusMinutes(Math.max(1, parseInt(e.target.value || "1", 10)))}
+                          className="w-14 h-7 px-2 border border-neutral-300 rounded text-sm bg-white"
+                        />
+                        <span>min</span>
+                      </div>
+                    )}
+                  </div>
+
                   <div className="bg-white border border-neutral-200 rounded-lg">
                     <button
                       className="w-full flex items-center gap-2 px-4 py-2.5 border-b border-neutral-200 text-xs uppercase tracking-widest text-neutral-500"
@@ -1020,8 +1033,8 @@ export default function WriterPage() {
                       </div>
                     )}
                   </div>
-                </div>
-              )}
+                </aside>
+              </div>
             </div>
           )}
         </div>
@@ -1066,6 +1079,82 @@ export default function WriterPage() {
   );
 }
 
+function EssayTitleBar({
+  title,
+  setTitle,
+  mode,
+  wordCount,
+  readingTime,
+}: {
+  title: string;
+  setTitle: (t: string) => void;
+  mode: Mode;
+  wordCount: number;
+  readingTime: string;
+}) {
+  return (
+    <div className="flex items-center gap-2 py-1 opacity-60 hover:opacity-100 transition-opacity">
+      <FileText size={13} className="text-neutral-400 shrink-0" />
+      <Input
+        value={title}
+        onChange={(e) => setTitle(e.target.value)}
+        placeholder="Untitled"
+        className="h-7 border-0 shadow-none focus-visible:ring-0 px-0 text-sm font-medium text-neutral-800 bg-transparent"
+      />
+      <div className="ml-auto text-xs text-neutral-400 whitespace-nowrap">
+        {mode === "review" ? "Review edits" : mode === "focus" ? "Focus draft" : "Draft"}
+        {" · "}
+        {wordCount} words
+        {" · "}
+        {readingTime}
+      </div>
+    </div>
+  );
+}
+
+function DiffReview({
+  segments,
+  onReject,
+  onAccept,
+  onDiscard,
+  onApply,
+  onDecide,
+}: {
+  segments: DiffSegment[];
+  onReject: () => void;
+  onAccept: () => void;
+  onDiscard: () => void;
+  onApply: () => void;
+  onDecide: (id: string, decision: "accepted" | "rejected") => void;
+}) {
+  return (
+    <div className="p-4">
+      <div className="mb-4 flex flex-wrap items-center gap-2">
+        <div className="text-sm text-neutral-600">
+          {changeCount(segments)} changes · {pendingCount(segments)} undecided
+        </div>
+        <div className="ml-auto flex gap-2">
+          <Button size="sm" variant="outline" onClick={onReject}>
+            Reject all
+          </Button>
+          <Button size="sm" variant="outline" onClick={onAccept}>
+            Accept all
+          </Button>
+          <Button size="sm" variant="ghost" onClick={onDiscard}>
+            <Undo2 size={14} className="mr-1" />
+            Discard
+          </Button>
+          <Button size="sm" onClick={onApply}>
+            <Check size={14} className="mr-1" />
+            Apply to draft
+          </Button>
+        </div>
+      </div>
+      <DiffView segments={segments} onDecide={onDecide} />
+    </div>
+  );
+}
+
 function TopBar({
   model,
   onModelChange,
@@ -1088,7 +1177,7 @@ function TopBar({
           <button
             onClick={onToggleSidebar}
             className="p-1.5 rounded hover:bg-neutral-100 text-neutral-500 hover:text-neutral-900"
-            title="Show essays"
+            title="Show essays (⌘\\)"
           >
             <PanelLeftOpen size={15} />
           </button>
