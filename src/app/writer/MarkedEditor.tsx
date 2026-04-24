@@ -10,6 +10,7 @@ import {
   useState,
 } from "react";
 import type { InlineComment } from "./types";
+import { markdownToHtml, htmlToMarkdown } from "./markdown";
 
 export interface HoverState {
   markIds: string[];
@@ -149,28 +150,30 @@ export const MarkedEditor = forwardRef<HTMLTextAreaElement, Props>(function Mark
     }
   }, [ref]);
 
-  // Sync mirror height to textarea's rendered (resized) height
-  useLayoutEffect(() => {
+  // Auto-grow the textarea to fit its content so the whole document is
+  // visible; the page itself scrolls, not an internal textarea scroll.
+  const recomputeHeight = useCallback(() => {
     const ta = innerTextareaRef.current;
     if (!ta) return;
-    const ro = new ResizeObserver(() => setHeight(ta.offsetHeight));
-    ro.observe(ta);
-    setHeight(ta.offsetHeight);
-    return () => ro.disconnect();
-  }, []);
+    ta.style.height = "auto";
+    const next = Math.max(minHeight ?? 480, ta.scrollHeight);
+    ta.style.height = next + "px";
+    setHeight(next);
+  }, [minHeight]);
 
-  // Sync scroll position
+  useLayoutEffect(() => {
+    recomputeHeight();
+  }, [value, recomputeHeight]);
+
+  // Width changes (window resize, sidebar toggle) change wrap points, which
+  // changes scrollHeight. Recompute when the wrapper resizes.
   useEffect(() => {
-    const ta = innerTextareaRef.current;
-    const mirror = mirrorRef.current;
-    if (!ta || !mirror) return;
-    const sync = () => {
-      mirror.scrollTop = ta.scrollTop;
-      mirror.scrollLeft = ta.scrollLeft;
-    };
-    ta.addEventListener("scroll", sync);
-    return () => ta.removeEventListener("scroll", sync);
-  }, []);
+    const wrapper = wrapperRef.current;
+    if (!wrapper) return;
+    const ro = new ResizeObserver(() => recomputeHeight());
+    ro.observe(wrapper);
+    return () => ro.disconnect();
+  }, [recomputeHeight]);
 
   const segments = useMemo(() => computeSegments(value, marks), [value, marks]);
 
@@ -232,6 +235,63 @@ export const MarkedEditor = forwardRef<HTMLTextAreaElement, Props>(function Mark
       </span>
     );
   });
+
+  const handleCopy = useCallback(
+    (e: React.ClipboardEvent<HTMLTextAreaElement>) => {
+      const ta = innerTextareaRef.current;
+      if (!ta) return;
+      const start = ta.selectionStart;
+      const end = ta.selectionEnd;
+      if (start === end) return; // nothing selected — let the browser do its thing
+      const selected = ta.value.slice(start, end);
+      e.preventDefault();
+      e.clipboardData.setData("text/plain", selected);
+      e.clipboardData.setData("text/html", markdownToHtml(selected));
+    },
+    []
+  );
+
+  const handleCut = useCallback(
+    (e: React.ClipboardEvent<HTMLTextAreaElement>) => {
+      const ta = innerTextareaRef.current;
+      if (!ta) return;
+      const start = ta.selectionStart;
+      const end = ta.selectionEnd;
+      if (start === end) return;
+      const selected = ta.value.slice(start, end);
+      e.preventDefault();
+      e.clipboardData.setData("text/plain", selected);
+      e.clipboardData.setData("text/html", markdownToHtml(selected));
+      const next = ta.value.slice(0, start) + ta.value.slice(end);
+      onChange(next);
+      requestAnimationFrame(() => {
+        ta.selectionStart = start;
+        ta.selectionEnd = start;
+      });
+    },
+    [onChange]
+  );
+
+  const handlePaste = useCallback(
+    (e: React.ClipboardEvent<HTMLTextAreaElement>) => {
+      const html = e.clipboardData.getData("text/html");
+      if (!html) return; // plain text paste — native behaviour is fine
+      e.preventDefault();
+      const ta = innerTextareaRef.current;
+      if (!ta) return;
+      const md = htmlToMarkdown(html);
+      const start = ta.selectionStart;
+      const end = ta.selectionEnd;
+      const next = ta.value.slice(0, start) + md + ta.value.slice(end);
+      onChange(next);
+      requestAnimationFrame(() => {
+        const pos = start + md.length;
+        ta.selectionStart = pos;
+        ta.selectionEnd = pos;
+      });
+    },
+    [onChange]
+  );
 
   const handleKeyDownInternal = useCallback(
     (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
@@ -295,10 +355,14 @@ export const MarkedEditor = forwardRef<HTMLTextAreaElement, Props>(function Mark
         onSelect={onSelect}
         onMouseMove={handleMouseMove}
         onMouseLeave={handleMouseLeave}
+        onCopy={handleCopy}
+        onCut={handleCut}
+        onPaste={handlePaste}
         readOnly={readOnly}
         placeholder={placeholder}
         spellCheck
-        className="relative w-full bg-transparent resize-y focus:outline-none"
+        rows={1}
+        className="relative w-full bg-transparent focus:outline-none resize-none overflow-hidden"
         style={{
           ...sharedStyle,
           minHeight: minHeight ?? 480,
