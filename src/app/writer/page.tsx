@@ -813,11 +813,11 @@ export default function WriterPage() {
                   "bg-white rounded-lg transition-shadow " +
                   (isZen
                     ? "border border-neutral-800 shadow-[0_0_80px_rgba(0,0,0,0.5)]"
-                    : "border border-neutral-200")
+                    : "")
                 }
               >
-                <div className="flex items-center gap-2 px-4 py-2.5 border-b border-neutral-200">
-                  <FileText size={14} className="text-neutral-500 shrink-0" />
+                <div className="flex items-center gap-2 px-4 py-2 opacity-60 hover:opacity-100 transition-opacity">
+                  <FileText size={13} className="text-neutral-400 shrink-0" />
                   <Input
                     value={title}
                     onChange={(e) => setTitle(e.target.value)}

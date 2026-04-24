@@ -75,6 +75,73 @@ function wrapSelection(
   }
 }
 
+type MdKind =
+  | "heading-hash"
+  | "heading-content"
+  | "bold-syntax"
+  | "bold-content"
+  | "italic-syntax"
+  | "italic-content";
+
+interface MdSpan {
+  start: number;
+  end: number;
+  kind: MdKind;
+}
+
+/**
+ * Find line-start headings (`# `, `## `, etc.), inline `**bold**` and
+ * inline `*italic*` runs. Returns spans tagged by kind so the renderer can
+ * style each character range appropriately — e.g. fade the `**` markers,
+ * apply -webkit-text-stroke to the content between them.
+ */
+function findMdSpans(text: string): MdSpan[] {
+  const spans: MdSpan[] = [];
+
+  // Headings: line starts with 1-6 # followed by space
+  const lines = text.split("\n");
+  let pos = 0;
+  for (const line of lines) {
+    const m = line.match(/^(#{1,6}) /);
+    if (m) {
+      const prefixLen = m[0].length; // # + space
+      spans.push({ start: pos, end: pos + prefixLen, kind: "heading-hash" });
+      if (line.length > prefixLen) {
+        spans.push({ start: pos + prefixLen, end: pos + line.length, kind: "heading-content" });
+      }
+    }
+    pos += line.length + 1;
+  }
+
+  // Bold: **non-empty, no newline**
+  const boldRegex = /\*\*([^*\n]+?)\*\*/g;
+  let m: RegExpExecArray | null;
+  while ((m = boldRegex.exec(text)) !== null) {
+    const openStart = m.index;
+    const contentStart = openStart + 2;
+    const contentEnd = contentStart + m[1].length;
+    const closeEnd = contentEnd + 2;
+    spans.push({ start: openStart, end: contentStart, kind: "bold-syntax" });
+    spans.push({ start: contentStart, end: contentEnd, kind: "bold-content" });
+    spans.push({ start: contentEnd, end: closeEnd, kind: "bold-syntax" });
+  }
+
+  // Italic: *text* — must not be adjacent to another * (i.e. not part of **)
+  const italicRegex = /(^|[^*])\*([^*\n]+?)\*(?!\*)/g;
+  while ((m = italicRegex.exec(text)) !== null) {
+    const offset = m[1].length;
+    const openStart = m.index + offset;
+    const contentStart = openStart + 1;
+    const contentEnd = contentStart + m[2].length;
+    const closeEnd = contentEnd + 1;
+    spans.push({ start: openStart, end: contentStart, kind: "italic-syntax" });
+    spans.push({ start: contentStart, end: contentEnd, kind: "italic-content" });
+    spans.push({ start: contentEnd, end: closeEnd, kind: "italic-syntax" });
+  }
+
+  return spans;
+}
+
 interface Segment {
   start: number;
   end: number;
@@ -82,6 +149,7 @@ interface Segment {
   markIds: string[];
   hasNote: boolean;
   hasLike: boolean;
+  mdKinds: Set<MdKind>;
 }
 
 function computeSegments(text: string, marks: InlineComment[]): Segment[] {
@@ -94,18 +162,29 @@ function computeSegments(text: string, marks: InlineComment[]): Segment[] {
     }))
     .filter((m) => m.end > m.start);
 
+  const mdSpans = findMdSpans(text);
+
   const boundaries = new Set<number>([0, len]);
   for (const m of clamped) {
     boundaries.add(m.start);
     boundaries.add(m.end);
   }
+  for (const s of mdSpans) {
+    boundaries.add(s.start);
+    boundaries.add(s.end);
+  }
   const sorted = [...boundaries].sort((a, b) => a - b);
+
   const out: Segment[] = [];
   for (let i = 0; i < sorted.length - 1; i++) {
     const start = sorted[i];
     const end = sorted[i + 1];
     if (end === start) continue;
     const active = clamped.filter((m) => m.start <= start && m.end >= end);
+    const mdKinds = new Set<MdKind>();
+    for (const s of mdSpans) {
+      if (s.start <= start && s.end >= end) mdKinds.add(s.kind);
+    }
     out.push({
       start,
       end,
@@ -113,6 +192,7 @@ function computeSegments(text: string, marks: InlineComment[]): Segment[] {
       markIds: active.map((m) => m.id),
       hasNote: active.some((m) => (m.kind ?? "note") === "note"),
       hasLike: active.some((m) => m.kind === "preserve"),
+      mdKinds,
     });
   }
   return out;
@@ -203,6 +283,9 @@ export const MarkedEditor = forwardRef<HTMLTextAreaElement, Props>(function Mark
   }, [onHoverChange]);
 
   const renderedSegments = segments.map((seg, i) => {
+    const style: React.CSSProperties = {};
+
+    // Mark underlines (stacked per-line backgrounds so they wrap correctly)
     const backgrounds: string[] = [];
     const positions: string[] = [];
     const sizes: string[] = [];
@@ -216,14 +299,42 @@ export const MarkedEditor = forwardRef<HTMLTextAreaElement, Props>(function Mark
       positions.push(seg.hasNote ? "0 calc(100% - 3px)" : "0 100%");
       sizes.push("100% 2px");
     }
-    const style: React.CSSProperties = backgrounds.length
-      ? {
-          backgroundImage: backgrounds.join(", "),
-          backgroundRepeat: "no-repeat, no-repeat",
-          backgroundPosition: positions.join(", "),
-          backgroundSize: sizes.join(", "),
-        }
-      : {};
+    if (backgrounds.length) {
+      style.backgroundImage = backgrounds.join(", ");
+      style.backgroundRepeat = "no-repeat, no-repeat";
+      style.backgroundPosition = positions.join(", ");
+      style.backgroundSize = sizes.join(", ");
+    }
+
+    // Markdown styling — all applied to the mirror only. We use
+    // -webkit-text-stroke to simulate bold weight without changing
+    // character advance widths, so the invisible textarea below still
+    // wraps at the same points and the caret stays aligned.
+    const isSyntax =
+      seg.mdKinds.has("heading-hash") ||
+      seg.mdKinds.has("bold-syntax") ||
+      seg.mdKinds.has("italic-syntax");
+    const isBold = seg.mdKinds.has("bold-content");
+    const isHeading =
+      seg.mdKinds.has("heading-content") || seg.mdKinds.has("heading-hash");
+    const isItalic = seg.mdKinds.has("italic-content");
+
+    if (isBold || (isHeading && !seg.mdKinds.has("heading-hash"))) {
+      style.WebkitTextStrokeWidth = "0.5px";
+      style.WebkitTextStrokeColor = "currentColor";
+    }
+    if (isItalic) {
+      style.fontStyle = "italic";
+    }
+    if (isSyntax) {
+      // Fade the ** / * / # markers so they recede but stay visible for editing.
+      style.color = "#c9c5bc";
+    }
+    if (isHeading && !isSyntax) {
+      // Slightly darker for visual weight on headings.
+      style.color = "#0f0f0e";
+    }
+
     const hasMark = seg.markIds.length > 0;
     return (
       <span
@@ -328,16 +439,14 @@ export const MarkedEditor = forwardRef<HTMLTextAreaElement, Props>(function Mark
   };
 
   return (
-    <div
-      ref={wrapperRef}
-      className="relative border border-neutral-200 rounded bg-white focus-within:ring-2 focus-within:ring-neutral-300"
-    >
+    <div ref={wrapperRef} className="relative">
       <div
         ref={mirrorRef}
         aria-hidden="true"
-        className="absolute inset-0 pointer-events-none overflow-hidden text-transparent"
+        className="absolute inset-0 pointer-events-none overflow-hidden"
         style={{
           ...sharedStyle,
+          color: "#1a1a18",
           height: height ?? undefined,
         }}
       >
@@ -362,12 +471,13 @@ export const MarkedEditor = forwardRef<HTMLTextAreaElement, Props>(function Mark
         placeholder={placeholder}
         spellCheck
         rows={1}
-        className="relative w-full bg-transparent focus:outline-none resize-none overflow-hidden"
+        className="relative w-full bg-transparent focus:outline-none resize-none overflow-hidden placeholder:text-neutral-400"
         style={{
           ...sharedStyle,
           minHeight: minHeight ?? 480,
-          color: "#1a1a18",
+          color: "transparent",
           caretColor: "#1a1a18",
+          WebkitTextFillColor: "transparent",
         }}
       />
     </div>
