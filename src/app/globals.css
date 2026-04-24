@@ -71,3 +71,157 @@
     font-family: var(--font-ibm-plex-sans), ui-sans-serif, system-ui, sans-serif;
   }
 }
+
+/* ------------------------------------------------------------------------- */
+/* Writer editor prose styles                                                */
+/* ------------------------------------------------------------------------- */
+
+.writer-prose {
+  font-family: "Source Serif 4", "Source Serif Pro", Charter, "Iowan Old Style",
+    "Palatino Linotype", Georgia, Cambria, serif;
+  font-size: 17px;
+  line-height: 1.75;
+  color: #1a1a18;
+  min-height: 480px;
+}
+
+.writer-prose > * + * {
+  margin-top: 0.75em;
+}
+
+.writer-prose p {
+  margin: 0;
+}
+
+.writer-prose h1 {
+  font-size: 2em;
+  font-weight: 700;
+  line-height: 1.2;
+  margin-top: 1.5em;
+  letter-spacing: -0.01em;
+  color: #0f0f0e;
+}
+.writer-prose h2 {
+  font-size: 1.55em;
+  font-weight: 700;
+  line-height: 1.25;
+  margin-top: 1.3em;
+  letter-spacing: -0.005em;
+  color: #0f0f0e;
+}
+.writer-prose h3 {
+  font-size: 1.25em;
+  font-weight: 700;
+  line-height: 1.3;
+  margin-top: 1.1em;
+  color: #0f0f0e;
+}
+.writer-prose h4 {
+  font-size: 1.05em;
+  font-weight: 700;
+  line-height: 1.35;
+  margin-top: 1em;
+  color: #0f0f0e;
+}
+
+.writer-prose strong {
+  font-weight: 700;
+  color: inherit;
+}
+.writer-prose em {
+  font-style: italic;
+}
+
+.writer-prose ul,
+.writer-prose ol {
+  padding-left: 1.5em;
+  margin: 0;
+}
+.writer-prose ul {
+  list-style: disc;
+}
+.writer-prose ol {
+  list-style: decimal;
+}
+.writer-prose li + li {
+  margin-top: 0.25em;
+}
+.writer-prose li > p {
+  margin: 0;
+}
+
+.writer-prose blockquote {
+  border-left: 3px solid #d6d3cd;
+  padding-left: 1em;
+  color: #4a4944;
+  font-style: italic;
+}
+
+.writer-prose code {
+  background: #f5f4f0;
+  border: 1px solid #e8e6e1;
+  border-radius: 4px;
+  padding: 1px 5px;
+  font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.9em;
+}
+.writer-prose pre {
+  background: #f5f4f0;
+  border: 1px solid #e8e6e1;
+  border-radius: 6px;
+  padding: 0.75em 1em;
+  overflow-x: auto;
+}
+.writer-prose pre code {
+  background: transparent;
+  border: none;
+  padding: 0;
+  font-size: 0.85em;
+}
+
+.writer-prose hr {
+  border: none;
+  border-top: 1px solid #d6d3cd;
+  margin: 1.5em 0;
+}
+
+.writer-prose a {
+  color: #4a5899;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  text-decoration-thickness: 1px;
+}
+
+/* Placeholder (TipTap Placeholder extension sets this pseudo on empty editors) */
+.writer-prose .is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  color: #a8a29e;
+  float: left;
+  height: 0;
+  pointer-events: none;
+}
+
+/* Note / Like marks — inline underlines that wrap with the text */
+.writer-note {
+  background-image: linear-gradient(#f97316, #f97316);
+  background-repeat: no-repeat;
+  background-position: 0 100%;
+  background-size: 100% 2px;
+  cursor: help;
+}
+.writer-like {
+  background-image: linear-gradient(#10b981, #10b981);
+  background-repeat: no-repeat;
+  background-position: 0 100%;
+  background-size: 100% 2px;
+  cursor: help;
+}
+/* Overlap: when a note wraps a like (or vice versa), stack the underlines. */
+.writer-note .writer-like,
+.writer-like .writer-note {
+  background-image: linear-gradient(#f97316, #f97316),
+    linear-gradient(#10b981, #10b981);
+  background-repeat: no-repeat, no-repeat;
+  background-position: 0 100%, 0 calc(100% - 3px);
+  background-size: 100% 2px, 100% 2px;
+}

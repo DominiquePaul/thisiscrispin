@@ -40,7 +40,12 @@ import { AuthGate } from "./AuthGate";
 import { TokenGate } from "./TokenGate";
 import { DiffView } from "./DiffView";
 import { EssaySidebar } from "./EssaySidebar";
-import { MarkedEditor, type HoverState } from "./MarkedEditor";
+import {
+  TipTapEditor,
+  type TipTapEditorHandle,
+  type SelectionState,
+  type HoverMarkState,
+} from "./TipTapEditor";
 import { parseEditResponse, applyDecisions, pendingCount, changeCount } from "./diff";
 import { requestEdits, type Question } from "./api";
 import {
@@ -56,58 +61,22 @@ import {
 import type { DiffSegment, Idea, InlineComment, Mode, ModelId } from "./types";
 
 const DEFAULT_MODEL: ModelId = "claude-opus-4-7";
-const CONTEXT_CHARS = 60;
-const SAMPLE_DRAFT = `Write your first draft here. Don't stop to edit — just get the ideas down.
+const SAMPLE_DRAFT = `# Start writing
 
-When you're ready, select a passage and choose "Like this" (green underline — Claude will preserve it) or "Add note" (orange underline — write what you want changed). Then hit "Next draft" and Claude will revise.
+Don't stop to edit — just get the ideas down.
 
-Markdown shortcuts: **bold**, *italic*, # heading. Cmd/Ctrl+B and Cmd/Ctrl+I wrap your selection.`;
+When you're ready, select a passage and choose **Like this** (green underline — Claude will preserve it) or **Add note** (orange underline — write what you want changed). Then hit *Next draft* and Claude will revise.
+
+Shortcuts: **bold** with ⌘B, *italic* with ⌘I, # for a heading.`;
 
 type FocusState =
   | { active: false }
-  | { active: true; startedAt: number; durationMs: number; lockedLength: number; remaining: number };
+  | { active: true; startedAt: number; durationMs: number; remaining: number };
 
 type AuthState =
   | { status: "loading" }
   | { status: "unauthenticated" }
   | { status: "authenticated"; user: User };
-
-/**
- * When the draft text changes, shift mark start/end so underlines follow the
- * same characters after insertion/deletion.
- */
-function shiftComments(
-  oldDraft: string,
-  newDraft: string,
-  comments: InlineComment[]
-): InlineComment[] {
-  if (oldDraft === newDraft) return comments;
-  let lo = 0;
-  const oldLen = oldDraft.length;
-  const newLen = newDraft.length;
-  const maxLo = Math.min(oldLen, newLen);
-  while (lo < maxLo && oldDraft[lo] === newDraft[lo]) lo++;
-  let oldHi = oldLen;
-  let newHi = newLen;
-  while (
-    oldHi > lo &&
-    newHi > lo &&
-    oldDraft[oldHi - 1] === newDraft[newHi - 1]
-  ) {
-    oldHi--;
-    newHi--;
-  }
-  const delta = newHi - oldHi; // +N inserted or -N removed
-  return comments
-    .map((c) => {
-      if (c.end <= lo) return c; // fully before edit
-      if (c.start >= oldHi) return { ...c, start: c.start + delta, end: c.end + delta }; // fully after
-      // Overlaps the edit: shift the end only; if mark collapsed to zero length, drop it later
-      const newEnd = Math.max(c.start, c.end + delta);
-      return { ...c, end: newEnd };
-    })
-    .filter((c) => c.end > c.start);
-}
 
 export default function WriterPage() {
   const [auth, setAuth] = useState<AuthState>({ status: "loading" });
@@ -136,14 +105,12 @@ export default function WriterPage() {
   const [focus, setFocus] = useState<FocusState>({ active: false });
   const [focusMinutes, setFocusMinutes] = useState(10);
 
-  const [selection, setSelection] = useState<{ start: number; end: number } | null>(null);
-  const [popover, setPopover] = useState<{ x: number; y: number } | null>(null);
+  const [selection, setSelection] = useState<SelectionState | null>(null);
   const [noteEditor, setNoteEditor] = useState<{
     markId: string;
-    x: number;
-    y: number;
+    rect: DOMRect;
   } | null>(null);
-  const [hovered, setHovered] = useState<HoverState | null>(null);
+  const [hovered, setHovered] = useState<HoverMarkState | null>(null);
 
   const [showApiKeyPrompt, setShowApiKeyPrompt] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
@@ -151,7 +118,7 @@ export default function WriterPage() {
   const [questions, setQuestions] = useState<Question[] | null>(null);
   const [answers, setAnswers] = useState<Record<string, string>>({});
 
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const editorRef = useRef<TipTapEditorHandle>(null);
   const loadingEssayRef = useRef(false);
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -226,7 +193,6 @@ export default function WriterPage() {
     setFocus({ active: false });
     setError(null);
     setSelection(null);
-    setPopover(null);
     setNoteEditor(null);
     setHovered(null);
     setQuestions(null);
@@ -319,126 +285,35 @@ export default function WriterPage() {
     return { pct, mmss: formatMs(focus.remaining) };
   }, [focus]);
 
-  const captureContext = useCallback(
-    (start: number, end: number) => ({
-      contextBefore: draft.slice(Math.max(0, start - CONTEXT_CHARS), start),
-      contextAfter: draft.slice(end, Math.min(draft.length, end + CONTEXT_CHARS)),
-    }),
-    [draft]
-  );
-
-  const updateSelectionAndPopover = useCallback(
-    (mouseX?: number, mouseY?: number) => {
-      const el = textareaRef.current;
-      if (!el) return;
-      const start = el.selectionStart;
-      const end = el.selectionEnd;
-      if (start === end) {
-        setSelection(null);
-        setPopover(null);
-        return;
-      }
-      setSelection({ start, end });
-      if (mouseX != null && mouseY != null) {
-        setPopover({ x: mouseX, y: mouseY });
-      } else {
-        const rect = el.getBoundingClientRect();
-        setPopover({ x: rect.left + rect.width / 2, y: rect.top + 40 });
-      }
-    },
-    []
-  );
-
-  const onTextareaMouseUp = useCallback(
-    (e: React.MouseEvent<HTMLTextAreaElement>) => {
-      updateSelectionAndPopover(e.clientX, e.clientY);
-    },
-    [updateSelectionAndPopover]
-  );
-
-  const onTextareaKeyUp = useCallback(() => {
-    updateSelectionAndPopover();
-  }, [updateSelectionAndPopover]);
-
-  const onTextareaSelect = useCallback(() => {
-    const el = textareaRef.current;
-    if (!el) return;
-    if (el.selectionStart === el.selectionEnd) {
-      setSelection(null);
-      setPopover(null);
-    }
-  }, []);
-
+  // Selection popover is driven by TipTap's onSelectionChange; we just hold
+  // the current selection rect and hide on Escape.
   useEffect(() => {
-    if (!popover) return;
-    const handler = (e: MouseEvent) => {
-      const t = e.target as Element | null;
-      if (t?.closest("[data-popover='selection']")) return;
-      if (t?.closest("textarea")) return;
-      setPopover(null);
-      setSelection(null);
-    };
+    if (!selection) return;
     const keyHandler = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
-        setPopover(null);
-        setSelection(null);
-      }
+      if (e.key === "Escape") setSelection(null);
     };
-    document.addEventListener("mousedown", handler);
     document.addEventListener("keydown", keyHandler);
-    return () => {
-      document.removeEventListener("mousedown", handler);
-      document.removeEventListener("keydown", keyHandler);
-    };
-  }, [popover]);
+    return () => document.removeEventListener("keydown", keyHandler);
+  }, [selection]);
 
   const quickLike = () => {
     if (!selection) return;
-    const quoted = draft.slice(selection.start, selection.end);
-    const ctx = captureContext(selection.start, selection.end);
-    setComments((prev) => [
-      ...prev,
-      {
-        id: crypto.randomUUID(),
-        start: selection.start,
-        end: selection.end,
-        quoted,
-        contextBefore: ctx.contextBefore,
-        contextAfter: ctx.contextAfter,
-        text: "Keep this passage exactly as written — don't edit it.",
-        kind: "preserve",
-        createdAt: Date.now(),
-      },
-    ]);
+    const id = crypto.randomUUID();
+    editorRef.current?.addLikeMark(id);
     setSelection(null);
-    setPopover(null);
   };
 
   const startAddNote = () => {
-    if (!selection || !popover) return;
-    const quoted = draft.slice(selection.start, selection.end);
-    const ctx = captureContext(selection.start, selection.end);
+    if (!selection) return;
     const id = crypto.randomUUID();
-    setComments((prev) => [
-      ...prev,
-      {
-        id,
-        start: selection.start,
-        end: selection.end,
-        quoted,
-        contextBefore: ctx.contextBefore,
-        contextAfter: ctx.contextAfter,
-        text: "",
-        kind: "note",
-        createdAt: Date.now(),
-      },
-    ]);
-    setNoteEditor({ markId: id, x: popover.x, y: popover.y });
+    const applied = editorRef.current?.addNoteMark(id, "");
+    if (!applied) return;
+    setNoteEditor({ markId: id, rect: selection.rect });
     setSelection(null);
-    setPopover(null);
   };
 
   const updateNoteText = (id: string, text: string) => {
+    editorRef.current?.updateNoteText(id, text);
     setComments((prev) => prev.map((c) => (c.id === id ? { ...c, text } : c)));
   };
 
@@ -446,18 +321,18 @@ export default function WriterPage() {
     if (!noteEditor) return;
     const mark = comments.find((c) => c.id === noteEditor.markId);
     if (mark && !mark.text.trim()) {
-      setComments((prev) => prev.filter((c) => c.id !== noteEditor.markId));
+      editorRef.current?.removeMark(noteEditor.markId);
     }
     setNoteEditor(null);
   };
 
   const openNoteEditorForMark = (markId: string, rect: DOMRect) => {
-    setNoteEditor({ markId, x: rect.left + rect.width / 2, y: rect.bottom + 8 });
+    setNoteEditor({ markId, rect });
     setHovered(null);
   };
 
   const removeMark = (id: string) => {
-    setComments((prev) => prev.filter((c) => c.id !== id));
+    editorRef.current?.removeMark(id);
     if (noteEditor?.markId === id) setNoteEditor(null);
     setHovered(null);
   };
@@ -625,18 +500,14 @@ export default function WriterPage() {
       active: true,
       startedAt: Date.now(),
       durationMs,
-      lockedLength: draft.length,
       remaining: durationMs,
     });
     setMode("focus");
     setSelection(null);
-    setPopover(null);
     setNoteEditor(null);
     setHovered(null);
     setTimeout(() => {
-      textareaRef.current?.focus();
-      const el = textareaRef.current;
-      if (el) el.setSelectionRange(el.value.length, el.value.length);
+      editorRef.current?.focus();
     }, 50);
   };
 
@@ -645,37 +516,26 @@ export default function WriterPage() {
     setMode("write");
   };
 
-  const handleEditorKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (!focus.active) return;
-    const el = e.currentTarget;
-    const blocked = e.key === "Backspace" || e.key === "Delete";
-    const hasSelection = el.selectionStart !== el.selectionEnd;
-    const insideLocked = el.selectionStart < focus.lockedLength;
+  const handleEditorKeyDown = useCallback(
+    (e: KeyboardEvent): boolean | void => {
+      if (!focus.active) return;
+      // Focus-mode lock: block deletions. Typing is unrestricted so the
+      // writer can keep going forward.
+      if (e.key === "Backspace" || e.key === "Delete") {
+        e.preventDefault();
+        return true;
+      }
+    },
+    [focus.active]
+  );
 
-    if (blocked) {
-      e.preventDefault();
-      return;
-    }
-    if (hasSelection) {
-      e.preventDefault();
-      el.setSelectionRange(el.selectionEnd, el.selectionEnd);
-      return;
-    }
-    if (insideLocked && e.key.length === 1 && !e.metaKey && !e.ctrlKey) {
-      e.preventDefault();
-      el.setSelectionRange(el.value.length, el.value.length);
-    }
-  };
-
-  const handleDraftChange = (next: string) => {
-    if (focus.active) {
-      if (next.length < focus.lockedLength) return;
-      if (next.slice(0, focus.lockedLength) !== draft.slice(0, focus.lockedLength)) return;
-    }
-    const shifted = shiftComments(draft, next, comments);
+  const handleDraftChange = useCallback((next: string) => {
     setDraft(next);
-    if (shifted !== comments) setComments(shifted);
-  };
+  }, []);
+
+  const handleCommentsChange = useCallback((next: InlineComment[]) => {
+    setComments(next);
+  }, []);
 
   // ── Essay management ──────────────────────────────────────────────
   const handleCreateEssay = async () => {
@@ -871,19 +731,18 @@ export default function WriterPage() {
                 {mode === "review" && segments ? (
                   <DiffView segments={segments} onDecide={decideSegment} />
                 ) : (
-                  <MarkedEditor
-                    ref={textareaRef}
+                  <TipTapEditor
+                    ref={editorRef}
                     value={draft}
+                    initialComments={comments}
                     onChange={handleDraftChange}
+                    onCommentsChange={handleCommentsChange}
+                    onSelectionChange={setSelection}
+                    onMarkHover={setHovered}
                     onKeyDown={handleEditorKeyDown}
-                    onSelect={onTextareaSelect}
-                    onMouseUp={onTextareaMouseUp}
-                    onKeyUp={onTextareaKeyUp}
-                    onHoverChange={setHovered}
                     readOnly={!canEdit}
                     placeholder="Start writing…"
-                    marks={comments}
-                    minHeight={600}
+                    resetKey={activeEssayId ?? "none"}
                   />
                 )}
               </div>
@@ -898,19 +757,18 @@ export default function WriterPage() {
                     <DiffView segments={segments} onDecide={decideSegment} />
                   ) : (
                     <div>
-                      <MarkedEditor
-                        ref={textareaRef}
+                      <TipTapEditor
+                        ref={editorRef}
                         value={draft}
+                        initialComments={comments}
                         onChange={handleDraftChange}
+                        onCommentsChange={handleCommentsChange}
+                        onSelectionChange={setSelection}
+                        onMarkHover={setHovered}
                         onKeyDown={handleEditorKeyDown}
-                        onSelect={onTextareaSelect}
-                        onMouseUp={onTextareaMouseUp}
-                        onKeyUp={onTextareaKeyUp}
-                        onHoverChange={setHovered}
                         readOnly={!canEdit}
                         placeholder="Start writing…"
-                        marks={comments}
-                        minHeight={480}
+                        resetKey={activeEssayId ?? "none"}
                       />
                       <div className="mt-3 flex items-center gap-4 text-[11px] text-neutral-400">
                         <span className="inline-flex items-center gap-1.5">
@@ -1038,10 +896,9 @@ export default function WriterPage() {
         </div>
       </div>
 
-      {popover && selection && mode !== "focus" && canEdit && (
+      {selection && mode !== "focus" && canEdit && (
         <SelectionPopover
-          x={popover.x}
-          y={popover.y}
+          rect={selection.rect}
           onLike={quickLike}
           onNote={startAddNote}
         />
@@ -1052,8 +909,7 @@ export default function WriterPage() {
         if (!mark) return null;
         return (
           <NoteInput
-            x={noteEditor.x}
-            y={noteEditor.y}
+            rect={noteEditor.rect}
             value={mark.text}
             quoted={mark.quoted}
             onChange={(v) => updateNoteText(mark.id, v)}
@@ -1329,23 +1185,22 @@ function TopBar({
 }
 
 function SelectionPopover({
-  x,
-  y,
+  rect,
   onLike,
   onNote,
 }: {
-  x: number;
-  y: number;
+  rect: DOMRect;
   onLike: () => void;
   onNote: () => void;
 }) {
   const POPOVER_W = 200;
   const POPOVER_H = 40;
+  const anchorX = rect.left + rect.width / 2;
   const left = Math.min(
-    Math.max(8, x - POPOVER_W / 2),
-    typeof window !== "undefined" ? window.innerWidth - POPOVER_W - 8 : x
+    Math.max(8, anchorX - POPOVER_W / 2),
+    typeof window !== "undefined" ? window.innerWidth - POPOVER_W - 8 : anchorX
   );
-  const top = Math.max(8, y - POPOVER_H - 12);
+  const top = Math.max(8, rect.top - POPOVER_H - 12);
   return (
     <div
       data-popover="selection"
@@ -1373,16 +1228,14 @@ function SelectionPopover({
 }
 
 function NoteInput({
-  x,
-  y,
+  rect,
   value,
   quoted,
   onChange,
   onClose,
   onRemove,
 }: {
-  x: number;
-  y: number;
+  rect: DOMRect;
   value: string;
   quoted: string;
   onChange: (v: string) => void;
@@ -1390,11 +1243,12 @@ function NoteInput({
   onRemove: () => void;
 }) {
   const BOX_W = 300;
+  const anchorX = rect.left + rect.width / 2;
   const left = Math.min(
-    Math.max(8, x - BOX_W / 2),
-    typeof window !== "undefined" ? window.innerWidth - BOX_W - 8 : x
+    Math.max(8, anchorX - BOX_W / 2),
+    typeof window !== "undefined" ? window.innerWidth - BOX_W - 8 : anchorX
   );
-  const top = y + 6;
+  const top = rect.bottom + 6;
   const ref = useRef<HTMLTextAreaElement>(null);
   useEffect(() => {
     ref.current?.focus();
