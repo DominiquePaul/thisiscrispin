@@ -555,7 +555,41 @@ export default function WriterPage() {
   const decideSegment = (id: string, decision: "accepted" | "rejected") => {
     setSegments((prev) => {
       if (!prev) return prev;
-      return prev.map((s) => (s.kind !== "keep" && s.id === id ? { ...s, status: decision } as DiffSegment : s));
+      const next = prev.map((s) =>
+        s.kind !== "keep" && s.id === id
+          ? ({ ...s, status: decision } as DiffSegment)
+          : s
+      );
+      // Find the next pending change after the one we just decided and
+      // scroll it into view on the next frame.
+      const currentIdx = next.findIndex(
+        (s) => s.kind !== "keep" && s.id === id
+      );
+      let nextId: string | null = null;
+      for (let i = currentIdx + 1; i < next.length; i++) {
+        const s = next[i];
+        if (s.kind !== "keep" && s.status === "pending") {
+          nextId = s.id;
+          break;
+        }
+      }
+      if (!nextId) {
+        for (let i = 0; i < currentIdx; i++) {
+          const s = next[i];
+          if (s.kind !== "keep" && s.status === "pending") {
+            nextId = s.id;
+            break;
+          }
+        }
+      }
+      if (nextId) {
+        const nid = nextId;
+        requestAnimationFrame(() => {
+          const el = document.querySelector(`[data-change-id="${nid}"]`);
+          el?.scrollIntoView({ behavior: "smooth", block: "center" });
+        });
+      }
+      return next;
     });
   };
 
@@ -799,16 +833,22 @@ export default function WriterPage() {
       )}
 
       <div className="flex">
-        {!isZen && sidebarOpen && (
-          <EssaySidebar
-            essays={essays}
-            activeEssayId={activeEssayId}
-            onSelect={handleSelectEssay}
-            onCreate={handleCreateEssay}
-            onDelete={handleDeleteEssay}
-            onCollapse={() => setSidebarOpen(false)}
-            saving={saving}
-          />
+        {!isZen && (
+          <div
+            className="shrink-0 overflow-x-hidden transition-[width] duration-200 ease-out"
+            style={{ width: sidebarOpen ? 260 : 0 }}
+            aria-hidden={!sidebarOpen}
+          >
+            <EssaySidebar
+              essays={essays}
+              activeEssayId={activeEssayId}
+              onSelect={handleSelectEssay}
+              onCreate={handleCreateEssay}
+              onDelete={handleDeleteEssay}
+              onCollapse={() => setSidebarOpen(false)}
+              saving={saving}
+            />
+          </div>
         )}
 
         <div className="flex-1 min-w-0">
@@ -827,40 +867,24 @@ export default function WriterPage() {
             <EmptyState onCreate={handleCreateEssay} />
           ) : isZen ? (
             <div className="max-w-3xl mx-auto px-6 py-10">
-              <div className="bg-white rounded-lg border border-neutral-800 shadow-[0_0_80px_rgba(0,0,0,0.5)]">
-                <EssayTitleBar
-                  title={title}
-                  setTitle={setTitle}
-                  mode={mode}
-                  wordCount={wordCount}
-                  readingTime={readingTime}
-                />
+              <div className="bg-white rounded-lg border border-neutral-800 shadow-[0_0_80px_rgba(0,0,0,0.5)] p-4">
                 {mode === "review" && segments ? (
-                  <DiffReview
-                    segments={segments}
-                    onReject={rejectAll}
-                    onAccept={acceptAll}
-                    onDiscard={discardReview}
-                    onApply={applyChanges}
-                    onDecide={decideSegment}
-                  />
+                  <DiffView segments={segments} onDecide={decideSegment} />
                 ) : (
-                  <div className="p-4">
-                    <MarkedEditor
-                      ref={textareaRef}
-                      value={draft}
-                      onChange={handleDraftChange}
-                      onKeyDown={handleEditorKeyDown}
-                      onSelect={onTextareaSelect}
-                      onMouseUp={onTextareaMouseUp}
-                      onKeyUp={onTextareaKeyUp}
-                      onHoverChange={setHovered}
-                      readOnly={!canEdit}
-                      placeholder="Start writing…"
-                      marks={comments}
-                      minHeight={600}
-                    />
-                  </div>
+                  <MarkedEditor
+                    ref={textareaRef}
+                    value={draft}
+                    onChange={handleDraftChange}
+                    onKeyDown={handleEditorKeyDown}
+                    onSelect={onTextareaSelect}
+                    onMouseUp={onTextareaMouseUp}
+                    onKeyUp={onTextareaKeyUp}
+                    onHoverChange={setHovered}
+                    readOnly={!canEdit}
+                    placeholder="Start writing…"
+                    marks={comments}
+                    minHeight={600}
+                  />
                 )}
               </div>
             </div>
@@ -870,26 +894,10 @@ export default function WriterPage() {
                 <div className="hidden lg:block" />
 
                 <main className="min-w-0">
-                  <EssayTitleBar
-                    title={title}
-                    setTitle={setTitle}
-                    mode={mode}
-                    wordCount={wordCount}
-                    readingTime={readingTime}
-                  />
                   {mode === "review" && segments ? (
-                    <div className="mt-2">
-                      <DiffReview
-                        segments={segments}
-                        onReject={rejectAll}
-                        onAccept={acceptAll}
-                        onDiscard={discardReview}
-                        onApply={applyChanges}
-                        onDecide={decideSegment}
-                      />
-                    </div>
+                    <DiffView segments={segments} onDecide={decideSegment} />
                   ) : (
-                    <div className="mt-2">
+                    <div>
                       <MarkedEditor
                         ref={textareaRef}
                         value={draft}
@@ -913,8 +921,8 @@ export default function WriterPage() {
                           <span className="w-4 h-0.5 bg-[#10b981] rounded" />
                           liked
                         </span>
-                        <span className="italic ml-auto hidden md:inline">
-                          hover marks to edit or remove · Cmd/Ctrl+B bold · Cmd/Ctrl+I italic
+                        <span className="ml-auto">
+                          {wordCount} words · {readingTime}
                         </span>
                       </div>
                     </div>
@@ -922,63 +930,28 @@ export default function WriterPage() {
                 </main>
 
                 <aside className="space-y-4">
-                  <div className="space-y-2">
-                    <Button
-                      onClick={handleNextDraft}
-                      disabled={loading || mode === "focus" || !draft.trim()}
-                      className="w-full"
-                    >
-                      {loading ? (
-                        <Loader2 size={14} className="mr-1.5 animate-spin" />
-                      ) : (
-                        <FastForward size={14} className="mr-1.5 fill-current" />
-                      )}
-                      {loading ? "Thinking…" : "Next draft"}
-                    </Button>
-                    <Button
-                      variant="outline"
-                      onClick={handleFixTypos}
-                      disabled={loading || mode === "focus" || !draft.trim()}
-                      className="w-full"
-                      title="Spelling and grammar only — no rewording"
-                    >
-                      <SpellCheck size={14} className="mr-1.5" />
-                      Fix typos
-                    </Button>
-                  </div>
-
-                  <div className="flex items-center gap-2">
-                    {mode !== "focus" ? (
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={startFocus}
-                        disabled={loading}
-                      >
-                        <Play size={14} className="mr-1.5" />
-                        Focus
-                      </Button>
-                    ) : (
-                      <Button size="sm" variant="outline" onClick={exitFocus}>
-                        <Square size={14} className="mr-1.5" />
-                        Exit focus
-                      </Button>
-                    )}
-                    {mode !== "focus" && (
-                      <div className="flex items-center gap-1.5 text-xs text-neutral-600">
-                        <Clock size={14} />
-                        <input
-                          type="number"
-                          min={1}
-                          max={120}
-                          value={focusMinutes}
-                          onChange={(e) => setFocusMinutes(Math.max(1, parseInt(e.target.value || "1", 10)))}
-                          className="w-14 h-7 px-2 border border-neutral-300 rounded text-sm bg-white"
-                        />
-                        <span>min</span>
-                      </div>
-                    )}
-                  </div>
+                  {mode === "review" && segments ? (
+                    <ReviewActions
+                      segments={segments}
+                      onReject={rejectAll}
+                      onAccept={acceptAll}
+                      onDiscard={discardReview}
+                      onApply={applyChanges}
+                    />
+                  ) : (
+                    <ActionsPanel
+                      loading={loading}
+                      mode={mode}
+                      draftIsEmpty={!draft.trim()}
+                      commentsCount={comments.length}
+                      focusMinutes={focusMinutes}
+                      onFocusMinutes={setFocusMinutes}
+                      onNextDraft={handleNextDraft}
+                      onFixTypos={handleFixTypos}
+                      onStartFocus={startFocus}
+                      onExitFocus={exitFocus}
+                    />
+                  )}
 
                   <div className="bg-white border border-neutral-200 rounded-lg">
                     <button
@@ -1104,78 +1077,197 @@ export default function WriterPage() {
   );
 }
 
-function EssayTitleBar({
-  title,
-  setTitle,
+function ActionsPanel({
+  loading,
   mode,
-  wordCount,
-  readingTime,
+  draftIsEmpty,
+  commentsCount,
+  focusMinutes,
+  onFocusMinutes,
+  onNextDraft,
+  onFixTypos,
+  onStartFocus,
+  onExitFocus,
 }: {
-  title: string;
-  setTitle: (t: string) => void;
+  loading: boolean;
   mode: Mode;
-  wordCount: number;
-  readingTime: string;
+  draftIsEmpty: boolean;
+  commentsCount: number;
+  focusMinutes: number;
+  onFocusMinutes: (n: number) => void;
+  onNextDraft: () => void;
+  onFixTypos: () => void;
+  onStartFocus: () => void;
+  onExitFocus: () => void;
 }) {
+  const noComments = commentsCount === 0;
+  const nextDraftDisabled =
+    loading || mode === "focus" || draftIsEmpty || noComments;
+  const nextDraftReason = draftIsEmpty
+    ? "Write something first"
+    : noComments
+      ? "Select text and add a note or a like, then Claude has something to work with"
+      : mode === "focus"
+        ? "Exit focus mode first"
+        : undefined;
+  const fixTyposDisabled = loading || mode === "focus" || draftIsEmpty;
+
   return (
-    <div className="flex items-center gap-2 py-1 opacity-60 hover:opacity-100 transition-opacity">
-      <FileText size={13} className="text-neutral-400 shrink-0" />
-      <Input
-        value={title}
-        onChange={(e) => setTitle(e.target.value)}
-        placeholder="Untitled"
-        className="h-7 border-0 shadow-none focus-visible:ring-0 px-0 text-sm font-medium text-neutral-800 bg-transparent"
-      />
-      <div className="ml-auto text-xs text-neutral-400 whitespace-nowrap">
-        {mode === "review" ? "Review edits" : mode === "focus" ? "Focus draft" : "Draft"}
-        {" · "}
-        {wordCount} words
-        {" · "}
-        {readingTime}
+    <div className="space-y-4">
+      <div className="space-y-2">
+        <span
+          className="block"
+          title={nextDraftDisabled ? nextDraftReason : undefined}
+        >
+          <Button
+            onClick={onNextDraft}
+            disabled={nextDraftDisabled}
+            className="w-full"
+          >
+            {loading ? (
+              <Loader2 size={14} className="mr-1.5 animate-spin" />
+            ) : (
+              <FastForward size={14} className="mr-1.5 fill-current" />
+            )}
+            {loading ? "Thinking…" : "Next draft"}
+          </Button>
+        </span>
+        <Button
+          variant="outline"
+          onClick={onFixTypos}
+          disabled={fixTyposDisabled}
+          className="w-full"
+          title="Spelling and grammar only — no rewording"
+        >
+          <SpellCheck size={14} className="mr-1.5" />
+          Fix typos
+        </Button>
+      </div>
+
+      <div className="flex items-center gap-2">
+        {mode !== "focus" ? (
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={onStartFocus}
+            disabled={loading}
+          >
+            <Play size={14} className="mr-1.5" />
+            Focus
+          </Button>
+        ) : (
+          <Button size="sm" variant="outline" onClick={onExitFocus}>
+            <Square size={14} className="mr-1.5" />
+            Exit focus
+          </Button>
+        )}
+        {mode !== "focus" && (
+          <div className="flex items-center gap-1.5 text-xs text-neutral-600">
+            <Clock size={14} />
+            <input
+              type="number"
+              min={1}
+              max={120}
+              value={focusMinutes}
+              onChange={(e) =>
+                onFocusMinutes(Math.max(1, parseInt(e.target.value || "1", 10)))
+              }
+              className="w-14 h-7 px-2 border border-neutral-300 rounded text-sm bg-white"
+            />
+            <span>min</span>
+          </div>
+        )}
       </div>
     </div>
   );
 }
 
-function DiffReview({
+function ReviewActions({
   segments,
   onReject,
   onAccept,
   onDiscard,
   onApply,
-  onDecide,
 }: {
   segments: DiffSegment[];
   onReject: () => void;
   onAccept: () => void;
   onDiscard: () => void;
   onApply: () => void;
-  onDecide: (id: string, decision: "accepted" | "rejected") => void;
 }) {
+  const total = changeCount(segments);
+  const pending = pendingCount(segments);
+  const allTriaged = pending === 0;
+  const accepted = segments.filter(
+    (s) => s.kind !== "keep" && s.status === "accepted"
+  ).length;
+  const rejected = segments.filter(
+    (s) => s.kind !== "keep" && s.status === "rejected"
+  ).length;
+
   return (
-    <div className="p-4">
-      <div className="mb-4 flex flex-wrap items-center gap-2">
-        <div className="text-sm text-neutral-600">
-          {changeCount(segments)} changes · {pendingCount(segments)} undecided
+    <div className="space-y-3">
+      <div className="bg-white border border-neutral-200 rounded-lg p-4">
+        <div className="text-[11px] uppercase tracking-widest text-neutral-500 mb-1">
+          Review edits
         </div>
-        <div className="ml-auto flex gap-2">
-          <Button size="sm" variant="outline" onClick={onReject}>
-            Reject all
-          </Button>
-          <Button size="sm" variant="outline" onClick={onAccept}>
-            Accept all
-          </Button>
-          <Button size="sm" variant="ghost" onClick={onDiscard}>
-            <Undo2 size={14} className="mr-1" />
-            Discard
-          </Button>
-          <Button size="sm" onClick={onApply}>
-            <Check size={14} className="mr-1" />
-            Apply to draft
-          </Button>
+        <div className="text-2xl font-semibold text-neutral-900">
+          {pending}
+          <span className="text-neutral-400 text-base font-normal"> / {total}</span>
         </div>
+        <div className="text-xs text-neutral-500 mt-0.5">
+          {allTriaged ? "all triaged" : "left to triage"}
+        </div>
+        {!allTriaged && (
+          <div className="mt-3 flex gap-3 text-[11px] text-neutral-500">
+            <span>
+              <span className="text-emerald-600 font-medium">{accepted}</span> accepted
+            </span>
+            <span>
+              <span className="text-rose-600 font-medium">{rejected}</span> rejected
+            </span>
+          </div>
+        )}
       </div>
-      <DiffView segments={segments} onDecide={onDecide} />
+
+      <div className="space-y-2">
+        <Button
+          size="sm"
+          variant="outline"
+          onClick={onAccept}
+          disabled={allTriaged}
+          className="w-full justify-start"
+        >
+          <Check size={13} className="mr-1.5 text-emerald-600" />
+          Accept all
+        </Button>
+        <Button
+          size="sm"
+          variant="outline"
+          onClick={onReject}
+          disabled={allTriaged}
+          className="w-full justify-start"
+        >
+          <X size={13} className="mr-1.5 text-rose-600" />
+          Reject all
+        </Button>
+        <Button
+          size="sm"
+          variant="ghost"
+          onClick={onDiscard}
+          className="w-full justify-start"
+        >
+          <Undo2 size={13} className="mr-1.5" />
+          Discard
+        </Button>
+      </div>
+
+      {allTriaged && (
+        <Button onClick={onApply} className="w-full">
+          <Check size={14} className="mr-1.5" />
+          Apply to draft
+        </Button>
+      )}
     </div>
   );
 }

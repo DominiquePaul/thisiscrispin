@@ -112,14 +112,18 @@ function ChangeBlock({
   onDecide: (id: string, decision: "accepted" | "rejected") => void;
 }) {
   return (
-    <span className="relative inline group">
+    <span
+      data-change-id={id}
+      data-change-status={pending ? "pending" : accepted ? "accepted" : "rejected"}
+      className="relative inline group"
+    >
       {children}
       {pending && (
-        <span className="inline-flex align-middle ml-1 mr-0.5 gap-0.5 opacity-80 group-hover:opacity-100">
+        <span className="inline-flex align-middle ml-1 mr-0.5 gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity duration-150">
           <button
             onClick={() => onDecide(id, "accepted")}
             className="h-5 w-5 rounded-sm bg-emerald-600 hover:bg-emerald-700 text-white inline-flex items-center justify-center"
-            title="Accept"
+            title="Accept (jumps to next)"
             type="button"
           >
             <Check size={12} />
@@ -127,7 +131,7 @@ function ChangeBlock({
           <button
             onClick={() => onDecide(id, "rejected")}
             className="h-5 w-5 rounded-sm bg-rose-600 hover:bg-rose-700 text-white inline-flex items-center justify-center"
-            title="Reject"
+            title="Reject (jumps to next)"
             type="button"
           >
             <X size={12} />
@@ -137,7 +141,7 @@ function ChangeBlock({
       {!pending && (
         <button
           onClick={() => onDecide(id, accepted ? "rejected" : "accepted")}
-          className="ml-1 mr-0.5 text-[10px] uppercase tracking-wide text-neutral-500 hover:text-neutral-900"
+          className="ml-1 mr-0.5 text-[10px] uppercase tracking-wide text-neutral-400 hover:text-neutral-900 opacity-0 group-hover:opacity-100 transition-opacity"
           type="button"
           title="Toggle decision"
         >
