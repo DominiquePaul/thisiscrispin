@@ -53,6 +53,8 @@ export interface EditRequest {
   ideas?: Idea[];
   /** If set, LLM should NOT ask further questions, just produce edits using these answers. */
   answers?: { question: string; answer: string }[];
+  /** "typos" restricts the edit to spelling/grammar fixes only — no questions, no rewording. */
+  mode?: "revise" | "typos";
 }
 
 export async function requestEdits(req: EditRequest): Promise<EditResult> {
@@ -89,7 +91,11 @@ export async function requestEdits(req: EditRequest): Promise<EditResult> {
         .join("\n")}\n\n`
     : "";
 
-  const userContent = `${styleBlock}${ideasBlock}${answersBlock}DRAFT:\n"""\n${req.draft}\n"""\n\nINLINE COMMENTS:\n${commentsBlock}`;
+  const intentBlock = req.mode === "typos"
+    ? `INTENT: TYPO & GRAMMAR PASS ONLY. Fix spelling mistakes, grammar errors, punctuation slips, and obvious typos. Do NOT reword, restructure, change style, or alter meaning. Make the SMALLEST possible change per fix. Ignore inline comments about style or content — address only mechanical errors. Do NOT ask clarifying questions.\n\n`
+    : "";
+
+  const userContent = `${intentBlock}${styleBlock}${ideasBlock}${answersBlock}DRAFT:\n"""\n${req.draft}\n"""\n\nINLINE COMMENTS:\n${commentsBlock}`;
 
   const body = {
     model: req.model,
@@ -127,8 +133,9 @@ export async function requestEdits(req: EditRequest): Promise<EditResult> {
     .join("");
   if (!text) throw new Error("Empty response from API");
 
-  // Detect a <questions> block (only respected when we haven't already answered)
-  if (!req.answers || req.answers.length === 0) {
+  // Detect a <questions> block (only respected when we haven't already answered
+  // and we're not in typo-fix mode, which is deterministic).
+  if (req.mode !== "typos" && (!req.answers || req.answers.length === 0)) {
     const qMatch = text.match(/<questions>([\s\S]*?)<\/questions>/i);
     if (qMatch) {
       const rawLines: string[] = qMatch[1].split(/\n/);

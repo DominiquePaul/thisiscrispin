@@ -27,6 +27,7 @@ import {
   MessageSquareText,
   Settings as SettingsIcon,
   FastForward,
+  SpellCheck,
   Pencil,
 } from "lucide-react";
 import type { User } from "@supabase/supabase-js";
@@ -282,7 +283,7 @@ export default function WriterPage() {
   // ── Global keyboard shortcut: Cmd/Ctrl+\ toggles the essay sidebar ───
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key === "\\") {
+      if ((e.metaKey || e.ctrlKey) && e.key === ".") {
         e.preventDefault();
         setSidebarOpen((s) => !s);
       }
@@ -478,7 +479,10 @@ export default function WriterPage() {
   };
 
   const runEditRequest = useCallback(
-    async (answersPayload?: { question: string; answer: string }[]) => {
+    async (opts: {
+      answersPayload?: { question: string; answer: string }[];
+      mode?: "revise" | "typos";
+    } = {}) => {
       if (!settings?.anthropic_key) {
         setShowApiKeyPrompt(true);
         return;
@@ -494,7 +498,8 @@ export default function WriterPage() {
           comments,
           styleNotes,
           ideas,
-          answers: answersPayload,
+          answers: opts.answersPayload,
+          mode: opts.mode ?? "revise",
         });
         if (result.kind === "questions") {
           setQuestions(result.questions);
@@ -506,7 +511,11 @@ export default function WriterPage() {
         }
         const parsed = parseEditResponse(result.text);
         if (changeCount(parsed) === 0) {
-          setError("Claude returned no changes. Try sharpening your notes or asking for specific revisions.");
+          setError(
+            opts.mode === "typos"
+              ? "No typos found — draft is clean."
+              : "Claude returned no changes. Try sharpening your notes or asking for specific revisions."
+          );
           setLoading(false);
           return;
         }
@@ -522,7 +531,11 @@ export default function WriterPage() {
   );
 
   const handleNextDraft = () => {
-    runEditRequest();
+    runEditRequest({ mode: "revise" });
+  };
+
+  const handleFixTypos = () => {
+    runEditRequest({ mode: "typos" });
   };
 
   const handleSubmitAnswers = () => {
@@ -531,7 +544,7 @@ export default function WriterPage() {
       question: q.text,
       answer: (answers[q.id] ?? "").trim(),
     }));
-    runEditRequest(payload);
+    runEditRequest({ answersPayload: payload, mode: "revise" });
   };
 
   const handleCancelQuestions = () => {
@@ -909,18 +922,30 @@ export default function WriterPage() {
                 </main>
 
                 <aside className="space-y-4">
-                  <Button
-                    onClick={handleNextDraft}
-                    disabled={loading || mode === "focus" || !draft.trim()}
-                    className="w-full"
-                  >
-                    {loading ? (
-                      <Loader2 size={14} className="mr-1.5 animate-spin" />
-                    ) : (
-                      <FastForward size={14} className="mr-1.5 fill-current" />
-                    )}
-                    {loading ? "Thinking…" : "Next draft"}
-                  </Button>
+                  <div className="space-y-2">
+                    <Button
+                      onClick={handleNextDraft}
+                      disabled={loading || mode === "focus" || !draft.trim()}
+                      className="w-full"
+                    >
+                      {loading ? (
+                        <Loader2 size={14} className="mr-1.5 animate-spin" />
+                      ) : (
+                        <FastForward size={14} className="mr-1.5 fill-current" />
+                      )}
+                      {loading ? "Thinking…" : "Next draft"}
+                    </Button>
+                    <Button
+                      variant="outline"
+                      onClick={handleFixTypos}
+                      disabled={loading || mode === "focus" || !draft.trim()}
+                      className="w-full"
+                      title="Spelling and grammar only — no rewording"
+                    >
+                      <SpellCheck size={14} className="mr-1.5" />
+                      Fix typos
+                    </Button>
+                  </div>
 
                   <div className="flex items-center gap-2">
                     {mode !== "focus" ? (
@@ -1177,7 +1202,7 @@ function TopBar({
           <button
             onClick={onToggleSidebar}
             className="p-1.5 rounded hover:bg-neutral-100 text-neutral-500 hover:text-neutral-900"
-            title="Show essays (⌘\\)"
+            title="Show essays (⌘.)"
           >
             <PanelLeftOpen size={15} />
           </button>
