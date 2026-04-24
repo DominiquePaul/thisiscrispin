@@ -26,9 +26,7 @@ import {
   ThumbsUp,
   MessageSquareText,
   Settings as SettingsIcon,
-  Bold,
-  Italic,
-  Heading as HeadingIcon,
+  FastForward,
   Pencil,
 } from "lucide-react";
 import type { User } from "@supabase/supabase-js";
@@ -296,6 +294,11 @@ export default function WriterPage() {
   }, [focus]);
 
   const wordCount = useMemo(() => draft.trim().split(/\s+/).filter(Boolean).length, [draft]);
+  const readingTime = useMemo(() => {
+    if (wordCount < 50) return "< 1 min read";
+    const mins = Math.max(1, Math.round(wordCount / 225));
+    return `${mins} min read`;
+  }, [wordCount]);
 
   const focusProgress = useMemo(() => {
     if (!focus.active) return null;
@@ -667,39 +670,6 @@ export default function WriterPage() {
     await sb.auth.signOut();
   };
 
-  const applyFormatting = (left: string, right: string = left) => {
-    const ta = textareaRef.current;
-    if (!ta) return;
-    const s = ta.selectionStart;
-    const e = ta.selectionEnd;
-    const sel = draft.slice(s, e);
-    const next = draft.slice(0, s) + left + sel + right + draft.slice(e);
-    handleDraftChange(next);
-    requestAnimationFrame(() => {
-      ta.focus();
-      ta.selectionStart = s + left.length;
-      ta.selectionEnd = e + left.length;
-    });
-  };
-
-  const applyHeading = () => {
-    const ta = textareaRef.current;
-    if (!ta) return;
-    const s = ta.selectionStart;
-    // Find line start
-    const lineStart = draft.lastIndexOf("\n", s - 1) + 1;
-    const rest = draft.slice(lineStart);
-    const alreadyHeading = /^#+\s/.test(rest);
-    if (alreadyHeading) return;
-    const next = draft.slice(0, lineStart) + "# " + draft.slice(lineStart);
-    handleDraftChange(next);
-    requestAnimationFrame(() => {
-      ta.focus();
-      ta.selectionStart = s + 2;
-      ta.selectionEnd = s + 2;
-    });
-  };
-
   // ── Early returns for auth flow ───────────────────────────────────
   if (auth.status === "loading") {
     return (
@@ -858,6 +828,8 @@ export default function WriterPage() {
                     {mode === "review" ? "Review edits" : mode === "focus" ? "Focus draft" : "Draft"}
                     {" · "}
                     {wordCount} words
+                    {" · "}
+                    {readingTime}
                   </div>
                 </div>
 
@@ -889,13 +861,6 @@ export default function WriterPage() {
                 ) : (
                   <div className="p-4">
                     <div className="flex flex-wrap items-center gap-2 mb-3">
-                      {mode !== "focus" && (
-                        <FormattingToolbar
-                          onBold={() => applyFormatting("**")}
-                          onItalic={() => applyFormatting("*")}
-                          onHeading={applyHeading}
-                        />
-                      )}
                       {!isZen &&
                         (mode !== "focus" ? (
                           <Button
@@ -936,7 +901,7 @@ export default function WriterPage() {
                           {loading ? (
                             <Loader2 size={14} className="mr-1.5 animate-spin" />
                           ) : (
-                            <Sparkles size={14} className="mr-1.5" />
+                            <FastForward size={14} className="mr-1.5 fill-current" />
                           )}
                           {loading ? "Thinking…" : "Next draft"}
                         </Button>
@@ -1153,44 +1118,6 @@ function TopBar({
           </Button>
         </div>
       </div>
-    </div>
-  );
-}
-
-function FormattingToolbar({
-  onBold,
-  onItalic,
-  onHeading,
-}: {
-  onBold: () => void;
-  onItalic: () => void;
-  onHeading: () => void;
-}) {
-  return (
-    <div className="inline-flex items-center border border-neutral-200 rounded overflow-hidden">
-      <button
-        onClick={onBold}
-        className="px-2 py-1 text-neutral-600 hover:bg-neutral-100 inline-flex items-center"
-        title="Bold (Cmd/Ctrl+B)"
-      >
-        <Bold size={13} />
-      </button>
-      <div className="w-px h-4 bg-neutral-200" />
-      <button
-        onClick={onItalic}
-        className="px-2 py-1 text-neutral-600 hover:bg-neutral-100 inline-flex items-center"
-        title="Italic (Cmd/Ctrl+I)"
-      >
-        <Italic size={13} />
-      </button>
-      <div className="w-px h-4 bg-neutral-200" />
-      <button
-        onClick={onHeading}
-        className="px-2 py-1 text-neutral-600 hover:bg-neutral-100 inline-flex items-center"
-        title="Heading"
-      >
-        <HeadingIcon size={13} />
-      </button>
     </div>
   );
 }
