@@ -17,7 +17,7 @@ export const STATIC_PAGES: Article[] = [
     title: "The π model family",
     excerpt:
       "A side-by-side of Physical Intelligence's VLA models — π0, π0.5, π0.6 / π*0.6, and π0.7 — fact-checked against the source papers.",
-    tags: ["devProjects"],
+    tags: ["writing"],
     createdAt: "2026-04-22T00:00:00.000Z",
   },
   {
