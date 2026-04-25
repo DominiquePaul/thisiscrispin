@@ -29,6 +29,7 @@ interface Article {
   createdAt: string
   coverImage?: string
   tags: string[]
+  href?: string
 }
 
 interface BlogContentProps {
@@ -98,7 +99,7 @@ export default function BlogContent({ articles, allTags = [], isTeaser = false, 
       <div>
         {displayedArticles.map((article) => (
           <Link
-            href={`/p/${article.slug}`}
+            href={article.href ?? `/p/${article.slug}`}
             key={article.id}
             className="block border-b last:border-b-0 group"
           >
