@@ -40,7 +40,7 @@ const MODELS: Model[] = [
     ),
     contributions: (
       <>
-        First flow-matching VLA with high-frequency chunks; pre-training/post-training recipe analogous to LLMs; ~10,000 hours — largest robot experiment at the time
+        First flow-matching VLA with high-frequency chunks; pre-training/post-training recipe analogous to LLMs; ~10,000 hours, the largest robot experiment at the time
       </>
     ),
     results: (
@@ -53,7 +53,7 @@ const MODELS: Model[] = [
     diff: <>Foundation paper.</>,
     appendix: (
       <>
-        Blockwise causal mask with 3 blocks ([images+text], [state], [noisy actions]). Action expert: width=1024, mlp_dim=4096. Beta(1.5,1) timestep with s=0.999 (up to 1,000 integration steps). <strong>Temporal ensembling was tried and hurt performance</strong> — chunks executed open-loop. 73&nbsp;ms onboard / 86&nbsp;ms off-board on RTX&nbsp;4090. <em>openpi config:</em> action space padded to 32 dims, max_token_len=48, continuous state input, z-score action norm.
+        Blockwise causal mask with 3 blocks ([images+text], [state], [noisy actions]). Action expert: width=1024, mlp_dim=4096. Beta(1.5,1) timestep with s=0.999 (up to 1,000 integration steps). <strong>Temporal ensembling was tried and hurt performance</strong>; chunks executed open-loop. 73&nbsp;ms onboard / 86&nbsp;ms off-board on RTX&nbsp;4090. <em>openpi config:</em> action space padded to 32 dims, max_token_len=48, continuous state input, z-score action norm.
       </>
     ),
   },
@@ -75,7 +75,7 @@ const MODELS: Model[] = [
     ),
     contributions: (
       <>
-        First end-to-end system doing 10–15&nbsp;min dexterous tasks <strong>in entirely new homes</strong>. Co-training recipe — each ablation hurts. 104-location model matches one trained directly on test homes.
+        First end-to-end system doing 10–15&nbsp;min dexterous tasks <strong>in entirely new homes</strong>. Co-training recipe: each ablation hurts. 104-location model matches one trained directly on test homes.
       </>
     ),
     results: (
@@ -103,7 +103,7 @@ const MODELS: Model[] = [
     year: "Nov 2025",
     tagline: "Specialist-level out of the box + RECAP RL recipe",
     tooltip:
-      "Two separate papers, same policy architecture. π0.6 (Nov 17) is the base model trained with supervised KI. π*0.6 (Nov 19) takes π0.6's weights and further trains them with RECAP — offline RL pre-train → SFT → iterative rollouts + interventions, plus a training-only 670M value function. Different checkpoints, but one release cycle.",
+      "Two separate papers, same policy architecture. π0.6 (Nov 17) is the base model trained with supervised KI. π*0.6 (Nov 19) takes π0.6's weights and further trains them with RECAP: offline RL pre-train → SFT → iterative rollouts + interventions, plus a training-only 670M value function. Different checkpoints, but one release cycle.",
     size: (
       <>
         SigLIP 400M + <strong>Gemma 3 4B</strong> + <strong>860M action expert</strong> (same depth as backbone).
@@ -129,7 +129,7 @@ const MODELS: Model[] = [
       <>
         <strong>π<sub>0.6</sub>:</strong> big gains on shirt/laundry folding, box assembly, table bussing, mobile tasks, generalization benchmarks. <em>Shortcomings:</em> still relies on fine-tuning for some specialists; card doesn&apos;t deeply analyze failure modes.
         <br /><br />
-        <strong>π*<sub>0.6</sub>:</strong> espresso, box assembly, laundry all reach 90%+. <em>Shortcomings:</em> not fully autonomous — needs human reward labels, interventions, resets. Naive exploration. Iterated offline RL (not concurrent online). Corrections don&apos;t fix overall speed or subtle behaviors. MC on-policy value — could benefit from off-policy Q-learning.
+        <strong>π*<sub>0.6</sub>:</strong> espresso, box assembly, laundry all reach 90%+. <em>Shortcomings:</em> not fully autonomous, needing human reward labels, interventions, resets. Naive exploration. Iterated offline RL (not concurrent online). Corrections don&apos;t fix overall speed or subtle behaviors. MC on-policy value, which could benefit from off-policy Q-learning.
       </>
     ),
     diff: (
@@ -141,9 +141,9 @@ const MODELS: Model[] = [
     ),
     appendix: (
       <>
-        <strong>π<sub>0.6</sub> card:</strong> no formal appendix — 4-page card. Image tokens bidirectional, text tokens now causal.
+        <strong>π<sub>0.6</sub> card:</strong> no formal appendix (4-page card). Image tokens bidirectional, text tokens now causal.
         <br /><br />
-        <strong>π*<sub>0.6</sub>:</strong> advantage dropout 30% for test-time CFG. β ∈ [1.5, 2.5] — high β pushes actions to support boundaries (aggressive). PPO baseline needed SPO-style constraint with η=0.01 for stability. Detailed flow-matching ELBO decomposition (AR + diffusion). Data per task: T-shirt laundry uses autonomous-only data (no corrections); diverse laundry uses 450 autonomous + 287 correction eps; box assembly uses 600 autonomous + 360 correction eps/iter on 3 robots; cafe uses 414 autonomous + 429 correction eps.
+        <strong>π*<sub>0.6</sub>:</strong> advantage dropout 30% for test-time CFG. β ∈ [1.5, 2.5]; high β pushes actions to support boundaries (aggressive). PPO baseline needed SPO-style constraint with η=0.01 for stability. Detailed flow-matching ELBO decomposition (AR + diffusion). Data per task: T-shirt laundry uses autonomous-only data (no corrections); diverse laundry uses 450 autonomous + 287 correction eps; box assembly uses 600 autonomous + 360 correction eps/iter on 3 robots; cafe uses 414 autonomous + 429 correction eps.
       </>
     ),
   },
@@ -169,11 +169,11 @@ const MODELS: Model[] = [
     ),
     contributions: (
       <>
-        Strong signs of <strong>compositional generalization</strong> — the &ldquo;grand challenge&rdquo;.
+        Strong signs of <strong>compositional generalization</strong>, the &ldquo;grand challenge&rdquo;.
         <br />
         (1) Out-of-box specialist-level dexterity matching π*<sub>0.6</sub> RL specialists, no RL or fine-tuning needed.
         <br />
-        (2) <strong>Zero-shot cross-embodiment transfer</strong> — folds t-shirts on bimanual UR5e (never trained for this), matching expert teleoperators (85.6%/80% vs 90.9%/80.6%).
+        (2) <strong>Zero-shot cross-embodiment transfer</strong>: folds t-shirts on bimanual UR5e (never trained for this), matching expert teleoperators (85.6%/80% vs 90.9%/80.6%).
         <br />
         (3) Discovers new manipulation strategies suited to target embodiment (vertical grasps on UR5e).
         <br />
@@ -234,7 +234,7 @@ const PARAM_TABLE: ParamSection[] = [
       { label: "Action expert config",    values: ["width=1024, mlp_dim=4096",                                "width=1024, mlp_dim=4096",                                                NS,                                                                                                                                                                                                                                                                          NS] },
       { label: "Image resolution",        values: ["224×224",                                                "224×224",                                                                 "448×448",                                                                                                                                                                                                                                                                   "448×448 (VAE inputs 512×384 in WM)"] },
       { label: "Max cameras",             values: ["2–3 per robot",                                          "up to 4 (front/back/2× wrist)",                                           <>up to 4 (base/2× wrist/optional back). {RL("")} experiments use 3 (base + 2× wrist) on static bimanual</>,                                                                                                                                                              "up to 4 + up to 3 subgoal images"] },
-      { label: "History frames",          values: ["—",                                                      "—",                                                                       "—",                                                                                                                                                                                                                                                                         "6 @ 1s stride (MEM encoder)"] },
+      { label: "History frames",          values: ["–",                                                      "–",                                                                       "–",                                                                                                                                                                                                                                                                         "6 @ 1s stride (MEM encoder)"] },
       { label: "State encoding",          values: ["linear projection",                                      "discretized text tokens",                                                 "discretized text tokens",                                                                                                                                                                                                                                                    "linear projection"] },
       { label: "Attention pattern",       values: ["blockwise causal, 3 blocks: [images+text] [state] [actions]", "prefix mask on images/prompt/state; FAST causal on prefix + prior FAST; action expert bidir on prefix, no attend to FAST", <>bidir images, causal text, bidir action tokens. {RL("")} adds advantage indicator token in prompt</>,                                                                                                                                                                        "block-causal: obs + subgoal bidir within; goal images attend obs; text causal"] },
       { label: "Action chunk length",     values: ["50 (H=50 in paper)",                                     "50 (openpi action_horizon=50; H not separately stated in π0.5 paper)",     NS,                                                                                                                                                                                                                                                                          "50 (exec 15–25 steps per chunk)"] },
@@ -248,9 +248,9 @@ const PARAM_TABLE: ParamSection[] = [
       { label: "Stages",                  values: ["pre-train + task-specific post-train",                   "pre-train 280k (discrete only, α=0) + post-train 80k (adds flow, α=10)", <>single-stage KI. {RL("")}: offline RL pre-train → SFT → K iterations of {"{"} collect data, retrain V, retrain π {"}"}</>,                                                                                                                                                NS] },
       { label: "Timestep distribution",   values: [<>Beta((s−τ)/s; 1.5, 1), s=0.999</>,                      "same as π0",                                                              NS,                                                                                                                                                                                                                                                                          NS] },
       { label: "Timestep injection",      values: ["MLP fused into action token embedding",                  "separate MLP + adaptive RMSNorm per layer",                               NS,                                                                                                                                                                                                                                                                          "adaptive RMSNorm"] },
-      { label: "Loss weight α (post)",    values: ["—",                                                      "10.0",                                                                    "—",                                                                                                                                                                                                                                                                         "—"] },
-      { label: "Image augmentation",      values: [<>RandomCrop 0.95×, Rotate ±5° (non-wrist cams), ColorJitter(0.3/0.4/0.5 brightness/contrast/saturation) — shared openpi <code>preprocess_observation</code></>, "same shared openpi pipeline as π0 (crop/rotate non-wrist only, jitter all images)", NS,                                                                                                                                                                                                                                                                          NS] },
-      { label: "Action normalization",    values: ["z-score (mean/std) per dim — openpi default",            "[−1, 1] via 1/99% quantile per dim",                                      NS,                                                                                                                                                                                                                                                                          NS] },
+      { label: "Loss weight α (post)",    values: ["–",                                                      "10.0",                                                                    "–",                                                                                                                                                                                                                                                                         "–"] },
+      { label: "Image augmentation",      values: [<>RandomCrop 0.95×, Rotate ±5° (non-wrist cams), ColorJitter(0.3/0.4/0.5 brightness/contrast/saturation), shared openpi <code>preprocess_observation</code></>, "same shared openpi pipeline as π0 (crop/rotate non-wrist only, jitter all images)", NS,                                                                                                                                                                                                                                                                          NS] },
+      { label: "Action normalization",    values: ["z-score (mean/std) per dim, openpi default",            "[−1, 1] via 1/99% quantile per dim",                                      NS,                                                                                                                                                                                                                                                                          NS] },
     ],
   },
   {
@@ -258,8 +258,8 @@ const PARAM_TABLE: ParamSection[] = [
     rows: [
       { label: "Own robot data",          values: ["~10,000 h / 903M timesteps / 7 robot configs / 68 tasks", "~400 h mobile manipulation (2.4% of pre-training mixture) + diverse non-mobile + lab cross-embodiment", <>&ldquo;largely inherits&rdquo; π0.5 composition. {RL("")} adds on-policy rollouts per task: diverse laundry (450 auto + 287 correction), box (600 auto + 360 correction / iter on 3 robots), cafe (414 auto + 429 correction); T-shirt laundry is auto-only</>, "demonstrations + autonomous rollouts (incl. π*0.6 RL data) + failures + egocentric human video"] },
       { label: "External data",           values: ["OXE (9.1%), Bridge v2, DROID",                           "OXE + multimodal web",                                                    "same as π0.5 (per card)",                                                                                                                                                                                                                                                   "same + open-source image-editing + open video datasets (for world model)"] },
-      { label: "Web co-training tasks",   values: ["—",                                                      "captioning, VQA, object localization (bounding box / keypoint)",          "bounding box + keypoint prediction + general multi-modal web",                                                                                                                                                                                                              "same + video captioning (robot + web)"] },
-      { label: "Metadata in prompt",      values: ["—",                                                      "—",                                                                       <>&ldquo;conditioning metadata&rdquo; in prompt (content not specified in card). {RL("")} adds binarized advantage indicator I<sub>t</sub></>,                                                                                                                                       <>overall speed (500-step bins, e.g. &ldquo;2000&rdquo;) + quality (1–5) + mistake (bool) + control mode (joint/ee)</>] },
+      { label: "Web co-training tasks",   values: ["–",                                                      "captioning, VQA, object localization (bounding box / keypoint)",          "bounding box + keypoint prediction + general multi-modal web",                                                                                                                                                                                                              "same + video captioning (robot + web)"] },
+      { label: "Metadata in prompt",      values: ["–",                                                      "–",                                                                       <>&ldquo;conditioning metadata&rdquo; in prompt (content not specified in card). {RL("")} adds binarized advantage indicator I<sub>t</sub></>,                                                                                                                                       <>overall speed (500-step bins, e.g. &ldquo;2000&rdquo;) + quality (1–5) + mistake (bool) + control mode (joint/ee)</>] },
       { label: "Language supervision",    values: ["task names + ~2s segment annotations",                   "+ high-level subtask labels + verbal instructions",                      NS,                                                                                                                                                                                                                                                                          "+ more detailed language + step-by-step human coaching"] },
     ],
   },
@@ -269,20 +269,20 @@ const PARAM_TABLE: ParamSection[] = [
       { label: "Denoising steps",         values: ["10",                                                     "10",                                                                      "5",                                                                                                                                                                                                                                                                         "5"] },
       { label: "Chunk execution",         values: [<>open-loop; inference every 0.8&nbsp;s at 20&nbsp;Hz (after 16 actions) / every 0.5&nbsp;s at 50&nbsp;Hz (after 25 actions); temporal ensembling was tried and hurt performance</>, NS, NS,                                                                                                                                                                                                                                                                                                                     "async with training-time RTC (0–12 step delay, up to 240 ms on 50 Hz robot)"] },
       { label: "Latency",                 values: ["73 ms onboard / 86 ms off-board (RTX 4090, 3 cams)",     NS,                                                                        "63 ms on single H100 (3 cams, 5 denoising steps)",                                                                                                                                                                                                                          "38 ms minimal variant / 127 ms w/ MEM + subgoals (single H100)"] },
-      { label: "Classifier-free guidance",values: ["—",                                                      "—",                                                                       <>— for π<sub>0.6</sub>. {RL("")} β ∈ [1.5, 2.5] on episode metadata</>,                                                                                                                                                                                                      <>β ∈ {"{"}1.3, 1.7, 2.2{"}"} (moderate values) on any part of prompt</>] },
+      { label: "Classifier-free guidance",values: ["–",                                                      "–",                                                                       <>– for π<sub>0.6</sub>. {RL("")} β ∈ [1.5, 2.5] on episode metadata</>,                                                                                                                                                                                                      <>β ∈ {"{"}1.3, 1.7, 2.2{"}"} (moderate values) on any part of prompt</>] },
     ],
   },
   {
     section: "RL (π*0.6) / world model (π0.7)",
     rows: [
-      { label: "Value function",          values: ["—",                                                      "—",                                                                       <>{RL("")} 670M VLM (Gemma 3 + SigLIP 400M) + value head, 201 discretized return bins, co-trained on web data</>,                                                                                                                                                              "—"] },
-      { label: "Reward",                  values: ["—",                                                      "—",                                                                       <>{RL("")} r<sub>t</sub> = 0 (success step T) / −C<sub>fail</sub> (fail step T) / −1 otherwise; value normalized to [−1, 0] per task</>,                                                                                                                                    "—"] },
-      { label: "Advantage estimation",    values: ["—",                                                      "—",                                                                       <>{RL("")} N=50 step lookahead (post-train); full trajectory T-step (pre-train)</>,                                                                                                                                                                                           "—"] },
-      { label: "Advantage threshold ε_ℓ", values: ["—",                                                      "—",                                                                       <>{RL("")} ~30th percentile (pre-train) / ~40th (fine-tune) / 10th (strict T-shirt task)</>,                                                                                                                                                                                   "—"] },
-      { label: "Advantage dropout",       values: ["—",                                                      "—",                                                                       <>{RL("")} 30% (enables test-time CFG)</>,                                                                                                                                                                                                                                    "—"] },
-      { label: "World model",             values: ["—",                                                      "—",                                                                       "—",                                                                                                                                                                                                                                                                         "14B BAGEL-init (7B LLM backbone + 7B generation backbone, ViT 448×336, VAE 512×384), 25 denoising steps, 1.25 s/subgoal on 4× H100 w/ 8-bit matmuls + SageAttention"] },
-      { label: "Subgoal sampling",        values: ["—",                                                      "—",                                                                       "—",                                                                                                                                                                                                                                                                         "25% of training examples include subgoal images; within those, 25% use end-of-segment, 75% sample uniformly 0–4 s ahead. Subgoals refreshed every Δ=4 s or on subtask change."] },
-      { label: "Prompt dropout (π0.7)",   values: ["—",                                                      "—",                                                                       "—",                                                                                                                                                                                                                                                                         "subtask instruction: 30% (when image present) · entire metadata: 15% · each metadata component: +5% · history frames: 30% · rear view: 30%"] },
+      { label: "Value function",          values: ["–",                                                      "–",                                                                       <>{RL("")} 670M VLM (Gemma 3 + SigLIP 400M) + value head, 201 discretized return bins, co-trained on web data</>,                                                                                                                                                              "–"] },
+      { label: "Reward",                  values: ["–",                                                      "–",                                                                       <>{RL("")} r<sub>t</sub> = 0 (success step T) / −C<sub>fail</sub> (fail step T) / −1 otherwise; value normalized to [−1, 0] per task</>,                                                                                                                                    "–"] },
+      { label: "Advantage estimation",    values: ["–",                                                      "–",                                                                       <>{RL("")} N=50 step lookahead (post-train); full trajectory T-step (pre-train)</>,                                                                                                                                                                                           "–"] },
+      { label: "Advantage threshold ε_ℓ", values: ["–",                                                      "–",                                                                       <>{RL("")} ~30th percentile (pre-train) / ~40th (fine-tune) / 10th (strict T-shirt task)</>,                                                                                                                                                                                   "–"] },
+      { label: "Advantage dropout",       values: ["–",                                                      "–",                                                                       <>{RL("")} 30% (enables test-time CFG)</>,                                                                                                                                                                                                                                    "–"] },
+      { label: "World model",             values: ["–",                                                      "–",                                                                       "–",                                                                                                                                                                                                                                                                         "14B BAGEL-init (7B LLM backbone + 7B generation backbone, ViT 448×336, VAE 512×384), 25 denoising steps, 1.25 s/subgoal on 4× H100 w/ 8-bit matmuls + SageAttention"] },
+      { label: "Subgoal sampling",        values: ["–",                                                      "–",                                                                       "–",                                                                                                                                                                                                                                                                         "25% of training examples include subgoal images; within those, 25% use end-of-segment, 75% sample uniformly 0–4 s ahead. Subgoals refreshed every Δ=4 s or on subtask change."] },
+      { label: "Prompt dropout (π0.7)",   values: ["–",                                                      "–",                                                                       "–",                                                                                                                                                                                                                                                                         "subtask instruction: 30% (when image present) · entire metadata: 15% · each metadata component: +5% · history frames: 30% · rear view: 30%"] },
     ],
   },
 ];
@@ -295,7 +295,7 @@ const TYPE_META: Record<ModelType, { label: string; blurb: string }> = {
   diffusion: { label: "Diffusion visuomotor policy", blurb: "Action distribution modelled as a denoising diffusion process. Trained from scratch per task, no language." },
   vla:       { label: "Vision-Language-Action", blurb: "Initialized from a pretrained vision-language model; language-conditioned; trained across embodiments." },
   world:     { label: "VLA + world model", blurb: "A VLA paired with a generative world model that predicts visual subgoals to plan over." },
-  wam:       { label: "World Action Model", blurb: "Grounded in a pretrained video-generation model: predicts the future as video and derives actions via inverse dynamics — dream the future, then act." },
+  wam:       { label: "World Action Model", blurb: "Grounded in a pretrained video-generation model: predicts the future as video and derives actions via inverse dynamics: dream the future, then act." },
 };
 
 const OVERVIEW_FIELDS: { key: string; label: string }[] = [
@@ -419,12 +419,12 @@ const WAM_MODELS: OverviewModel[] = [
       actionRep: <>Jointly denoises <strong>video + action chunks</strong>; implicit IDM → normalized joint positions</>,
       chunk: "H=48 @ 30 Hz (1.6 s, AgiBot) · H=24 @ 15 Hz (DROID)",
       language: "Yes (frozen text encoder)",
-      crossEmbod: "Yes — adapts to new robot (YAM) with 30 min play; video-only demos +42% on unseen",
+      crossEmbod: "Yes, adapts to new robot (YAM) with 30 min play; video-only demos +42% on unseen",
       controlHz: "7 Hz closed-loop (real-time)",
       inference: "16 denoising steps; Flash variant 4→1 step (~350→~150 ms)",
       data: "~500 h teleop on AgiBot G1 across 22 environments + DROID",
       generalization: ">2× task progress vs SOTA VLAs; zero-shot new tasks & environments",
-      contribution: <><strong>World Action Model</strong>: dream the future in video pixels, then act — strong zero-shot policy</>,
+      contribution: <><strong>World Action Model</strong>: dream the future in video pixels, then act, a strong zero-shot policy</>,
       platform: "AgiBot G1, DROID Franka, YAM",
     },
   },
@@ -977,9 +977,9 @@ export default function PiModelsPage() {
           {tab === "pi" && (
             <>
           <div className="pm-section-subhead">
-            <h2>The π family — detailed comparison</h2>
+            <h2>The π family: detailed comparison</h2>
             <p>
-              Physical Intelligence&rsquo;s VLA lineage, 2024–2026, compared across architecture, training recipe, contributions, and limitations — including the architecture-specific dimensions (FAST tokens, Knowledge Insulation, RL value function, world model) that only apply within this family.
+              Physical Intelligence&rsquo;s VLA lineage, 2024–2026, compared across architecture, training recipe, contributions, and limitations, including the architecture-specific dimensions (FAST tokens, Knowledge Insulation, RL value function, world model) that only apply within this family.
             </p>
           </div>
 
@@ -1107,7 +1107,7 @@ export default function PiModelsPage() {
           <div className="pm-section-subhead">
             <h2>World Action Models</h2>
             <p>
-              World Action Models (WAMs), also called Video-Action Models, ground the policy in a pretrained video-generation model. Rather than learning physical dynamics from scratch like a VLA, they reuse the video model&rsquo;s learned dynamics — predicting future world states as video and deriving low-level actions through an inverse-dynamics model. The intuition: <em>dream the future in pixels, then solve for the motor commands that get there.</em> Both arrived late&nbsp;2025–early&nbsp;2026.
+              World Action Models (WAMs), also called Video-Action Models, ground the policy in a pretrained video-generation model. Rather than learning physical dynamics from scratch like a VLA, they reuse the video model&rsquo;s learned dynamics, predicting future world states as video and deriving low-level actions through an inverse-dynamics model. The intuition: <em>dream the future in pixels, then solve for the motor commands that get there.</em> Both arrived late&nbsp;2025–early&nbsp;2026.
             </p>
           </div>
 
