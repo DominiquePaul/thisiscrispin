@@ -288,13 +288,14 @@ const PARAM_TABLE: ParamSection[] = [
 ];
 
 /* ── high-level overview (cross-paradigm) ─────────────────────────── */
-type ModelType = "chunk" | "diffusion" | "vla" | "world";
+type ModelType = "chunk" | "diffusion" | "vla" | "world" | "wam";
 
 const TYPE_META: Record<ModelType, { label: string; blurb: string }> = {
   chunk:     { label: "Action-chunking imitation", blurb: "Transformer predicts a chunk of future actions; generative head is a CVAE. Trained from scratch per task, no language." },
   diffusion: { label: "Diffusion visuomotor policy", blurb: "Action distribution modelled as a denoising diffusion process. Trained from scratch per task, no language." },
   vla:       { label: "Vision-Language-Action", blurb: "Initialized from a pretrained vision-language model; language-conditioned; trained across embodiments." },
   world:     { label: "VLA + world model", blurb: "A VLA paired with a generative world model that predicts visual subgoals to plan over." },
+  wam:       { label: "World Action Model", blurb: "Grounded in a pretrained video-generation model: predicts the future as video and derives actions via inverse dynamics — dream the future, then act." },
 };
 
 const OVERVIEW_FIELDS: { key: string; label: string }[] = [
@@ -384,15 +385,61 @@ const OVERVIEW_MODELS: OverviewModel[] = [
   },
 ];
 
+/* ── World Action Models (subpage) ────────────────────────────────── */
+const WAM_FIELDS: { key: string; label: string }[] = [
+  ...OVERVIEW_FIELDS,
+  { key: "platform", label: "Robot platform" },
+];
+
+const WAM_MODELS: OverviewModel[] = [
+  {
+    key: "mimicvideo", display: <>mimic-video</>, family: "mimic-video", type: "wam",
+    specs: {
+      origin: "Dec 2025 · mimic robotics / ETH / Microsoft / UC Berkeley",
+      params: "2B video backbone + flow-matching action decoder",
+      backbone: "NVIDIA Cosmos-Predict2 (2B latent DiT)",
+      actionRep: <>Flow-matching <strong>inverse-dynamics</strong> decoder on video latents (partial denoise to τ<sub>v</sub>)</>,
+      chunk: NS,
+      language: "Yes (T5 instruction encoder)",
+      crossEmbod: "Tested on several embodiments (WidowX/Panda/bimanual); not yet a unified model",
+      controlHz: NS,
+      inference: <>Partial denoising of video to τ<sub>v</sub>=1, then decode actions from latents</>,
+      data: "LIBERO 50 demos/task · real bimanual 512 + 480 eps · 10× sample-efficiency vs VLA",
+      generalization: "77% from 1 episode/task (2% of action data); converges ~2× faster than VLA",
+      contribution: <><strong>Video-Action Model</strong>: video backbone supplies dynamics; decoder only solves control</>,
+      platform: "Bimanual Franka Panda + 16-DoF dexterous hands",
+    },
+  },
+  {
+    key: "dreamzero", display: <>DreamZero</>, family: "DreamZero", type: "wam",
+    specs: {
+      origin: "Feb 2026 · NVIDIA",
+      params: "14B",
+      backbone: "Wan2.1-I2V-14B (autoregressive video diffusion)",
+      actionRep: <>Jointly denoises <strong>video + action chunks</strong>; implicit IDM → normalized joint positions</>,
+      chunk: "H=48 @ 30 Hz (1.6 s, AgiBot) · H=24 @ 15 Hz (DROID)",
+      language: "Yes (frozen text encoder)",
+      crossEmbod: "Yes — adapts to new robot (YAM) with 30 min play; video-only demos +42% on unseen",
+      controlHz: "7 Hz closed-loop (real-time)",
+      inference: "16 denoising steps; Flash variant 4→1 step (~350→~150 ms)",
+      data: "~500 h teleop on AgiBot G1 across 22 environments + DROID",
+      generalization: ">2× task progress vs SOTA VLAs; zero-shot new tasks & environments",
+      contribution: <><strong>World Action Model</strong>: dream the future in video pixels, then act — strong zero-shot policy</>,
+      platform: "AgiBot G1, DROID Franka, YAM",
+    },
+  },
+];
+
 /* ── navigation ───────────────────────────────────────────────────── */
 const TABS = [
   { id: "overview", label: "Overview" },
   { id: "pi", label: "The π family" },
+  { id: "wam", label: "World action models" },
 ] as const;
 
 /* ── component ────────────────────────────────────────────────────── */
 export default function PiModelsPage() {
-  const [tab, setTab] = React.useState<"overview" | "pi">("overview");
+  const [tab, setTab] = React.useState<"overview" | "pi" | "wam">("overview");
   const [piView, setPiView] = React.useState<"comparison" | "params">("comparison");
   return (
     <>
@@ -682,6 +729,7 @@ export default function PiModelsPage() {
         .pm-type-dot.pm-type-diffusion { background: #6B4A98; }
         .pm-type-dot.pm-type-vla       { background: var(--accent); }
         .pm-type-dot.pm-type-world     { background: #9A6A2E; }
+        .pm-type-dot.pm-type-wam       { background: #A8443C; }
 
         .pm-type-note {
           display: block;
@@ -1051,6 +1099,52 @@ export default function PiModelsPage() {
           <div className="pm-scroll-hint">← scroll horizontally to compare →</div>
             </>
           )}
+            </>
+          )}
+
+          {tab === "wam" && (
+            <>
+          <div className="pm-section-subhead">
+            <h2>World Action Models</h2>
+            <p>
+              World Action Models (WAMs), also called Video-Action Models, ground the policy in a pretrained video-generation model. Rather than learning physical dynamics from scratch like a VLA, they reuse the video model&rsquo;s learned dynamics — predicting future world states as video and deriving low-level actions through an inverse-dynamics model. The intuition: <em>dream the future in pixels, then solve for the motor commands that get there.</em> Both arrived late&nbsp;2025–early&nbsp;2026.
+            </p>
+          </div>
+
+          <div className="pm-table-wrapper pm-params-wrapper">
+            <table className="pm-params-table">
+              <thead>
+                <tr>
+                  <th className="pm-row-header" />
+                  {WAM_MODELS.map((m) => (
+                    <th key={m.key}>
+                      <span className="pm-model-name">{m.display}</span>
+                      <span className="pm-info" tabIndex={0} aria-label={`${TYPE_META[m.type].label}. ${TYPE_META[m.type].blurb}`}>
+                        <span className={`pm-type-dot pm-type-${m.type}`} aria-hidden="true" />
+                        <span className="pm-info-tip">
+                          <strong>{TYPE_META[m.type].label}</strong>
+                          <br />
+                          {TYPE_META[m.type].blurb}
+                        </span>
+                      </span>
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {WAM_FIELDS.map((f) => (
+                  <tr key={f.key}>
+                    <td className="pm-row-label">{f.label}</td>
+                    {WAM_MODELS.map((m) => (
+                      <td key={m.key} className="pm-params-cell">{m.specs[f.key]}</td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          <div className="pm-scroll-hint">← scroll horizontally to compare →</div>
             </>
           )}
         </div>
