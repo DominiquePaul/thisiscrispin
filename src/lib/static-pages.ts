@@ -14,9 +14,10 @@ export const STATIC_PAGES: Article[] = [
     id: "static-pi-models",
     slug: "pi-models",
     href: "/pi-models",
-    title: "The π model family",
+    title: "Robot manipulation policy architectures",
+    coverImage: "/images/pi-models-cover.png",
     excerpt:
-      "A side-by-side of Physical Intelligence's VLA models — π0, π0.5, π0.6 / π*0.6, and π0.7 — fact-checked against the source papers.",
+      "A field guide to how robot manipulation policies represent actions — from ACT and Diffusion Policy, through Physical Intelligence's π family, to the new World Action Models (mimic-video, DreamZero) — fact-checked against the source papers and code.",
     tags: ["writing"],
     createdAt: "2026-04-22T00:00:00.000Z",
   },
