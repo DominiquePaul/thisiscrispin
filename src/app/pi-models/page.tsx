@@ -384,8 +384,16 @@ const OVERVIEW_MODELS: OverviewModel[] = [
   },
 ];
 
+/* ── navigation ───────────────────────────────────────────────────── */
+const TABS = [
+  { id: "overview", label: "Overview" },
+  { id: "pi", label: "The π family" },
+] as const;
+
 /* ── component ────────────────────────────────────────────────────── */
 export default function PiModelsPage() {
+  const [tab, setTab] = React.useState<"overview" | "pi">("overview");
+  const [piView, setPiView] = React.useState<"comparison" | "params">("comparison");
   return (
     <>
       <style>{`
@@ -713,6 +721,60 @@ export default function PiModelsPage() {
           max-width: 820px;
         }
 
+        .pm-tabs {
+          display: flex;
+          gap: 0.25rem;
+          margin-bottom: 2rem;
+          border-bottom: 1px solid var(--border-strong);
+        }
+        .pm-tab {
+          appearance: none;
+          background: none;
+          border: none;
+          border-bottom: 2px solid transparent;
+          margin-bottom: -1px;
+          padding: 0.6rem 1rem;
+          font-family: 'DM Sans', sans-serif;
+          font-size: 0.9rem;
+          font-weight: 600;
+          color: var(--text-tertiary);
+          cursor: pointer;
+          transition: color 0.12s, border-color 0.12s;
+        }
+        .pm-tab:hover { color: var(--text-secondary); }
+        .pm-tab-active {
+          color: var(--accent);
+          border-bottom-color: var(--accent);
+        }
+
+        .pm-subtabs {
+          display: inline-flex;
+          margin-bottom: 1.5rem;
+          background: var(--bg);
+          border: 1px solid var(--border-strong);
+          border-radius: 8px;
+          padding: 3px;
+        }
+        .pm-subtab {
+          appearance: none;
+          background: none;
+          border: none;
+          padding: 0.4rem 0.95rem;
+          border-radius: 6px;
+          font-family: 'DM Sans', sans-serif;
+          font-size: 0.8rem;
+          font-weight: 600;
+          color: var(--text-tertiary);
+          cursor: pointer;
+          transition: background 0.12s, color 0.12s;
+        }
+        .pm-subtab:hover { color: var(--text-secondary); }
+        .pm-subtab-active {
+          background: var(--surface);
+          color: var(--text-primary);
+          box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
+        }
+
         .pm-info {
           position: relative;
           display: inline-flex;
@@ -823,6 +885,20 @@ export default function PiModelsPage() {
             </p>
           </header>
 
+          <nav className="pm-tabs">
+            {TABS.map((t) => (
+              <button
+                key={t.id}
+                className={`pm-tab${tab === t.id ? " pm-tab-active" : ""}`}
+                onClick={() => setTab(t.id)}
+              >
+                {t.label}
+              </button>
+            ))}
+          </nav>
+
+          {tab === "overview" && (
+            <>
           <div className="pm-legend">
             {(Object.keys(TYPE_META) as ModelType[]).map((t) => (
               <div className="pm-legend-item" key={t}>
@@ -862,7 +938,11 @@ export default function PiModelsPage() {
           </div>
 
           <div className="pm-scroll-hint">← scroll horizontally to compare →</div>
+            </>
+          )}
 
+          {tab === "pi" && (
+            <>
           <div className="pm-section-subhead">
             <h2>The π family — detailed comparison</h2>
             <p>
@@ -886,6 +966,23 @@ export default function PiModelsPage() {
             </p>
           </div>
 
+          <div className="pm-subtabs">
+            <button
+              className={`pm-subtab${piView === "comparison" ? " pm-subtab-active" : ""}`}
+              onClick={() => setPiView("comparison")}
+            >
+              Comparison
+            </button>
+            <button
+              className={`pm-subtab${piView === "params" ? " pm-subtab-active" : ""}`}
+              onClick={() => setPiView("params")}
+            >
+              Parameters
+            </button>
+          </div>
+
+          {piView === "comparison" && (
+            <>
           <div className="pm-table-wrapper">
             <table>
               <thead>
@@ -922,7 +1019,11 @@ export default function PiModelsPage() {
           </div>
 
           <div className="pm-scroll-hint">← scroll horizontally to compare →</div>
+            </>
+          )}
 
+          {piView === "params" && (
+            <>
           <div className="pm-params-header">
             <h2>Model & training parameters</h2>
             <p>
@@ -963,6 +1064,10 @@ export default function PiModelsPage() {
           </div>
 
           <div className="pm-scroll-hint">← scroll horizontally to compare →</div>
+            </>
+          )}
+            </>
+          )}
         </div>
       </div>
     </>
