@@ -287,6 +287,103 @@ const PARAM_TABLE: ParamSection[] = [
   },
 ];
 
+/* ── high-level overview (cross-paradigm) ─────────────────────────── */
+type ModelType = "chunk" | "diffusion" | "vla" | "world";
+
+const TYPE_META: Record<ModelType, { label: string; blurb: string }> = {
+  chunk:     { label: "Action-chunking imitation", blurb: "Transformer predicts a chunk of future actions; generative head is a CVAE. Trained from scratch per task, no language." },
+  diffusion: { label: "Diffusion visuomotor policy", blurb: "Action distribution modelled as a denoising diffusion process. Trained from scratch per task, no language." },
+  vla:       { label: "Vision-Language-Action", blurb: "Initialized from a pretrained vision-language model; language-conditioned; trained across embodiments." },
+  world:     { label: "VLA + world model", blurb: "A VLA paired with a generative world model that predicts visual subgoals to plan over." },
+};
+
+const OVERVIEW_FIELDS: { key: string; label: string }[] = [
+  { key: "origin",         label: "Year · origin" },
+  { key: "params",         label: "Params" },
+  { key: "backbone",       label: "Perception backbone" },
+  { key: "actionRep",      label: "Action representation" },
+  { key: "chunk",          label: "Action chunk (H)" },
+  { key: "language",       label: "Language-conditioned" },
+  { key: "crossEmbod",     label: "Cross-embodiment" },
+  { key: "controlHz",      label: "Control freq" },
+  { key: "inference",      label: "Inference" },
+  { key: "data",           label: "Training data" },
+  { key: "generalization", label: "Generalization scope" },
+  { key: "contribution",   label: "Key contribution" },
+];
+
+interface OverviewModel {
+  key: string;
+  display: React.ReactNode;
+  family: string;
+  type: ModelType;
+  typeNote?: string;
+  specs: Record<string, React.ReactNode>;
+}
+
+const OVERVIEW_MODELS: OverviewModel[] = [
+  {
+    key: "act", display: <>ACT</>, family: "ALOHA", type: "chunk",
+    specs: {
+      origin: "2023 · Stanford (ALOHA)", params: "~80M", backbone: "ResNet-18 × 4 cams",
+      actionRep: "CVAE (transformer enc-dec), L1 + KL", chunk: "k = 100", language: "No",
+      crossEmbod: "No", controlHz: "50 Hz", inference: "single forward pass; temporal ensembling (+3.3%)",
+      data: "~50 demos / task", generalization: "single task, single robot",
+      contribution: <strong>Introduced action chunking</strong>,
+    },
+  },
+  {
+    key: "dp", display: <>Diffusion Policy</>, family: "Diffusion Policy", type: "diffusion",
+    specs: {
+      origin: "2023 · Columbia / TRI / MIT", params: "~67M (CNN variant)", backbone: "ResNet-18 (spatial-softmax, GroupNorm)",
+      actionRep: "DDPM diffusion (1D U-Net / transformer), ε-pred", chunk: "Tp=16 predict, Ta=8 exec (To=2)", language: "No",
+      crossEmbod: "No", controlHz: "~10 Hz", inference: "DDIM 10 steps (DDPM 100 train)",
+      data: "136–250 demos / task", generalization: "single task; models multimodal demos",
+      contribution: <strong>Introduced the diffusion action head</strong>,
+    },
+  },
+  {
+    key: "pi0", display: <>π<sub>0</sub></>, family: "π family", type: "vla",
+    specs: {
+      origin: "2024 · Physical Intelligence", params: "3.3B", backbone: "PaliGemma (SigLIP 400M + Gemma 2B)",
+      actionRep: "Conditional flow matching", chunk: "H = 50", language: "Yes",
+      crossEmbod: "Yes", controlHz: "up to 50 Hz", inference: "10 flow steps; open-loop (ensembling hurt)",
+      data: "~10,000 h, 903M steps, 7 robots", generalization: "fine-tune to new tasks",
+      contribution: "First flow-matching VLA",
+    },
+  },
+  {
+    key: "pi05", display: <>π<sub>0.5</sub></>, family: "π family", type: "vla",
+    specs: {
+      origin: "2025 · PI", params: "~3.3B", backbone: "PaliGemma (SigLIP 400M + Gemma 2B)",
+      actionRep: "Hybrid FAST (AR) + flow matching", chunk: "H = 50", language: "Yes",
+      crossEmbod: "Yes", controlHz: "50 Hz", inference: "10 flow steps",
+      data: "+ ~400 h mobile, ~100 homes", generalization: "open-world new homes",
+      contribution: "Generalize to entirely new homes",
+    },
+  },
+  {
+    key: "pi06", display: <>π<sub>0.6</sub> / π*<sub>0.6</sub></>, family: "π family", type: "vla", typeNote: "+ RL (π*)",
+    specs: {
+      origin: "2025 · PI", params: "~5.3B (4B + 860M)", backbone: "SigLIP 400M + Gemma 3 4B",
+      actionRep: "KI: FAST in VLM + flow in expert", chunk: "H = 50", language: "Yes",
+      crossEmbod: "Yes", controlHz: "50 Hz", inference: "5 flow steps; 63 ms / chunk",
+      data: "π0.5 + RL rollouts + interventions", generalization: "specialist-level out-of-box",
+      contribution: "RL (RECAP) at VLA scale (π*0.6)",
+    },
+  },
+  {
+    key: "pi07", display: <>π<sub>0.7</sub></>, family: "π family", type: "world",
+    specs: {
+      origin: "2026 · PI", params: "~5B + 14B world model", backbone: "Gemma 3 4B + SigLIP + MEM",
+      actionRep: "KI + flow; world-model subgoals", chunk: "H = 50", language: "Yes",
+      crossEmbod: "Yes (zero-shot)", controlHz: "50 Hz", inference: "5 flow steps; 38–127 ms",
+      data: "+ egocentric human video + autonomous", generalization: "compositional, new embodiments",
+      contribution: "Compositional generalization",
+    },
+  },
+];
+
 /* ── component ────────────────────────────────────────────────────── */
 export default function PiModelsPage() {
   return (
@@ -548,6 +645,74 @@ export default function PiModelsPage() {
         }
         .pm-rl-tag sub { font-size: 0.75em; }
 
+        /* ── type taxonomy + high-level overview ── */
+        .pm-type-tag {
+          display: inline-block;
+          font-family: 'JetBrains Mono', monospace;
+          font-size: 0.58rem;
+          font-weight: 600;
+          letter-spacing: 0.04em;
+          text-transform: uppercase;
+          padding: 2px 7px;
+          border-radius: 4px;
+          line-height: 1.3;
+          white-space: nowrap;
+        }
+        .pm-type-chunk     { background: #E6F2EE; color: #2F7A63; }
+        .pm-type-diffusion { background: #EFE9F7; color: #6B4A98; }
+        .pm-type-vla       { background: var(--accent-bg); color: var(--accent); }
+        .pm-type-world     { background: #F7EEE2; color: #9A6A2E; }
+
+        .pm-legend {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 0.75rem;
+          margin-bottom: 1.5rem;
+        }
+        .pm-legend-item {
+          flex: 1 1 220px;
+          min-width: 220px;
+          padding: 0.7rem 0.85rem;
+          background: var(--surface);
+          border: 1px solid var(--border);
+          border-radius: 8px;
+        }
+        .pm-legend-item .pm-type-tag { margin-bottom: 0.4rem; }
+        .pm-legend-item p {
+          font-size: 0.72rem;
+          color: var(--text-secondary);
+          line-height: 1.45;
+          margin: 0;
+        }
+
+        .pm-type-note {
+          display: block;
+          font-family: 'JetBrains Mono', monospace;
+          font-size: 0.58rem;
+          color: var(--text-tertiary);
+          margin-top: 3px;
+          letter-spacing: 0;
+          text-transform: none;
+        }
+
+        .pm-section-subhead {
+          margin-top: 3.5rem;
+          margin-bottom: 1.25rem;
+        }
+        .pm-section-subhead h2 {
+          font-size: 1.15rem;
+          font-weight: 700;
+          letter-spacing: -0.01em;
+          color: var(--text-primary);
+          text-transform: none;
+        }
+        .pm-section-subhead p {
+          font-size: 0.82rem;
+          color: var(--text-secondary);
+          margin-top: 0.4rem;
+          max-width: 820px;
+        }
+
         .pm-info {
           position: relative;
           display: inline-flex;
@@ -652,11 +817,58 @@ export default function PiModelsPage() {
       <div className="pm-root">
         <div className="pm-container">
           <header className="pm-header">
-            <h1>The π model family</h1>
+            <h1>Robot manipulation policy architectures</h1>
             <p>
-              Physical Intelligence&rsquo;s VLA lineage, 2024–2026. Each generation compared across architecture, training recipe, contributions, and limitations. Scroll horizontally to move through the timeline.
+              How learned manipulation policies represent and generate actions, 2023–2026. A high-level overview compares every model on the dimensions that generalize across paradigms; the π-family section below drills into architecture-specific detail. Models are tagged by paradigm so you can read across families or across types.
             </p>
           </header>
+
+          <div className="pm-legend">
+            {(Object.keys(TYPE_META) as ModelType[]).map((t) => (
+              <div className="pm-legend-item" key={t}>
+                <span className={`pm-type-tag pm-type-${t}`}>{TYPE_META[t].label}</span>
+                <p>{TYPE_META[t].blurb}</p>
+              </div>
+            ))}
+          </div>
+
+          <div className="pm-table-wrapper pm-params-wrapper">
+            <table className="pm-params-table">
+              <thead>
+                <tr>
+                  <th className="pm-row-header" />
+                  {OVERVIEW_MODELS.map((m) => (
+                    <th key={m.key}>
+                      <span className="pm-model-name">{m.display}</span>
+                      <span className={`pm-type-tag pm-type-${m.type}`} style={{ marginLeft: "0.5rem" }}>
+                        {TYPE_META[m.type].label}
+                      </span>
+                      {m.typeNote && <span className="pm-type-note">{m.typeNote}</span>}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {OVERVIEW_FIELDS.map((f) => (
+                  <tr key={f.key}>
+                    <td className="pm-row-label">{f.label}</td>
+                    {OVERVIEW_MODELS.map((m) => (
+                      <td key={m.key} className="pm-params-cell">{m.specs[f.key]}</td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          <div className="pm-scroll-hint">← scroll horizontally to compare →</div>
+
+          <div className="pm-section-subhead">
+            <h2>The π family — detailed comparison</h2>
+            <p>
+              Physical Intelligence&rsquo;s VLA lineage, 2024–2026, compared across architecture, training recipe, contributions, and limitations — including the architecture-specific dimensions (FAST tokens, Knowledge Insulation, RL value function, world model) that only apply within this family.
+            </p>
+          </div>
 
           <div className="pm-synthesis pm-synthesis-top">
             <h2>Quick synthesis</h2>
