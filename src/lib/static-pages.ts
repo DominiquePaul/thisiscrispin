@@ -15,7 +15,7 @@ export const STATIC_PAGES: Article[] = [
     slug: "pi-models",
     href: "/pi-models",
     title: "Robot manipulation policy architectures",
-    coverImage: "/images/pi-models-cover.png",
+    coverImage: "/images/policy-architectures-cover.png",
     excerpt:
       "A field guide to how robot manipulation policies represent actions — from ACT and Diffusion Policy, through Physical Intelligence's π family, to the new World Action Models (mimic-video, DreamZero) — fact-checked against the source papers and code.",
     tags: ["writing"],

@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="600" height="600" viewBox="0 0 600 600">
+  <rect width="600" height="600" fill="#FAFAF8"/>
+  <rect x="0" y="0" width="600" height="6" fill="#4A5899"/>
+
+  <text x="300" y="150" text-anchor="middle"
+        font-family="'Courier New', monospace" font-size="24" font-weight="700"
+        letter-spacing="6" fill="#9C9A93">POLICY ARCHITECTURES</text>
+
+  <!-- lineage of paradigms: chunking → diffusion → VLA → world-action -->
+  <line x1="150" y1="320" x2="450" y2="320" stroke="#D8D6D1" stroke-width="4"/>
+
+  <!-- directional chevrons between nodes -->
+  <g fill="none" stroke="#C2C0BA" stroke-width="4" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M196,310 L206,320 L196,330"/>
+    <path d="M296,310 L306,320 L296,330"/>
+    <path d="M396,310 L406,320 L396,330"/>
+  </g>
+
+  <circle cx="150" cy="320" r="30" fill="#2F7A63"/>
+  <circle cx="250" cy="320" r="30" fill="#6B4A98"/>
+  <circle cx="350" cy="320" r="30" fill="#4A5899"/>
+  <circle cx="450" cy="320" r="30" fill="#A8443C"/>
+
+  <text x="300" y="470" text-anchor="middle"
+        font-family="'Helvetica Neue', Arial, sans-serif" font-size="26" font-weight="600"
+        fill="#1A1A18">Robot manipulation policies</text>
+  <text x="300" y="506" text-anchor="middle"
+        font-family="'Helvetica Neue', Arial, sans-serif" font-size="22"
+        fill="#4A4944">ACT · Diffusion · VLA · World-Action</text>
+</svg>
