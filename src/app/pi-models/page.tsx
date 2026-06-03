@@ -671,27 +671,17 @@ export default function PiModelsPage() {
         .pm-type-vla       { background: var(--accent-bg); color: var(--accent); }
         .pm-type-world     { background: #F7EEE2; color: #9A6A2E; }
 
-        .pm-legend {
-          display: flex;
-          flex-wrap: wrap;
-          gap: 0.75rem;
-          margin-bottom: 1.5rem;
+        .pm-type-dot {
+          display: inline-block;
+          width: 9px;
+          height: 9px;
+          border-radius: 50%;
+          vertical-align: middle;
         }
-        .pm-legend-item {
-          flex: 1 1 220px;
-          min-width: 220px;
-          padding: 0.7rem 0.85rem;
-          background: var(--surface);
-          border: 1px solid var(--border);
-          border-radius: 8px;
-        }
-        .pm-legend-item .pm-type-tag { margin-bottom: 0.4rem; }
-        .pm-legend-item p {
-          font-size: 0.72rem;
-          color: var(--text-secondary);
-          line-height: 1.45;
-          margin: 0;
-        }
+        .pm-type-dot.pm-type-chunk     { background: #2F7A63; }
+        .pm-type-dot.pm-type-diffusion { background: #6B4A98; }
+        .pm-type-dot.pm-type-vla       { background: var(--accent); }
+        .pm-type-dot.pm-type-world     { background: #9A6A2E; }
 
         .pm-type-note {
           display: block;
@@ -899,15 +889,6 @@ export default function PiModelsPage() {
 
           {tab === "overview" && (
             <>
-          <div className="pm-legend">
-            {(Object.keys(TYPE_META) as ModelType[]).map((t) => (
-              <div className="pm-legend-item" key={t}>
-                <span className={`pm-type-tag pm-type-${t}`}>{TYPE_META[t].label}</span>
-                <p>{TYPE_META[t].blurb}</p>
-              </div>
-            ))}
-          </div>
-
           <div className="pm-table-wrapper pm-params-wrapper">
             <table className="pm-params-table">
               <thead>
@@ -916,10 +897,14 @@ export default function PiModelsPage() {
                   {OVERVIEW_MODELS.map((m) => (
                     <th key={m.key}>
                       <span className="pm-model-name">{m.display}</span>
-                      <span className={`pm-type-tag pm-type-${m.type}`} style={{ marginLeft: "0.5rem" }}>
-                        {TYPE_META[m.type].label}
+                      <span className="pm-info" tabIndex={0} aria-label={`${TYPE_META[m.type].label}. ${TYPE_META[m.type].blurb}`}>
+                        <span className={`pm-type-dot pm-type-${m.type}`} aria-hidden="true" />
+                        <span className="pm-info-tip">
+                          <strong>{TYPE_META[m.type].label}</strong>{m.typeNote ? ` · ${m.typeNote}` : ""}
+                          <br />
+                          {TYPE_META[m.type].blurb}
+                        </span>
                       </span>
-                      {m.typeNote && <span className="pm-type-note">{m.typeNote}</span>}
                     </th>
                   ))}
                 </tr>
