@@ -1176,7 +1176,7 @@ export default function CapTable() {
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 32, flexWrap: "wrap", gap: 12 }}>
           <div>
             <h1 style={{ fontSize: 28, fontWeight: 700, margin: 0, letterSpacing: "-0.02em" }}>
-              Cap Table Simulator
+              Founder Cap Table Calculator
             </h1>
             <button
               onClick={() => setShowExplainer(!showExplainer)}

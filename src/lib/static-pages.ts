@@ -25,8 +25,8 @@ export const STATIC_PAGES: Article[] = [
     id: "static-captable-calculator",
     slug: "captable-calculator",
     href: "/captable-calculator",
-    title: "Cap table calculator",
-    coverImage: "/images/captable-calculator-cover.png",
+    title: "Founder Cap Table Calculator",
+    coverImage: "/images/founder-cap-table-cover.png",
     excerpt:
       "Simulate dilution across funding rounds: founders, ESOP, SAFEs, priced rounds, and exits.",
     tags: ["devProjects"],
