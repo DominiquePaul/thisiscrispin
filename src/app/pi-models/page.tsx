@@ -92,7 +92,7 @@ const MODELS: Model[] = [
     ),
     appendix: (
       <>
-        Action expert tokens do NOT attend to FAST tokens (avoids info leakage between two action representations). Adaptive RMSNorm for τ injection (vs. input fusion in π<sub>0</sub>). α=10.0 post-training. Image aug: crop 0.95×, rotate ±5°, color jitter. <em>openpi config:</em> max_token_len=200 (vs 48 for π<sub>0</sub>), discrete state token input, quantile action norm, gemma_2b + gemma_300m action expert.
+        Action expert tokens do NOT attend to FAST tokens (avoids info leakage between two action representations). Adaptive RMSNorm for τ injection (vs. input fusion in π<sub>0</sub>). α=10.0 post-training. Image aug: crop 0.95×, rotate ±5°, color jitter. <em>openpi config:</em> max_token_len=200 (vs 48 for π<sub>0</sub>), discrete state token input, quantile action norm, action_horizon=50. Uses the <strong>same gemma_2b backbone variant as π<sub>0</sub></strong> (the &ldquo;2.6B&rdquo; is the actual param count of nominal Gemma-2B) + gemma_300m action expert; backbone/expert sizes are not stated in the π<sub>0.5</sub> paper itself.
       </>
     ),
   },
