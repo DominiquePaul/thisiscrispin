@@ -1146,16 +1146,16 @@ export default function CapTable() {
     <div
       style={
         {
-          "--bg": "#0f1117",
-          "--card-bg": "#181b24",
-          "--input-bg": "#1e222d",
-          "--border": "#2a2f3c",
-          "--text": "#e8eaf0",
-          "--text-dim": "#6b7280",
+          "--bg": "#F2F2F2",
+          "--card-bg": "#FFFFFF",
+          "--input-bg": "#F4F4F4",
+          "--border": "#E4E4E4",
+          "--text": "#1E1E24",
+          "--text-dim": "#8E8E8E",
           "--accent-safe": "#f59e0b",
           "--accent-priced": "#3b82f6",
-          "--mono": "'JetBrains Mono', monospace",
-          "--sans": "'Space Grotesk', -apple-system, sans-serif",
+          "--mono": "var(--font-sf-mono), ui-monospace, monospace",
+          "--sans": "var(--font-sf-mono), ui-monospace, monospace",
           background: "var(--bg)",
           color: "var(--text)",
           minHeight: "100vh",
@@ -1165,11 +1165,6 @@ export default function CapTable() {
         } as React.CSSProperties
       }
     >
-      {/* eslint-disable-next-line @next/next/no-page-custom-font */}
-      <link
-        href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap"
-        rel="stylesheet"
-      />
 
       <div style={{ maxWidth: 960, margin: "0 auto" }}>
         {/* Header with share button */}
