@@ -1,25 +1,10 @@
 "use client";
 
 import { useState } from "react"
-import Image from "next/image"
 import Link from "next/link"
-import { Badge } from "@/components/ui/badge"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import NewPostDialog from './NewPostDialog'
 import { useAuth } from '@/lib/AuthContext'
-import { IBM_Plex_Sans, IBM_Plex_Mono } from 'next/font/google';
-
-const plexSans = IBM_Plex_Sans({ 
-  subsets: ['latin'],
-  weight: ['400', '600'],
-  display: 'swap',
-});
-
-const plexMono = IBM_Plex_Mono({ 
-  subsets: ['latin'],
-  weight: ['400'],
-  display: 'swap',
-});
 
 interface Article {
   id: string
@@ -42,7 +27,7 @@ interface BlogContentProps {
 export default function BlogContent({ articles, allTags = [], isTeaser = false, maxArticles = Infinity }: BlogContentProps) {
   const [selectedTag, setSelectedTag] = useState<string>("all")
   const { isAuthenticated } = useAuth()
-  
+
   // Map from tag ID to display name
   const getTagDisplayName = (tagId: string) => {
     const tagMap: Record<string, string> = {
@@ -52,92 +37,66 @@ export default function BlogContent({ articles, allTags = [], isTeaser = false, 
       "design": "Design",
       "personal": "Personal",
       "hideOnThisiscrispin": "Hidden",
-      // Add more mappings as needed
     };
-    
+
     return tagMap[tagId] || tagId; // Fallback to tagId if no mapping exists
   }
-  
+
   // Filter out the hideOnThisiscrispin tag for non-admins in dropdown
-  const visibleTags = isAuthenticated 
-    ? allTags 
+  const visibleTags = isAuthenticated
+    ? allTags
     : allTags.filter(tag => tag !== "hideOnThisiscrispin")
 
   // Different filtering strategies for admin vs non-admin
   const filteredArticles = isAuthenticated
-    ? (selectedTag === "all" 
-        ? articles 
+    ? (selectedTag === "all"
+        ? articles
         : articles.filter(article => article.tags.includes(selectedTag)))
-    : (selectedTag === "all" 
+    : (selectedTag === "all"
         ? articles.filter(article => !article.tags.includes("hideOnThisiscrispin"))
         : articles.filter(article => article.tags.includes(selectedTag) && !article.tags.includes("hideOnThisiscrispin")))
 
   const displayedArticles = filteredArticles.slice(0, maxArticles)
 
   return (
-    <div className={`${isTeaser ? '' : 'mt-24'} ${plexSans.className}`}>
+    <div style={{ fontFamily: 'var(--font-jetbrains-mono)' }}>
       {!isTeaser && (
-        <header>
-          <h1 className="text-6xl font-bold mb-4">Posts</h1>
-          <nav className="flex justify-between items-center">
+        <header className="mb-12 flex flex-wrap items-end justify-between gap-4">
+          <h1 className="text-4xl sm:text-5xl tracking-[-0.03em] text-[rgb(18,18,22)]">Posts</h1>
+          <div className="flex items-center gap-3">
             <Select onValueChange={(value) => setSelectedTag(value)}>
-              <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder="Filter by Tag" />
+              <SelectTrigger className="w-[160px] h-9 text-xs">
+                <SelectValue placeholder="Filter by tag" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Tags</SelectItem>
+                <SelectItem value="all">All tags</SelectItem>
                 {visibleTags.map((tag) => (
                   <SelectItem key={tag} value={tag}>{getTagDisplayName(tag)}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
             <NewPostDialog />
-          </nav>
+          </div>
         </header>
       )}
 
-      <div>
+      <ul className="space-y-3">
         {displayedArticles.map((article) => (
-          <Link
-            href={article.href ?? `/p/${article.slug}`}
-            key={article.id}
-            className="block border-b last:border-b-0 group"
-          >
-            <div className="flex items-center gap-6 md:gap-8 px-4 md:px-8 py-4 transition-colors duration-200 rounded-[6px] group-hover:bg-gray-200">
-              <div className="flex-1 space-y-3">
-                <h2 className="text-2xl font-bold">{article.title}</h2>
-                <p className="text-gray-600">{article.excerpt}</p>
-                <p className="text-sm text-gray-500">
-                  {new Date(article.createdAt).toLocaleDateString('en-US', {
-                    year: 'numeric',
-                    month: 'long',
-                    day: 'numeric'
-                  })}
-                </p>
-                <div className="flex flex-wrap items-center gap-2">
-                  {article.tags.map((tag) => (
-                    <Badge key={tag} variant="secondary" className="border border-gray-300">
-                      {getTagDisplayName(tag)}
-                    </Badge>
-                  ))}
-                </div>
-              </div>
-              {/* Only render the image on larger screens */}
-              {article.coverImage && (
-                <div className="hidden md:block md:h-[200px] md:w-[200px] relative flex-shrink-0">
-                  <Image
-                    src={`${article.coverImage}?fm=webp&q=60`}
-                    alt={article.title}
-                    fill
-                    sizes="200px"
-                    className="object-cover rounded-sm"
-                  />
-                </div>
-              )}
-            </div>
-          </Link>
+          <li key={article.id}>
+            <Link
+              href={article.href ?? `/p/${article.slug}`}
+              className="group flex items-baseline justify-between gap-6"
+            >
+              <span className="text-base text-[rgb(45,45,52)] transition-colors duration-200 group-hover:text-[#9A9A9A]">
+                {article.title}
+              </span>
+              <span className="shrink-0 text-xs text-[#ADADAD]">
+                {new Date(article.createdAt).getFullYear()}
+              </span>
+            </Link>
+          </li>
         ))}
-      </div>
+      </ul>
     </div>
   )
 }

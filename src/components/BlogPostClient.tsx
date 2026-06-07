@@ -6,20 +6,7 @@ import BlogPostEditButton from './BlogPostEditButton';
 import { documentToReactComponents } from '@contentful/rich-text-react-renderer';
 import { BLOCKS, INLINES, MARKS } from '@contentful/rich-text-types';
 import Image from 'next/image';
-import { IBM_Plex_Sans, IBM_Plex_Mono } from 'next/font/google';
 import VideoEmbed from './VideoEmbed';
-
-const plexSans = IBM_Plex_Sans({ 
-  subsets: ['latin'],
-  weight: ['400', '600'],
-  display: 'swap',
-});
-
-const plexMono = IBM_Plex_Mono({ 
-  subsets: ['latin'],
-  weight: ['400'],
-  display: 'swap',
-});
 
 // Load ContentfulEditor with dynamic imports (client-side only)
 const ContentfulEditor = dynamic(() => import('./ContentfulEditor'), {
@@ -140,13 +127,22 @@ export default function BlogPostClient({
               />
             </div>
           )}
-          <h1 className={`text-6xl font-bold mb-4 ${plexSans.className}`}>
+          <h1
+            className="text-4xl sm:text-5xl mb-4 tracking-[-0.03em] leading-[1.05] text-[rgb(18,18,22)]"
+            style={{ fontFamily: 'var(--font-jetbrains-mono)' }}
+          >
             {title}
           </h1>
-          <div className={`text-gray-400 mb-12 text-sm italic ${plexSans.className}`}>
-            Published on {formattedDate}
+          <div
+            className="text-[#9A9A9A] mb-12 text-xs uppercase tracking-[0.2em]"
+            style={{ fontFamily: 'var(--font-jetbrains-mono)' }}
+          >
+            {formattedDate}
           </div>
-          <div className={`prose prose-md max-w-none ${plexSans.className}`}>
+          <div
+            className="prose prose-neutral max-w-none text-[rgb(45,45,52)]"
+            style={{ fontFamily: 'var(--font-jetbrains-mono)' }}
+          >
             {content ? (
               <>
                 {documentToReactComponents(content, {
@@ -230,7 +226,7 @@ export default function BlogPostClient({
                     [INLINES.HYPERLINK]: (node, children) => {
                       const url = node.data.uri;
                       return (
-                        <a href={url} className="text-blue-600 hover:text-blue-800 underline">
+                        <a href={url} className="text-[rgb(18,18,22)] underline decoration-1 underline-offset-2 decoration-[#C8C8C8] transition-colors hover:decoration-[rgb(18,18,22)]">
                           {children}
                         </a>
                       );
@@ -252,7 +248,7 @@ export default function BlogPostClient({
                         if (url) {
                           const fullUrl = url.startsWith('//') ? `https:${url}` : url;
                           return (
-                            <a href={fullUrl} className="text-blue-600 hover:text-blue-800 underline">
+                            <a href={fullUrl} className="text-[rgb(18,18,22)] underline decoration-1 underline-offset-2 decoration-[#C8C8C8] transition-colors hover:decoration-[rgb(18,18,22)]">
                               {children}
                             </a>
                           );
@@ -263,7 +259,7 @@ export default function BlogPostClient({
                   },
                   renderMark: {
                     [MARKS.CODE]: (text) => (
-                      <code className={`${plexMono.className} bg-gray-100 rounded px-1`}>
+                      <code className="bg-[#EAEAEA] rounded px-1" style={{ fontFamily: 'var(--font-jetbrains-mono)' }}>
                         {text}
                       </code>
                     ),
