@@ -1179,7 +1179,7 @@ export default function CapTable() {
                   Each priced round investor gets exactly amount&nbsp;/&nbsp;(pre-money&nbsp;+&nbsp;amount) ownership, with a 1.00x entry multiple.
                 </p>
                 <p style={{ margin: 0 }}>
-                  Use <span style={{ color: "var(--text)" }}>Copy Link</span> to share a specific scenario.
+                  Use <span style={{ color: "var(--text)", fontWeight: 600 }}>Copy Link</span> to share a specific scenario.
                 </p>
               </div>
             )}
