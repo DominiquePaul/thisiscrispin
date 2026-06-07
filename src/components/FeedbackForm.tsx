@@ -82,19 +82,13 @@ export default function FeedbackForm({ onSuccess }: FeedbackFormProps) {
         </div>
         <h2
           aria-hidden
-          className="text-4xl font-bold uppercase leading-[0.85] tracking-[-0.03em] text-[rgb(18,18,22)] sm:text-5xl"
+          className="text-3xl font-bold uppercase leading-[0.9] tracking-[-0.04em] text-[rgb(18,18,22)] sm:text-4xl"
         >
-          Off the
-          <br />
-          record
+          Off the record
         </h2>
       </div>
 
       <div className="space-y-5 px-8 pb-8 pt-7">
-        <p className="text-sm leading-relaxed text-[rgb(45,45,52)]">
-          It’s easier to be real when you don’t have to be polite.
-        </p>
-
         <div className="space-y-2">
           <Textarea
             id="anonymous-feedback"
@@ -112,7 +106,7 @@ export default function FeedbackForm({ onSuccess }: FeedbackFormProps) {
                 form?.requestSubmit();
               }
             }}
-            placeholder="Tell me what you see that I don’t. Bold ideas, honest criticism, raw thoughts."
+            placeholder="A tool to share something with me, without your name attached to it."
             maxLength={maxCharacters}
             className="min-h-[170px] resize-none rounded-none border-2 border-[rgb(18,18,22)] bg-white text-sm leading-relaxed text-[rgb(18,18,22)] placeholder:text-[#ADADAD] focus-visible:ring-0 focus-visible:ring-offset-0"
           />
