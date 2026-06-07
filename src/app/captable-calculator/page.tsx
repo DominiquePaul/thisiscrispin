@@ -1149,7 +1149,6 @@ export default function CapTable() {
                 lineHeight: 1.6,
                 color: "var(--text-dim)",
                 fontFamily: "var(--mono)",
-                maxWidth: 640,
               }}>
                 <p style={{ margin: "0 0 8px" }}>
                   A cap table simulator for founders. Add SAFEs and priced rounds, set valuations and ESOP pools, and watch how ownership dilutes round by round.
@@ -1160,8 +1159,11 @@ export default function CapTable() {
                 <p style={{ margin: "0 0 8px" }}>
                   <span style={{ color: "var(--text)", fontWeight: 600 }}>ESOP pools</span> are target-based and carved out of pre-money. &quot;15% ESOP&quot; means the total pool is set to 15% of post-money &mdash; existing pool shares count toward the target. The cost is borne by existing shareholders, not the new investor.
                 </p>
+                <p style={{ margin: "0 0 8px" }}>
+                  Each priced round investor gets exactly amount&nbsp;/&nbsp;(pre-money&nbsp;+&nbsp;amount) ownership, with a 1.00x entry multiple.
+                </p>
                 <p style={{ margin: 0 }}>
-                  Each priced round investor gets exactly <span style={{ color: "var(--text)" }}>amount&nbsp;/&nbsp;(pre-money&nbsp;+&nbsp;amount)</span> ownership, with a 1.00x entry multiple. Use <span style={{ color: "var(--text)" }}>Copy Link</span> to share a specific scenario.
+                  Use <span style={{ color: "var(--text)" }}>Copy Link</span> to share a specific scenario.
                 </p>
               </div>
             )}
@@ -1337,7 +1339,7 @@ export default function CapTable() {
             >
               Charts
             </h2>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))", gap: 16, alignItems: "start" }}>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))", gap: 16, alignItems: "stretch" }}>
               <OwnershipChart pricedSnapshots={pricedSnapshots} colorMap={colorMap} />
               <ValueChart pricedSnapshots={pricedSnapshots} colorMap={colorMap} />
             </div>
