@@ -29,17 +29,17 @@ function MinimalList({
   return (
     <div>
       <h2
-        className="text-xs uppercase tracking-[0.3em] text-[#9A9A9A] mb-6"
+        className="text-[11px] uppercase tracking-[0.25em] text-[#B0B0B0] mb-5"
         style={{ fontFamily: 'var(--font-sf-mono)' }}
       >
         {title}
       </h2>
-      <ul className="space-y-4">
+      <ul className="space-y-3">
         {items.map((article) => (
           <li key={article.id}>
             <Link
               href={article.href ?? `/p/${article.slug}`}
-              className="text-[rgb(20,20,24)] text-lg sm:text-xl transition-colors duration-200 hover:text-[#9A9A9A]"
+              className="text-[rgb(45,45,52)] text-base transition-colors duration-200 hover:text-[rgb(18,18,22)]"
               style={{ fontFamily: 'var(--font-sf-mono)' }}
             >
               {article.title}
@@ -64,26 +64,18 @@ export default function HomeContent({ articles }: HomeContentProps) {
       {/* <InteractiveGrainyHero /> */}
       <section className="flex-grow-0 pt-[30vh] px-[5%] sm:px-[10%] 2xl:px-[20%]">
         <div className="max-w-3xl">
-          <div>
-            <h4
-              className="text-[#9A9A9A] text-xs uppercase tracking-[0.4em] mb-5"
-              style={{ fontFamily: 'var(--font-sf-mono)' }}
-            >
-              thisiscrispin
-            </h4>
-            <h1
-              className="text-[rgb(18,18,22)] font-bold text-5xl sm:text-7xl mb-10 tracking-[-0.04em] leading-[0.95]"
-              style={{ fontFamily: 'var(--font-sf-mono)' }}
-            >
-              Dominique Paul
-            </h1>
-          </div>
+          <h1
+            className="text-[rgb(30,30,36)] text-4xl sm:text-6xl mb-8 tracking-[-0.03em] leading-[1]"
+            style={{ fontFamily: 'var(--font-sf-mono)' }}
+          >
+            Dominique Paul
+          </h1>
           <div
-            className="max-w-2xl text-base sm:text-lg leading-relaxed text-[rgb(55,55,62)]"
+            className="max-w-xl text-base leading-relaxed text-[rgb(90,90,98)]"
             style={{ fontFamily: 'var(--font-sf-mono)' }}
           >
             <p>
-              Hacker, extrovert, and europatriot. I&apos;m <a href="https://dream-machines.eu/" className="text-[rgb(18,18,22)] underline decoration-1 underline-offset-4 decoration-[#BBBBBB] transition-colors hover:decoration-[rgb(18,18,22)]" target="_blank" rel="noopener noreferrer">building ML models for robotic arms</a>, after a non-linear path through maths &amp; statistics at ETH Zurich, computational genomics, and freelance ML work.
+              Hacker, extrovert, and europatriot. I&apos;m <a href="https://dream-machines.eu/" className="text-[rgb(30,30,36)] underline decoration-1 underline-offset-4 decoration-[#D0D0D0] transition-colors hover:decoration-[rgb(30,30,36)]" target="_blank" rel="noopener noreferrer">building ML models for robotic arms</a>, after a non-linear path through maths &amp; statistics at ETH Zurich, computational genomics, and freelance ML work.
             </p>
           </div>
           <div className="mt-12">
@@ -113,7 +105,7 @@ export default function HomeContent({ articles }: HomeContentProps) {
                   </a>
                   <Link
                     href="/shots"
-                    className="text-[#9A9A9A] text-xs uppercase tracking-[0.2em] transition-colors duration-200 hover:text-[rgb(18,18,22)]"
+                    className="text-[#ADADAD] text-[11px] uppercase tracking-[0.2em] transition-colors duration-200 hover:text-[rgb(18,18,22)]"
                     style={{ fontFamily: 'var(--font-sf-mono)' }}
                   >
                     Photographs
@@ -125,7 +117,7 @@ export default function HomeContent({ articles }: HomeContentProps) {
                     <DialogTrigger asChild>
                       <button
                         type="button"
-                        className="text-[#9A9A9A] text-xs uppercase tracking-[0.2em] transition-colors duration-200 cursor-pointer hover:text-[rgb(18,18,22)]"
+                        className="text-[#ADADAD] text-[11px] uppercase tracking-[0.2em] transition-colors duration-200 cursor-pointer hover:text-[rgb(18,18,22)]"
                         style={{ fontFamily: 'var(--font-sf-mono)' }}
                       >
                         Send me an anonymous note
@@ -151,7 +143,7 @@ export default function HomeContent({ articles }: HomeContentProps) {
           className="px-[5%] sm:px-[10%] 2xl:px-[20%] py-24"
           style={{ fontFamily: 'var(--font-sf-mono)' }}
         >
-          <div className="grid gap-16 md:grid-cols-2">
+          <div className="grid gap-12 md:grid-cols-2">
             <MinimalList title="Writing" items={writing} />
             <MinimalList title="Tools" items={tools} />
           </div>
