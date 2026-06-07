@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import Image from "next/image";
 import Link from "next/link";
 import FeedbackForm from '@/components/FeedbackForm';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
@@ -31,13 +30,19 @@ function MinimalList({
   if (items.length === 0) return null;
   return (
     <div>
-      <h2 className="text-sm uppercase tracking-[0.15em] text-[#8E8E8E] mb-6">{title}</h2>
-      <ul className="space-y-3">
+      <h2
+        className="text-xs uppercase tracking-[0.3em] text-[#9A9A9A] mb-6"
+        style={{ fontFamily: 'var(--font-jetbrains-mono)' }}
+      >
+        {title}
+      </h2>
+      <ul className="space-y-4">
         {items.map((article) => (
           <li key={article.id}>
             <Link
               href={article.href ?? `/p/${article.slug}`}
-              className="text-[rgb(35,35,44)] text-lg transition-colors duration-200 hover:text-[#8E8E8E]"
+              className="text-[rgb(20,20,24)] text-lg sm:text-xl tracking-tight transition-colors duration-200 hover:text-[#9A9A9A]"
+              style={{ fontFamily: 'var(--font-space-grotesk)' }}
             >
               {article.title}
             </Link>
@@ -47,7 +52,8 @@ function MinimalList({
       {seeAllHref && (
         <Link
           href={seeAllHref}
-          className="inline-block mt-6 text-sm text-[#8E8E8E] transition-colors duration-200 hover:text-[#6E6E6E]"
+          className="inline-block mt-8 text-xs uppercase tracking-[0.2em] text-[#9A9A9A] transition-colors duration-200 hover:text-[rgb(20,20,24)]"
+          style={{ fontFamily: 'var(--font-jetbrains-mono)' }}
         >
           See all &rarr;
         </Link>
@@ -67,37 +73,34 @@ export default function HomeContent({ articles }: HomeContentProps) {
   return (
     <div className="flex flex-col min-h-screen overflow-auto">
       {/* <InteractiveGrainyHero /> */}
-      <section className="flex-grow-0 pt-[40vh] pl-[5%] sm:pl-[10%] 2xl:pl-[20%]">
-        <div className="relative ">
-          <div className="relative z-10">
-            <h4 className="text-[rgb(100,100,100)] text-base z-10">
+      <section className="flex-grow-0 pt-[30vh] px-[5%] sm:px-[10%] 2xl:px-[20%]">
+        <div className="max-w-3xl">
+          <div>
+            <h4
+              className="text-[#9A9A9A] text-xs uppercase tracking-[0.4em] mb-5"
+              style={{ fontFamily: 'var(--font-jetbrains-mono)' }}
+            >
               thisiscrispin
             </h4>
-            <h1 className="text-[rgb(35,35,44)] font-bold text-5xl sm:text-7xl mb-4 z-10">
+            <h1
+              className="text-[rgb(18,18,22)] font-bold text-6xl sm:text-8xl mb-10 tracking-[-0.045em] leading-[0.88]"
+              style={{ fontFamily: 'var(--font-space-grotesk)' }}
+            >
               Dominique Paul
             </h1>
           </div>
-          <div className="relative bg-[linear-gradient(57.09deg,rgba(245,250,28,0.9)_0%,rgba(252,255,101,0)_37.99%),linear-gradient(162.34deg,rgb(106,255,201)_25.23%,rgba(70,255,188,0)_70.88%),linear-gradient(95.09deg,rgb(252,255,109)_1.14%,rgba(101,220,176,0.86)_33.44%,rgba(253,125,225,0.86)_62.8%,rgba(211,155,255,0.58)_99.02%)] p-[30px]">
-            <div className="absolute top-0 -translate-y-full -z-10 left-[40%] sm:left-[45%]">
-              <Image
-                src="https://images.ctfassets.net/2jl6ez2z7dm3/60e2epJPiz2xl7SQ6qrVB/c2ec5203690ff15cb11d776a0f04f470/website-profile_cropped.webp"
-                alt="Decorative top image"
-                width={600}
-                height={800}
-                className="object-contain"
-                sizes="(max-width: 768px) 100vw"
-              />
-            </div>
-            <div className="w-full pr-[20%] text-lg space-y-6" style={{ fontFamily: 'var(--font-sf-mono)' }}>
-              <p>
-                Hacker, extrovert, and europatriot. I&apos;m <a href="https://dream-machines.eu/" style={{ color: "inherit", textDecoration: "none" }} target="_blank" rel="noopener noreferrer">building ML models for robotic arms</a>, after a non-linear path through maths &amp; statistics at ETH Zurich, computational genomics, and freelance ML work.
-              </p>
-            </div>
+          <div
+            className="max-w-2xl text-base sm:text-lg leading-relaxed text-[rgb(55,55,62)]"
+            style={{ fontFamily: 'var(--font-jetbrains-mono)' }}
+          >
+            <p>
+              Hacker, extrovert, and europatriot. I&apos;m <a href="https://dream-machines.eu/" className="text-[rgb(18,18,22)] underline decoration-1 underline-offset-4 decoration-[#BBBBBB] transition-colors hover:decoration-[rgb(18,18,22)]" target="_blank" rel="noopener noreferrer">building ML models for robotic arms</a>, after a non-linear path through maths &amp; statistics at ETH Zurich, computational genomics, and freelance ML work.
+            </p>
           </div>
-          <div className="pl-[30px] mt-2.5">
-            <div className="w-9/12 font-['SF_Mono']">
-              <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start">
-                <div className="flex items-center space-x-[30px] sm:space-x-[20px] pb-10">
+          <div className="mt-12">
+            <div style={{ fontFamily: 'var(--font-jetbrains-mono)' }}>
+              <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-6">
+                <div className="flex items-center space-x-[28px] sm:space-x-[22px]">
                   <a href="https://thisiscrispin.substack.com" target="_blank" rel="noopener noreferrer">
                     <svg width="20" height="20" viewBox="0 0 448 511.471" fill="#8E8E8E" className="w-5">
                       <path d="M0 0h448v62.804H0V0zm0 229.083h448v282.388L223.954 385.808 0 511.471V229.083zm0-114.542h448v62.804H0v-62.804z"/>
@@ -121,18 +124,20 @@ export default function HomeContent({ articles }: HomeContentProps) {
                   </a>
                   <Link
                     href="/shots"
-                    className="text-[#8E8E8E] text-sm font-ibm-plex-sans transition-colors duration-200 hover:text-[#6E6E6E]"
+                    className="text-[#9A9A9A] text-xs uppercase tracking-[0.2em] transition-colors duration-200 hover:text-[rgb(18,18,22)]"
+                    style={{ fontFamily: 'var(--font-jetbrains-mono)' }}
                   >
                     Photographs
                   </Link>
                 </div>
-                {/* Photographs button - positioned to align with writings section */}
-                <div className="flex justify-end pb-10 pr-2">
+                {/* Anonymous note - aligned to the right on wide screens */}
+                <div className="flex sm:justify-end">
                   <Dialog open={isFeedbackOpen} onOpenChange={setIsFeedbackOpen}>
                     <DialogTrigger asChild>
                       <button
                         type="button"
-                        className="text-[#8E8E8E] transition-colors duration-200 cursor-pointer text-sm font-ibm-plex-sans hover:text-[#6E6E6E]"
+                        className="text-[#9A9A9A] text-xs uppercase tracking-[0.2em] transition-colors duration-200 cursor-pointer hover:text-[rgb(18,18,22)]"
+                        style={{ fontFamily: 'var(--font-jetbrains-mono)' }}
                       >
                         Send me an anonymous note
                       </button>
@@ -155,7 +160,7 @@ export default function HomeContent({ articles }: HomeContentProps) {
       {visible.length > 0 && (
         <section
           className="px-[5%] sm:px-[10%] 2xl:px-[20%] py-24"
-          style={{ fontFamily: 'var(--font-sf-mono)' }}
+          style={{ fontFamily: 'var(--font-jetbrains-mono)' }}
         >
           <div className="grid gap-16 md:grid-cols-2">
             <MinimalList title="Writing" items={writing} seeAllHref="/p" />
