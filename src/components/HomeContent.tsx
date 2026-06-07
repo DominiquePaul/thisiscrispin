@@ -71,11 +71,14 @@ export default function HomeContent({ articles }: HomeContentProps) {
             Dominique Paul
           </h1>
           <div
-            className="max-w-xl text-base leading-relaxed text-[rgb(90,90,98)]"
+            className="max-w-2xl text-base leading-relaxed text-[rgb(90,90,98)] space-y-4"
             style={{ fontFamily: 'var(--font-jetbrains-mono)' }}
           >
             <p>
-              Hacker, extrovert, and europatriot. I&apos;m <a href="https://dream-machines.eu/" className="text-[rgb(30,30,36)] underline decoration-1 underline-offset-4 decoration-[#D0D0D0] transition-colors hover:decoration-[rgb(30,30,36)]" target="_blank" rel="noopener noreferrer">building ML models for robotic arms</a>, after a non-linear path through maths &amp; statistics at ETH Zurich, computational genomics, and freelance ML work.
+              Europe is unique. Diverse cultures bound by a belief that a society is measured by how it treats its weakest, not its strongest. For those values to stay relevant, Europe has to change. Technology is the greatest force for that change, and young technologists are its sharpest edge. Yet too many leave technical universities convinced they can&apos;t just do whatever they want, or copying foreign playbooks in a chase to earn money. Europe needs more value-driven entrepreneurs solving societal problems.
+            </p>
+            <p>
+              I build <a href="https://dream-machines.eu/" className="text-[rgb(30,30,36)] underline decoration-1 underline-offset-4 decoration-[#D0D0D0] transition-colors hover:decoration-[rgb(30,30,36)]" target="_blank" rel="noopener noreferrer">AI models for robotic arms</a> that let small manufacturers match the output of companies ten times their size, and I create spaces for technical builders to meet and exchange ideas.
             </p>
           </div>
           <div className="mt-12">
