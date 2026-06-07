@@ -2,23 +2,67 @@
 
 import { useState } from "react";
 import Image from "next/image";
-// import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import Link from "next/link";
-import BlogContent from '@/components/BlogContent';
 import FeedbackForm from '@/components/FeedbackForm';
-import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-// import ProjectCard from '@/components/ProjectCard';
 
+interface Article {
+  id: string;
+  slug: string;
+  title: string;
+  tags: string[];
+  href?: string;
+}
 
 interface HomeContentProps {
-    articles: any[]; // Replace 'any' with your actual article type
+    articles: Article[];
     allTags: string[];
   }
-  
-export default function HomeContent({ articles, allTags }: HomeContentProps) {
+
+function MinimalList({
+  title,
+  items,
+  seeAllHref,
+}: {
+  title: string;
+  items: Article[];
+  seeAllHref?: string;
+}) {
+  if (items.length === 0) return null;
+  return (
+    <div>
+      <h2 className="text-sm uppercase tracking-[0.15em] text-[#8E8E8E] mb-6">{title}</h2>
+      <ul className="space-y-3">
+        {items.map((article) => (
+          <li key={article.id}>
+            <Link
+              href={article.href ?? `/p/${article.slug}`}
+              className="text-[rgb(35,35,44)] text-lg transition-colors duration-200 hover:text-[#8E8E8E]"
+            >
+              {article.title}
+            </Link>
+          </li>
+        ))}
+      </ul>
+      {seeAllHref && (
+        <Link
+          href={seeAllHref}
+          className="inline-block mt-6 text-sm text-[#8E8E8E] transition-colors duration-200 hover:text-[#6E6E6E]"
+        >
+          See all &rarr;
+        </Link>
+      )}
+    </div>
+  );
+}
+
+export default function HomeContent({ articles }: HomeContentProps) {
 
   const [isFeedbackOpen, setIsFeedbackOpen] = useState(false);
+
+  const visible = articles.filter((a) => !a.tags.includes("hideOnThisiscrispin"));
+  const tools = visible.filter((a) => a.tags.includes("devProjects"));
+  const writing = visible.filter((a) => !a.tags.includes("devProjects")).slice(0, 6);
 
   return (
     <div className="flex flex-col min-h-screen overflow-auto">
@@ -46,10 +90,7 @@ export default function HomeContent({ articles, allTags }: HomeContentProps) {
             </div>
             <div className="w-full pr-[20%] text-lg space-y-6" style={{ fontFamily: 'var(--font-sf-mono)' }}>
               <p>
-                I&apos;m a hacker, extrovert, nerd, and europatriot. Life is about creating value for people who share your values. Builders and entrepreneurs, in my case. Making something physical is hard. Scaling it is even harder. What&apos;s missing is automation that works before you&apos;re huge, something anyone can configure intuitively without needing an engineer. That&apos;s why I&apos;m <a href="https://dream-machines.eu/" style={{ color: "inherit", textDecoration: "none" }} target="_blank" rel="noopener noreferrer">building ML models for robotic arms</a>.
-              </p>
-              <p>
-                My path here has been non-linear: from economics to maths &amp; statistics at ETH Zurich, computational genomics research, <a href="https://openreview.net/forum?id=IbiiNw4oRj" style={{ color: "inherit", textDecoration: "none" }} target="_blank" rel="noopener noreferrer">publishing on scaling laws at NeurIPS</a>, half a year clearing shipping containers in <a href="https://www.sierraleonehockey.org/" style={{ color: "inherit", textDecoration: "none" }} target="_blank" rel="noopener noreferrer">Sierra Leone</a>, and freelancing to build ML pipelines, which is now funding my v1 product.
+                Hacker, extrovert, and europatriot. I&apos;m <a href="https://dream-machines.eu/" style={{ color: "inherit", textDecoration: "none" }} target="_blank" rel="noopener noreferrer">building ML models for robotic arms</a>, after a non-linear path through maths &amp; statistics at ETH Zurich, computational genomics, and freelance ML work.
               </p>
             </div>
           </div>
@@ -110,18 +151,15 @@ export default function HomeContent({ articles, allTags }: HomeContentProps) {
           </div>
         </div>
       </section>
-      {/* Blog Section - hidden when articles fail to load (e.g. rate limiting) */}
-      {articles.length > 0 && (
-        <section className="px-[10%] 2xl:px-[20%] py-24">
-          <h1 className="text-5xl font-bold mb-12">Writing</h1>
-          <BlogContent articles={articles} allTags={allTags} isTeaser={true} maxArticles={5} />
-
-          <div className="mt-8 text-center">
-            <Link href="/p">
-              <Button variant="outline" size="lg">
-                See all
-              </Button>
-            </Link>
+      {/* Minimal link lists - hidden when articles fail to load (e.g. rate limiting) */}
+      {visible.length > 0 && (
+        <section
+          className="px-[5%] sm:px-[10%] 2xl:px-[20%] py-24"
+          style={{ fontFamily: 'var(--font-sf-mono)' }}
+        >
+          <div className="grid gap-16 md:grid-cols-2">
+            <MinimalList title="Writing" items={writing} seeAllHref="/p" />
+            <MinimalList title="Tools" items={tools} />
           </div>
         </section>
       )}
