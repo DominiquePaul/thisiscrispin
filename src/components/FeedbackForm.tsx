@@ -74,52 +74,65 @@ export default function FeedbackForm({ onSuccess }: FeedbackFormProps) {
   const maxCharacters = 1500;
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
-      <p className="text-sm leading-relaxed text-[rgb(45,45,52)]">
-        It’s easier to be real when you don’t have to be polite.
-      </p>
-
-      <div className="space-y-2">
-        <Textarea
-          id="anonymous-feedback"
-          aria-label="Anonymous feedback"
-          value={notes}
-          onChange={(event) => setNotes(event.target.value)}
-          onKeyDown={(event) => {
-            if ((event.metaKey || event.ctrlKey) && event.key === "Enter") {
-              event.preventDefault();
-              if (isSubmitting) {
-                return;
-              }
-
-              const form = event.currentTarget.form;
-              form?.requestSubmit();
-            }
-          }}
-          placeholder="Tell me what you see that I don’t. Bold ideas, honest criticism, raw thoughts."
-          maxLength={maxCharacters}
-          className="min-h-[200px] resize-none rounded-[6px] border border-[#E4E4E4] bg-white text-sm leading-relaxed text-[rgb(18,18,22)] placeholder:text-[#ADADAD] focus-visible:ring-1 focus-visible:ring-[rgb(18,18,22)]/15"
-        />
-        {characterCount > maxCharacters && (
-          <div className="flex items-center justify-between text-xs text-red-600">
-            <span>
-              {characterCount}/{maxCharacters} — please keep it under {maxCharacters} characters.
-            </span>
-          </div>
-        )}
-        {characterCount > 600 && characterCount <= maxCharacters && (
-          <div className="flex items-center justify-between text-xs text-slate-400">
-            <span>{characterCount}/{maxCharacters}</span>
-          </div>
-        )}
+    <form onSubmit={handleSubmit}>
+      {/* Header band */}
+      <div className="border-b-2 border-[rgb(18,18,22)] px-8 pb-6 pt-9">
+        <div className="mb-3 text-[10px] uppercase tracking-[0.45em] text-[#9A9A9A]">
+          Anonymous
+        </div>
+        <h2
+          aria-hidden
+          className="text-4xl font-bold uppercase leading-[0.85] tracking-[-0.03em] text-[rgb(18,18,22)] sm:text-5xl"
+        >
+          Off the
+          <br />
+          record
+        </h2>
       </div>
 
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-end sm:gap-4">
+      <div className="space-y-5 px-8 pb-8 pt-7">
+        <p className="text-sm leading-relaxed text-[rgb(45,45,52)]">
+          It’s easier to be real when you don’t have to be polite.
+        </p>
+
+        <div className="space-y-2">
+          <Textarea
+            id="anonymous-feedback"
+            aria-label="Anonymous feedback"
+            value={notes}
+            onChange={(event) => setNotes(event.target.value)}
+            onKeyDown={(event) => {
+              if ((event.metaKey || event.ctrlKey) && event.key === "Enter") {
+                event.preventDefault();
+                if (isSubmitting) {
+                  return;
+                }
+
+                const form = event.currentTarget.form;
+                form?.requestSubmit();
+              }
+            }}
+            placeholder="Tell me what you see that I don’t. Bold ideas, honest criticism, raw thoughts."
+            maxLength={maxCharacters}
+            className="min-h-[170px] resize-none rounded-none border-2 border-[rgb(18,18,22)] bg-white text-sm leading-relaxed text-[rgb(18,18,22)] placeholder:text-[#ADADAD] focus-visible:ring-0 focus-visible:ring-offset-0"
+          />
+          {characterCount > maxCharacters && (
+            <div className="text-[10px] uppercase tracking-[0.1em] text-red-600">
+              {characterCount}/{maxCharacters} — keep it under {maxCharacters}.
+            </div>
+          )}
+          {characterCount > 600 && characterCount <= maxCharacters && (
+            <div className="text-[10px] uppercase tracking-[0.1em] text-[#ADADAD]">
+              {characterCount}/{maxCharacters}
+            </div>
+          )}
+        </div>
+
         {status && (
           <p
             role={status.tone === "error" ? "alert" : undefined}
             className={cn(
-              "text-sm sm:mr-auto",
+              "text-xs",
               status.tone === "error" ? "text-red-600" : "text-emerald-600"
             )}
           >
@@ -130,9 +143,10 @@ export default function FeedbackForm({ onSuccess }: FeedbackFormProps) {
         <Button
           type="submit"
           disabled={isSubmitting}
-          className="ml-auto w-full min-w-[150px] rounded-[6px] bg-[rgb(18,18,22)] px-6 py-4 text-xs uppercase tracking-[0.15em] text-white transition hover:bg-[rgb(45,45,52)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgb(18,18,22)] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
+          className="flex w-full items-center justify-between rounded-none bg-[rgb(18,18,22)] px-6 py-6 text-xs uppercase tracking-[0.3em] text-white transition hover:bg-[rgb(45,45,52)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgb(18,18,22)] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
         >
-          {isSubmitting ? "Sending…" : formState === "success" ? "Sent" : "Send message"}
+          <span>{isSubmitting ? "Sending" : formState === "success" ? "Sent" : "Send message"}</span>
+          <span aria-hidden>&rarr;</span>
         </Button>
       </div>
     </form>

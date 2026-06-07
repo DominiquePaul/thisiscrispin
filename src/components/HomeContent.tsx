@@ -126,7 +126,7 @@ export default function HomeContent({ articles }: HomeContentProps) {
                       </button>
                     </DialogTrigger>
                     <DialogContent
-                      className="sm:max-w-lg p-8 rounded-[8px] border border-[#E4E4E4]"
+                      className="sm:max-w-md gap-0 p-0 rounded-none border-2 border-[rgb(18,18,22)]"
                       style={{ fontFamily: 'var(--font-jetbrains-mono)' }}
                     >
                       <DialogHeader className="sr-only">
