@@ -532,18 +532,32 @@ function RoundCard({ round, onUpdate, onRemove, isOnly }: RoundCardProps) {
   );
 }
 
-const INVESTOR_COLORS = ["#f59e0b", "#10b981", "#06b6d4", "#ef4444", "#f97316", "#ec4899"];
+// Founders and the ESOP pool share a green family at the same intensity, so
+// they read as one "internal" group, set apart from outside investors.
+const FOUNDER_COLOR = "#10B981"; // emerald
+const ESOP_COLOR = "#14B8A6"; // teal — a sibling of the founder colour
+
+// Investors share a single indigo hue spread dark -> light as a gradient, so
+// they clearly belong to one group while staying individually distinguishable.
+function investorColor(index: number, total: number): string {
+  const dark = [49, 46, 129]; // indigo-900 #312E81
+  const light = [165, 180, 252]; // indigo-300 #A5B4FC
+  const t = total <= 1 ? 0 : index / (total - 1);
+  const mix = dark.map((d, i) => Math.round(d + (light[i] - d) * t));
+  return `rgb(${mix[0]}, ${mix[1]}, ${mix[2]})`;
+}
 
 function OwnershipBar({ shareholders }: { shareholders: Shareholder[] }) {
+  const totalInvestors = shareholders.filter((s) => s.type === "investor").length;
   let investorIdx = 0;
   return (
     <div style={{ display: "flex", borderRadius: 8, overflow: "hidden", height: 32, width: "100%" }}>
       {shareholders.map((s, i) => {
         let color: string;
-        if (s.type === "founder") color = "#3b82f6";
-        else if (s.type === "esop") color = "#8b5cf6";
+        if (s.type === "founder") color = FOUNDER_COLOR;
+        else if (s.type === "esop") color = ESOP_COLOR;
         else {
-          color = INVESTOR_COLORS[investorIdx % INVESTOR_COLORS.length];
+          color = investorColor(investorIdx, totalInvestors);
           investorIdx++;
         }
         return (
@@ -582,15 +596,16 @@ function OwnershipBar({ shareholders }: { shareholders: Shareholder[] }) {
 }
 
 function Legend({ shareholders }: { shareholders: Shareholder[] }) {
+  const totalInvestors = shareholders.filter((s) => s.type === "investor").length;
   let investorIdx = 0;
   return (
     <div style={{ display: "flex", flexWrap: "wrap", gap: "6px 16px", marginTop: 8 }}>
       {shareholders.map((s, i) => {
         let color: string;
-        if (s.type === "founder") color = "#3b82f6";
-        else if (s.type === "esop") color = "#8b5cf6";
+        if (s.type === "founder") color = FOUNDER_COLOR;
+        else if (s.type === "esop") color = ESOP_COLOR;
         else {
-          color = INVESTOR_COLORS[investorIdx % INVESTOR_COLORS.length];
+          color = investorColor(investorIdx, totalInvestors);
           investorIdx++;
         }
         return (
@@ -812,12 +827,13 @@ function buildColorMap(snapshots: Snapshot[]): Map<string, string> {
   let investorIdx = 0;
   const lastPriced = [...snapshots].reverse().find((s) => s.roundType === "priced");
   if (lastPriced) {
+    const totalInvestors = lastPriced.shareholders.filter((s) => s.type === "investor").length;
     for (const s of lastPriced.shareholders) {
       if (map.has(s.name)) continue;
-      if (s.type === "founder") map.set(s.name, "#3b82f6");
-      else if (s.type === "esop") map.set(s.name, "#8b5cf6");
+      if (s.type === "founder") map.set(s.name, FOUNDER_COLOR);
+      else if (s.type === "esop") map.set(s.name, ESOP_COLOR);
       else {
-        map.set(s.name, INVESTOR_COLORS[investorIdx % INVESTOR_COLORS.length]);
+        map.set(s.name, investorColor(investorIdx, totalInvestors));
         investorIdx++;
       }
     }

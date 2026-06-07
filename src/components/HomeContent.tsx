@@ -60,7 +60,7 @@ export default function HomeContent({ articles }: HomeContentProps) {
   const writing = visible.filter((a) => !a.tags.includes("devProjects")).slice(0, 6);
 
   return (
-    <div className="flex flex-col min-h-screen overflow-auto">
+    <div className="flex flex-col min-h-screen overflow-auto" style={{ zoom: 0.9 }}>
       <section className="flex-grow-0 pt-[30vh] px-[5%] sm:px-[10%] 2xl:px-[20%]">
         <div className="max-w-3xl">
           <h1
