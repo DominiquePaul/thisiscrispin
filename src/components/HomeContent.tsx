@@ -21,18 +21,16 @@ interface HomeContentProps {
 function MinimalList({
   title,
   items,
-  seeAllHref,
 }: {
   title: string;
   items: Article[];
-  seeAllHref?: string;
 }) {
   if (items.length === 0) return null;
   return (
     <div>
       <h2
         className="text-xs uppercase tracking-[0.3em] text-[#9A9A9A] mb-6"
-        style={{ fontFamily: 'var(--font-jetbrains-mono)' }}
+        style={{ fontFamily: 'var(--font-sf-mono)' }}
       >
         {title}
       </h2>
@@ -41,23 +39,14 @@ function MinimalList({
           <li key={article.id}>
             <Link
               href={article.href ?? `/p/${article.slug}`}
-              className="text-[rgb(20,20,24)] text-lg sm:text-xl tracking-tight transition-colors duration-200 hover:text-[#9A9A9A]"
-              style={{ fontFamily: 'var(--font-space-grotesk)' }}
+              className="text-[rgb(20,20,24)] text-lg sm:text-xl transition-colors duration-200 hover:text-[#9A9A9A]"
+              style={{ fontFamily: 'var(--font-sf-mono)' }}
             >
               {article.title}
             </Link>
           </li>
         ))}
       </ul>
-      {seeAllHref && (
-        <Link
-          href={seeAllHref}
-          className="inline-block mt-8 text-xs uppercase tracking-[0.2em] text-[#9A9A9A] transition-colors duration-200 hover:text-[rgb(20,20,24)]"
-          style={{ fontFamily: 'var(--font-jetbrains-mono)' }}
-        >
-          See all &rarr;
-        </Link>
-      )}
     </div>
   );
 }
@@ -78,27 +67,27 @@ export default function HomeContent({ articles }: HomeContentProps) {
           <div>
             <h4
               className="text-[#9A9A9A] text-xs uppercase tracking-[0.4em] mb-5"
-              style={{ fontFamily: 'var(--font-jetbrains-mono)' }}
+              style={{ fontFamily: 'var(--font-sf-mono)' }}
             >
               thisiscrispin
             </h4>
             <h1
-              className="text-[rgb(18,18,22)] font-bold text-6xl sm:text-8xl mb-10 tracking-[-0.045em] leading-[0.88]"
-              style={{ fontFamily: 'var(--font-space-grotesk)' }}
+              className="text-[rgb(18,18,22)] font-bold text-5xl sm:text-7xl mb-10 tracking-[-0.04em] leading-[0.95]"
+              style={{ fontFamily: 'var(--font-sf-mono)' }}
             >
               Dominique Paul
             </h1>
           </div>
           <div
             className="max-w-2xl text-base sm:text-lg leading-relaxed text-[rgb(55,55,62)]"
-            style={{ fontFamily: 'var(--font-jetbrains-mono)' }}
+            style={{ fontFamily: 'var(--font-sf-mono)' }}
           >
             <p>
               Hacker, extrovert, and europatriot. I&apos;m <a href="https://dream-machines.eu/" className="text-[rgb(18,18,22)] underline decoration-1 underline-offset-4 decoration-[#BBBBBB] transition-colors hover:decoration-[rgb(18,18,22)]" target="_blank" rel="noopener noreferrer">building ML models for robotic arms</a>, after a non-linear path through maths &amp; statistics at ETH Zurich, computational genomics, and freelance ML work.
             </p>
           </div>
           <div className="mt-12">
-            <div style={{ fontFamily: 'var(--font-jetbrains-mono)' }}>
+            <div style={{ fontFamily: 'var(--font-sf-mono)' }}>
               <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-6">
                 <div className="flex items-center space-x-[28px] sm:space-x-[22px]">
                   <a href="https://thisiscrispin.substack.com" target="_blank" rel="noopener noreferrer">
@@ -125,7 +114,7 @@ export default function HomeContent({ articles }: HomeContentProps) {
                   <Link
                     href="/shots"
                     className="text-[#9A9A9A] text-xs uppercase tracking-[0.2em] transition-colors duration-200 hover:text-[rgb(18,18,22)]"
-                    style={{ fontFamily: 'var(--font-jetbrains-mono)' }}
+                    style={{ fontFamily: 'var(--font-sf-mono)' }}
                   >
                     Photographs
                   </Link>
@@ -137,7 +126,7 @@ export default function HomeContent({ articles }: HomeContentProps) {
                       <button
                         type="button"
                         className="text-[#9A9A9A] text-xs uppercase tracking-[0.2em] transition-colors duration-200 cursor-pointer hover:text-[rgb(18,18,22)]"
-                        style={{ fontFamily: 'var(--font-jetbrains-mono)' }}
+                        style={{ fontFamily: 'var(--font-sf-mono)' }}
                       >
                         Send me an anonymous note
                       </button>
@@ -160,10 +149,10 @@ export default function HomeContent({ articles }: HomeContentProps) {
       {visible.length > 0 && (
         <section
           className="px-[5%] sm:px-[10%] 2xl:px-[20%] py-24"
-          style={{ fontFamily: 'var(--font-jetbrains-mono)' }}
+          style={{ fontFamily: 'var(--font-sf-mono)' }}
         >
           <div className="grid gap-16 md:grid-cols-2">
-            <MinimalList title="Writing" items={writing} seeAllHref="/p" />
+            <MinimalList title="Writing" items={writing} />
             <MinimalList title="Tools" items={tools} />
           </div>
         </section>
