@@ -353,7 +353,7 @@ function FormattedInput({ label, value, onChange, prefix = "", suffix = "", step
           alignItems: "center",
           background: "var(--input-bg)",
           borderRadius: 6,
-          border: `1px solid ${isFocused ? "var(--accent-priced)" : "var(--border)"}`,
+          border: `1px solid ${isFocused ? "var(--text)" : "var(--border)"}`,
           padding: "6px 10px",
           transition: "border-color 0.2s",
         }}
@@ -402,7 +402,7 @@ interface RoundCardProps {
 
 function RoundCard({ round, onUpdate, onRemove, isOnly }: RoundCardProps) {
   const isSafe = round.type === "safe";
-  const accentColor = isSafe ? "var(--accent-safe)" : "var(--accent-priced)";
+  const accentColor = isSafe ? "#C4C4C4" : "#1E1E24";
 
   return (
     <div
@@ -441,8 +441,8 @@ function RoundCard({ round, onUpdate, onRemove, isOnly }: RoundCardProps) {
               fontWeight: 700,
               textTransform: "uppercase",
               letterSpacing: "0.1em",
-              color: accentColor,
-              background: `${accentColor}18`,
+              color: isSafe ? "#6E6E6E" : "#FFFFFF",
+              background: isSafe ? "#ECECEC" : "#1E1E24",
               padding: "3px 8px",
               borderRadius: 4,
               fontFamily: "var(--mono)",
@@ -825,9 +825,36 @@ function buildColorMap(snapshots: Snapshot[]): Map<string, string> {
   return map;
 }
 
+function ChartTooltip({ tip }: { tip: { x: number; y: number; label: string } | null }) {
+  if (!tip) return null;
+  return (
+    <div
+      style={{
+        position: "fixed",
+        left: tip.x + 12,
+        top: tip.y + 12,
+        zIndex: 50,
+        pointerEvents: "none",
+        background: "var(--text)",
+        color: "#fff",
+        fontSize: 11,
+        fontFamily: "var(--mono)",
+        padding: "4px 8px",
+        borderRadius: 4,
+        whiteSpace: "nowrap",
+      }}
+    >
+      {tip.label}
+    </div>
+  );
+}
+
 function OwnershipChart({ pricedSnapshots, colorMap }: { pricedSnapshots: Snapshot[]; colorMap: Map<string, string> }) {
+  const [tip, setTip] = useState<{ x: number; y: number; label: string } | null>(null);
   if (pricedSnapshots.length === 0) return null;
   const allNames = Array.from(colorMap.keys());
+  // colorMap lists founders first; render reversed so founders sit at the bottom of each bar.
+  const stacked = [...allNames].reverse();
   const barH = 280;
 
   return (
@@ -846,13 +873,14 @@ function OwnershipChart({ pricedSnapshots, colorMap }: { pricedSnapshots: Snapsh
         <div style={{ display: "flex", flex: 1, gap: 8, alignItems: "flex-end" }}>
           {pricedSnapshots.map((snap, si) => (
             <div key={si} style={{ flex: 1, display: "flex", flexDirection: "column", height: barH }}>
-              {allNames.map((name) => {
+              {stacked.map((name) => {
                 const sh = snap.shareholders.find((s) => s.name === name);
                 const pct = sh ? sh.ownership * 100 : 0;
                 return (
                   <div
                     key={name}
-                    title={`${name}: ${pct.toFixed(1)}%`}
+                    onMouseMove={(e) => setTip({ x: e.clientX, y: e.clientY, label: `${name} · ${pct.toFixed(1)}%` })}
+                    onMouseLeave={() => setTip(null)}
                     style={{
                       height: `${pct}%`,
                       background: colorMap.get(name),
@@ -878,13 +906,17 @@ function OwnershipChart({ pricedSnapshots, colorMap }: { pricedSnapshots: Snapsh
           </div>
         ))}
       </div>
+      <ChartTooltip tip={tip} />
     </div>
   );
 }
 
 function ValueChart({ pricedSnapshots, colorMap }: { pricedSnapshots: Snapshot[]; colorMap: Map<string, string> }) {
+  const [tip, setTip] = useState<{ x: number; y: number; label: string } | null>(null);
   if (pricedSnapshots.length === 0) return null;
   const allNames = Array.from(colorMap.keys());
+  // Render reversed so founders sit at the bottom of each bar.
+  const stacked = [...allNames].reverse();
   const maxVal = Math.max(...pricedSnapshots.map((s) => s.postMoney || 0));
   const barH = 280;
 
@@ -914,14 +946,15 @@ function ValueChart({ pricedSnapshots, colorMap }: { pricedSnapshots: Snapshot[]
             return (
               <div key={si} style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "flex-end", height: barH }}>
                 <div style={{ display: "flex", flexDirection: "column", height: `${heightPct}%`, transition: "height 0.4s ease" }}>
-                  {allNames.map((name) => {
+                  {stacked.map((name) => {
                     const sh = snap.shareholders.find((s) => s.name === name);
                     const val = sh?.impliedValue || 0;
                     const pct = total > 0 ? (val / total) * 100 : 0;
                     return (
                       <div
                         key={name}
-                        title={`${name}: ${formatCurrency(val)}`}
+                        onMouseMove={(e) => setTip({ x: e.clientX, y: e.clientY, label: `${name} · ${formatCurrency(val)}` })}
+                        onMouseLeave={() => setTip(null)}
                         style={{
                           height: `${pct}%`,
                           background: colorMap.get(name),
@@ -939,102 +972,7 @@ function ValueChart({ pricedSnapshots, colorMap }: { pricedSnapshots: Snapshot[]
           })}
         </div>
       </div>
-    </div>
-  );
-}
-
-function DilutionChart({ pricedSnapshots }: { pricedSnapshots: Snapshot[] }) {
-  if (pricedSnapshots.length === 0) return null;
-
-  const points = pricedSnapshots.map((snap) => {
-    const founder = snap.shareholders.find((s) => s.type === "founder");
-    return { ownership: founder?.ownership || 0, name: snap.roundName, postMoney: snap.postMoney || 0 };
-  });
-
-  const chartW = 800;
-  const chartH = 260;
-  const padL = 55;
-  const padR = 20;
-  const padT = 20;
-  const padB = 45;
-  const plotW = chartW - padL - padR;
-  const plotH = chartH - padT - padB;
-
-  const maxOwnership = Math.max(...points.map((p) => p.ownership), 0.5);
-  const yMax = Math.ceil(maxOwnership * 10) / 10; // round up to nearest 10%
-
-  const getX = (i: number) => padL + (points.length === 1 ? plotW / 2 : (i / (points.length - 1)) * plotW);
-  const getY = (ownership: number) => padT + (1 - ownership / yMax) * plotH;
-
-  const linePath = points.map((p, i) => `${i === 0 ? "M" : "L"}${getX(i)},${getY(p.ownership)}`).join(" ");
-
-  // Area path (fill under line)
-  const areaPath = `${linePath} L${getX(points.length - 1)},${padT + plotH} L${getX(0)},${padT + plotH} Z`;
-
-  // Y-axis ticks
-  const yTicks: number[] = [];
-  for (let v = 0; v <= yMax; v += yMax / 4) yTicks.push(v);
-
-  return (
-    <div style={{ background: "var(--card-bg)", border: "1px solid var(--border)", borderRadius: 10, padding: 20 }}>
-      <h3 style={{ margin: "0 0 16px", fontSize: 16, fontWeight: 700, color: "var(--text)", fontFamily: "var(--sans)" }}>
-        Founder Ownership Over Rounds
-      </h3>
-      <svg viewBox={`0 0 ${chartW} ${chartH}`} style={{ width: "100%", height: "auto" }}>
-        {/* Grid lines */}
-        {yTicks.map((v, i) => (
-          <g key={i}>
-            <line x1={padL} y1={getY(v)} x2={chartW - padR} y2={getY(v)} stroke="var(--border)" strokeWidth="1" />
-            <text x={padL - 8} y={getY(v) + 4} textAnchor="end" fill="var(--text-dim)" fontSize="11" fontFamily="var(--mono)">
-              {(v * 100).toFixed(0)}%
-            </text>
-          </g>
-        ))}
-        {/* Area fill */}
-        <path d={areaPath} fill="#3b82f6" opacity="0.1" />
-        {/* Line */}
-        <path d={linePath} fill="none" stroke="#3b82f6" strokeWidth="2.5" strokeLinejoin="round" />
-        {/* Points + labels */}
-        {points.map((p, i) => (
-          <g key={i}>
-            <circle cx={getX(i)} cy={getY(p.ownership)} r="5" fill="#3b82f6" stroke="var(--card-bg)" strokeWidth="2" />
-            <text
-              x={getX(i)}
-              y={getY(p.ownership) - 14}
-              textAnchor="middle"
-              fill="var(--text)"
-              fontSize="12"
-              fontWeight="700"
-              fontFamily="var(--mono)"
-            >
-              {formatPct(p.ownership)}
-            </text>
-            {/* X-axis label */}
-            <text
-              x={getX(i)}
-              y={padT + plotH + 20}
-              textAnchor="middle"
-              fill="var(--text-dim)"
-              fontSize="12"
-              fontFamily="var(--mono)"
-            >
-              {p.name}
-            </text>
-            {/* Valuation below round name */}
-            <text
-              x={getX(i)}
-              y={padT + plotH + 36}
-              textAnchor="middle"
-              fill="var(--text-dim)"
-              fontSize="10"
-              fontFamily="var(--mono)"
-              opacity="0.7"
-            >
-              {formatCurrency(p.postMoney)}
-            </text>
-          </g>
-        ))}
-      </svg>
+      <ChartTooltip tip={tip} />
     </div>
   );
 }
@@ -1070,6 +1008,14 @@ export default function CapTable() {
 
   const pricedSnapshots = useMemo(() => snapshots.filter((s) => s.roundType === "priced"), [snapshots]);
   const colorMap = useMemo(() => buildColorMap(snapshots), [snapshots]);
+
+  // On first load, expand the Series C snapshot by default (fall back to the last round).
+  useEffect(() => {
+    if (!initialized) return;
+    const idx = snapshots.findIndex((s) => s.roundName === "Series C");
+    setOpenSnapshots(new Set([idx >= 0 ? idx : snapshots.length - 1]));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialized]);
 
   const toggleSnapshot = useCallback((index: number) => {
     setOpenSnapshots((prev) => {
@@ -1190,7 +1136,7 @@ export default function CapTable() {
               }}
             >
               <span style={{ display: "inline-block", transform: showExplainer ? "rotate(90deg)" : "rotate(0deg)", transition: "transform 0.2s", fontSize: 10 }}>&#9654;</span>
-              How does this work?
+              What is this?
             </button>
             {showExplainer && (
               <div style={{
@@ -1206,13 +1152,13 @@ export default function CapTable() {
                 maxWidth: 640,
               }}>
                 <p style={{ margin: "0 0 8px" }}>
-                  Model how your cap table evolves across funding rounds. Add SAFEs and priced rounds, adjust valuations and ESOP pools, and see exactly how ownership dilutes at each stage.
+                  A cap table simulator for founders. Add SAFEs and priced rounds, set valuations and ESOP pools, and watch how ownership dilutes round by round.
                 </p>
                 <p style={{ margin: "0 0 8px" }}>
-                  <span style={{ color: "var(--accent-safe)", fontWeight: 600 }}>SAFEs</span> are post-money: the investor&apos;s ownership = amount&nbsp;/&nbsp;cap. Multiple SAFEs convert simultaneously at the next priced round, each getting their exact stated percentage.
+                  <span style={{ color: "var(--text)", fontWeight: 600 }}>SAFEs</span> are post-money: the investor&apos;s ownership = amount&nbsp;/&nbsp;cap. Multiple SAFEs convert simultaneously at the next priced round, each getting their exact stated percentage.
                 </p>
                 <p style={{ margin: "0 0 8px" }}>
-                  <span style={{ color: "var(--accent-priced)", fontWeight: 600 }}>ESOP pools</span> are target-based and carved out of pre-money. &quot;15% ESOP&quot; means the total pool is set to 15% of post-money &mdash; existing pool shares count toward the target. The cost is borne by existing shareholders, not the new investor.
+                  <span style={{ color: "var(--text)", fontWeight: 600 }}>ESOP pools</span> are target-based and carved out of pre-money. &quot;15% ESOP&quot; means the total pool is set to 15% of post-money &mdash; existing pool shares count toward the target. The cost is borne by existing shareholders, not the new investor.
                 </p>
                 <p style={{ margin: 0 }}>
                   Each priced round investor gets exactly <span style={{ color: "var(--text)" }}>amount&nbsp;/&nbsp;(pre-money&nbsp;+&nbsp;amount)</span> ownership, with a 1.00x entry multiple. Use <span style={{ color: "var(--text)" }}>Copy Link</span> to share a specific scenario.
@@ -1241,7 +1187,7 @@ export default function CapTable() {
             <button
               onClick={copyShareLink}
               style={{
-                background: copied ? "#10b981" : "var(--accent-priced)",
+                background: copied ? "#10b981" : "var(--text)",
                 border: "none",
                 borderRadius: 6,
                 color: "#fff",
@@ -1391,8 +1337,7 @@ export default function CapTable() {
             >
               Charts
             </h2>
-            <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-              <DilutionChart pricedSnapshots={pricedSnapshots} />
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))", gap: 16, alignItems: "start" }}>
               <OwnershipChart pricedSnapshots={pricedSnapshots} colorMap={colorMap} />
               <ValueChart pricedSnapshots={pricedSnapshots} colorMap={colorMap} />
             </div>

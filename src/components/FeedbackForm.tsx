@@ -75,7 +75,7 @@ export default function FeedbackForm({ onSuccess }: FeedbackFormProps) {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
-      <p className="text-base font-medium leading-relaxed text-slate-800">
+      <p className="text-sm leading-relaxed text-[rgb(45,45,52)]">
         It’s easier to be real when you don’t have to be polite.
       </p>
 
@@ -98,7 +98,7 @@ export default function FeedbackForm({ onSuccess }: FeedbackFormProps) {
           }}
           placeholder="Tell me what you see that I don’t. Bold ideas, honest criticism, raw thoughts."
           maxLength={maxCharacters}
-          className="min-h-[220px] resize-none border border-slate-300 bg-white text-base leading-relaxed text-slate-900 focus-visible:ring-slate-900/20"
+          className="min-h-[200px] resize-none rounded-[6px] border border-[#E4E4E4] bg-white text-sm leading-relaxed text-[rgb(18,18,22)] placeholder:text-[#ADADAD] focus-visible:ring-1 focus-visible:ring-[rgb(18,18,22)]/15"
         />
         {characterCount > maxCharacters && (
           <div className="flex items-center justify-between text-xs text-red-600">
@@ -130,9 +130,9 @@ export default function FeedbackForm({ onSuccess }: FeedbackFormProps) {
         <Button
           type="submit"
           disabled={isSubmitting}
-          className="ml-auto w-full min-w-[160px] rounded-full bg-slate-900 px-6 py-4 text-sm font-semibold text-white shadow-sm transition hover:bg-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-900 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
+          className="ml-auto w-full min-w-[150px] rounded-[6px] bg-[rgb(18,18,22)] px-6 py-4 text-xs uppercase tracking-[0.15em] text-white transition hover:bg-[rgb(45,45,52)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgb(18,18,22)] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
         >
-          {isSubmitting ? "Sending…" : formState === "success" ? "Sent" : "Send feedback"}
+          {isSubmitting ? "Sending…" : formState === "success" ? "Sent" : "Send message"}
         </Button>
       </div>
     </form>

@@ -77,7 +77,7 @@ export default function HomeContent({ articles }: HomeContentProps) {
               Europe is unique. Diverse cultures bound by a belief that a society is measured by how it treats its weakest, not its strongest. For those values to stay relevant, Europe has to change. Technology is the greatest force for that change, and young technologists are its sharpest edge. Yet too many leave technical universities convinced they can&apos;t just do whatever they want, or copying foreign playbooks in a chase to earn money. Europe needs more value-driven entrepreneurs solving societal problems.
             </p>
             <p>
-              I build <a href="https://dream-machines.eu/" className="text-[rgb(30,30,36)] underline decoration-1 underline-offset-4 decoration-[#D0D0D0] transition-colors hover:decoration-[rgb(30,30,36)]" target="_blank" rel="noopener noreferrer">AI models for robotic arms</a> that let small manufacturers match the output of companies ten times their size, and I create spaces for technical builders to meet and exchange ideas.
+              I build <a href="https://dream-machines.eu/" className="underline decoration-1 underline-offset-4 decoration-[#C0C0C0] transition-colors hover:decoration-[rgb(90,90,98)]" target="_blank" rel="noopener noreferrer">AI models for robotic arms</a> that let small manufacturers match the output of companies ten times their size, and I create spaces for technical builders to meet.
             </p>
           </div>
           <div className="mt-12">
@@ -110,7 +110,7 @@ export default function HomeContent({ articles }: HomeContentProps) {
                     className="text-[#ADADAD] text-[11px] uppercase tracking-[0.2em] transition-colors duration-200 hover:text-[rgb(18,18,22)]"
                     style={{ fontFamily: 'var(--font-jetbrains-mono)' }}
                   >
-                    Photographs
+                    Photography
                   </Link>
                 </div>
                 {/* Anonymous note - aligned to the right on wide screens */}
@@ -122,12 +122,15 @@ export default function HomeContent({ articles }: HomeContentProps) {
                         className="text-[#ADADAD] text-[11px] uppercase tracking-[0.2em] transition-colors duration-200 cursor-pointer hover:text-[rgb(18,18,22)]"
                         style={{ fontFamily: 'var(--font-jetbrains-mono)' }}
                       >
-                        Send me an anonymous note
+                        Send anonymous message
                       </button>
                     </DialogTrigger>
-                    <DialogContent className="sm:max-w-xl p-8 sm:rounded-[20px]">
+                    <DialogContent
+                      className="sm:max-w-lg p-8 rounded-[8px] border border-[#E4E4E4]"
+                      style={{ fontFamily: 'var(--font-jetbrains-mono)' }}
+                    >
                       <DialogHeader className="sr-only">
-                        <DialogTitle>Send anonymous feedback</DialogTitle>
+                        <DialogTitle>Send anonymous message</DialogTitle>
                         <DialogDescription>Share any thoughts you would like me to read.</DialogDescription>
                       </DialogHeader>
                       <FeedbackForm onSuccess={() => setIsFeedbackOpen(false)} />
