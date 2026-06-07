@@ -30,7 +30,7 @@ function MinimalList({
     <div>
       <h2
         className="text-[11px] uppercase tracking-[0.25em] text-[#B0B0B0] mb-5"
-        style={{ fontFamily: 'var(--font-sf-mono)' }}
+        style={{ fontFamily: 'var(--font-jetbrains-mono)' }}
       >
         {title}
       </h2>
@@ -40,7 +40,7 @@ function MinimalList({
             <Link
               href={article.href ?? `/p/${article.slug}`}
               className="text-[rgb(45,45,52)] text-base transition-colors duration-200 hover:text-[rgb(18,18,22)]"
-              style={{ fontFamily: 'var(--font-sf-mono)' }}
+              style={{ fontFamily: 'var(--font-jetbrains-mono)' }}
             >
               {article.title}
             </Link>
@@ -66,20 +66,20 @@ export default function HomeContent({ articles }: HomeContentProps) {
         <div className="max-w-3xl">
           <h1
             className="text-[rgb(30,30,36)] text-4xl sm:text-6xl mb-8 tracking-[-0.03em] leading-[1]"
-            style={{ fontFamily: 'var(--font-sf-mono)' }}
+            style={{ fontFamily: 'var(--font-jetbrains-mono)' }}
           >
             Dominique Paul
           </h1>
           <div
             className="max-w-xl text-base leading-relaxed text-[rgb(90,90,98)]"
-            style={{ fontFamily: 'var(--font-sf-mono)' }}
+            style={{ fontFamily: 'var(--font-jetbrains-mono)' }}
           >
             <p>
               Hacker, extrovert, and europatriot. I&apos;m <a href="https://dream-machines.eu/" className="text-[rgb(30,30,36)] underline decoration-1 underline-offset-4 decoration-[#D0D0D0] transition-colors hover:decoration-[rgb(30,30,36)]" target="_blank" rel="noopener noreferrer">building ML models for robotic arms</a>, after a non-linear path through maths &amp; statistics at ETH Zurich, computational genomics, and freelance ML work.
             </p>
           </div>
           <div className="mt-12">
-            <div style={{ fontFamily: 'var(--font-sf-mono)' }}>
+            <div style={{ fontFamily: 'var(--font-jetbrains-mono)' }}>
               <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-6">
                 <div className="flex items-center space-x-[28px] sm:space-x-[22px]">
                   <a href="https://thisiscrispin.substack.com" target="_blank" rel="noopener noreferrer">
@@ -106,7 +106,7 @@ export default function HomeContent({ articles }: HomeContentProps) {
                   <Link
                     href="/shots"
                     className="text-[#ADADAD] text-[11px] uppercase tracking-[0.2em] transition-colors duration-200 hover:text-[rgb(18,18,22)]"
-                    style={{ fontFamily: 'var(--font-sf-mono)' }}
+                    style={{ fontFamily: 'var(--font-jetbrains-mono)' }}
                   >
                     Photographs
                   </Link>
@@ -118,7 +118,7 @@ export default function HomeContent({ articles }: HomeContentProps) {
                       <button
                         type="button"
                         className="text-[#ADADAD] text-[11px] uppercase tracking-[0.2em] transition-colors duration-200 cursor-pointer hover:text-[rgb(18,18,22)]"
-                        style={{ fontFamily: 'var(--font-sf-mono)' }}
+                        style={{ fontFamily: 'var(--font-jetbrains-mono)' }}
                       >
                         Send me an anonymous note
                       </button>
@@ -141,7 +141,7 @@ export default function HomeContent({ articles }: HomeContentProps) {
       {visible.length > 0 && (
         <section
           className="px-[5%] sm:px-[10%] 2xl:px-[20%] py-24"
-          style={{ fontFamily: 'var(--font-sf-mono)' }}
+          style={{ fontFamily: 'var(--font-jetbrains-mono)' }}
         >
           <div className="grid gap-12 md:grid-cols-2">
             <MinimalList title="Writing" items={writing} />

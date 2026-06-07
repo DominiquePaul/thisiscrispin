@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { IBM_Plex_Sans } from "next/font/google";
+import { IBM_Plex_Sans, JetBrains_Mono } from "next/font/google";
 import localFont from 'next/font/local';
 import "./globals.css";
 import { Analytics } from "@vercel/analytics/react"
@@ -45,6 +45,12 @@ const sfMono = localFont({
   variable: '--font-sf-mono',
 });
 
+const jetbrainsMono = JetBrains_Mono({
+  subsets: ["latin"],
+  weight: ['400', '500', '600', '700'],
+  variable: '--font-jetbrains-mono',
+});
+
 export const metadata: Metadata = {
   title: "Dominique Paul - thisiscrispin",
   description: "Dominique Paul's personal website and blog.",
@@ -60,7 +66,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${ibmPlexSans.className} ${ibmPlexSans.variable} ${segoeUI.variable} ${sfMono.variable} bg-[#F2F2F2]`}>
+      <body className={`${ibmPlexSans.className} ${ibmPlexSans.variable} ${segoeUI.variable} ${sfMono.variable} ${jetbrainsMono.variable} bg-[#F2F2F2]`}>
         <AuthProvider>
           <SiteLogo />
           <AdminPanel />
