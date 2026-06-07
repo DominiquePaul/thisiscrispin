@@ -71,7 +71,7 @@ export default function HomeContent({ articles }: HomeContentProps) {
             Dominique Paul
           </h1>
           <div
-            className="max-w-2xl text-base leading-relaxed text-[rgb(90,90,98)] space-y-4"
+            className="max-w-3xl text-base leading-relaxed text-[rgb(90,90,98)] space-y-4"
             style={{ fontFamily: 'var(--font-jetbrains-mono)' }}
           >
             <p>
@@ -146,7 +146,7 @@ export default function HomeContent({ articles }: HomeContentProps) {
           className="px-[5%] sm:px-[10%] 2xl:px-[20%] py-24"
           style={{ fontFamily: 'var(--font-jetbrains-mono)' }}
         >
-          <div className="grid gap-12 md:grid-cols-2">
+          <div className="max-w-3xl grid gap-12 md:grid-cols-2">
             <MinimalList title="Writing" items={writing} />
             <MinimalList title="Tools" items={tools} />
           </div>
