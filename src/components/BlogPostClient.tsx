@@ -1,17 +1,86 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import dynamic from 'next/dynamic';
 import BlogPostEditButton from './BlogPostEditButton';
-import { documentToReactComponents } from '@contentful/rich-text-react-renderer';
+import { documentToHtmlString } from '@contentful/rich-text-html-renderer';
 import { BLOCKS, INLINES, MARKS } from '@contentful/rich-text-types';
 import Image from 'next/image';
-import VideoEmbed from './VideoEmbed';
 
 // Load ContentfulEditor with dynamic imports (client-side only)
 const ContentfulEditor = dynamic(() => import('./ContentfulEditor'), {
   ssr: false
 });
+
+const LINK_CLASS =
+  "text-[rgb(18,18,22)] underline decoration-1 underline-offset-2 decoration-[#C8C8C8] transition-colors hover:decoration-[rgb(18,18,22)]";
+
+const escapeAttr = (s: unknown) =>
+  String(s ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/"/g, '&quot;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+
+/**
+ * Render Contentful Rich Text to an HTML string (server- and client-safe).
+ *
+ * We deliberately render to HTML + dangerouslySetInnerHTML instead of using
+ * documentToReactComponents: the prebuilt rich-text React renderer produces
+ * React elements that Next 15's renderer rejects ("Objects are not valid as a
+ * React child"). Emitting an HTML string avoids that entirely.
+ */
+function richTextToHtml(content: any): string {
+  if (!content) return '';
+  return documentToHtmlString(content, {
+    renderMark: {
+      [MARKS.CODE]: (text) => `<code class="bg-[#EAEAEA] rounded px-1">${text}</code>`,
+    },
+    renderNode: {
+      [BLOCKS.EMBEDDED_ASSET]: (node: any) => {
+        try {
+          const { file, title: assetTitle, description } = node.data.target.fields;
+          const url = file?.['en-US']?.url || file?.url;
+          if (!url) return '';
+          const fullUrl = url.startsWith('//') ? `https:${url}` : url;
+          const alt = escapeAttr(
+            description?.['en-US'] || assetTitle?.['en-US'] || description || assetTitle || ''
+          );
+          const isVideo = /\.(mp4|m4v|webm|ogg|mov)(\?.*)?$/i.test(fullUrl);
+          if (isVideo) {
+            return `<video controls preload="metadata" class="my-6 w-full rounded-lg" style="max-height:70vh"><source src="${escapeAttr(fullUrl)}" /></video>`;
+          }
+          return `<img src="${escapeAttr(fullUrl)}" alt="${alt}" loading="lazy" class="my-4 w-full h-auto" />`;
+        } catch {
+          return '';
+        }
+      },
+      [BLOCKS.TABLE]: (node: any, next) =>
+        `<div class="overflow-x-auto my-6"><table class="min-w-full border-collapse border border-gray-300">${next(node.content)}</table></div>`,
+      [BLOCKS.TABLE_ROW]: (node: any, next) =>
+        `<tr class="border-b border-gray-300">${next(node.content)}</tr>`,
+      [BLOCKS.TABLE_CELL]: (node: any, next) =>
+        `<td class="border border-gray-300 px-4 py-2">${next(node.content)}</td>`,
+      [BLOCKS.TABLE_HEADER_CELL]: (node: any, next) =>
+        `<th class="border border-gray-300 px-4 py-2 bg-gray-100 font-semibold text-left">${next(node.content)}</th>`,
+      [INLINES.HYPERLINK]: (node: any, next) =>
+        `<a href="${escapeAttr(node.data.uri)}" class="${LINK_CLASS}">${next(node.content)}</a>`,
+      [INLINES.ASSET_HYPERLINK]: (node: any, next) => {
+        try {
+          const url = node.data?.target?.fields?.file?.url;
+          if (url) {
+            const fullUrl = url.startsWith('//') ? `https:${url}` : url;
+            return `<a href="${escapeAttr(fullUrl)}" class="${LINK_CLASS}">${next(node.content)}</a>`;
+          }
+        } catch {}
+        return `<span>${next(node.content)}</span>`;
+      },
+      [BLOCKS.EMBEDDED_ENTRY]: () => '',
+      [INLINES.EMBEDDED_ENTRY]: () => '',
+      [INLINES.ENTRY_HYPERLINK]: (node: any, next) => `<span>${next(node.content)}</span>`,
+    },
+  });
+}
 
 interface BlogPostClientProps {
   contentfulId: string;
@@ -24,10 +93,10 @@ interface BlogPostClientProps {
   excerpt?: string;
 }
 
-export default function BlogPostClient({ 
-  contentfulId, 
-  title: initialTitle, 
-  content: initialContent, 
+export default function BlogPostClient({
+  contentfulId,
+  title: initialTitle,
+  content: initialContent,
   tags: initialTags,
   createdAt,
   coverImage: initialCoverImage,
@@ -39,14 +108,16 @@ export default function BlogPostClient({
   const [tags, setTags] = useState(initialTags);
   const [coverImage, setCoverImage] = useState(initialCoverImage);
   const [excerpt, setExcerpt] = useState(initialExcerpt || '');
-  
+
   // Format date for display
   const formattedDate = new Date(createdAt).toLocaleDateString('en-US', {
     year: 'numeric',
     month: 'long',
     day: 'numeric'
   });
-  
+
+  const contentHtml = useMemo(() => richTextToHtml(content), [content]);
+
   // Update state when props change (in case content is reloaded)
   useEffect(() => {
     setTitle(initialTitle);
@@ -55,7 +126,7 @@ export default function BlogPostClient({
     setCoverImage(initialCoverImage);
     setExcerpt(initialExcerpt || '');
   }, [initialTitle, initialContent, initialTags, initialCoverImage, initialExcerpt]);
-  
+
   // Handle cancellation of editing
   const handleCancel = () => {
     // Reset to the initial content if needed
@@ -82,24 +153,24 @@ export default function BlogPostClient({
     setExcerpt(newExcerpt || '');
     setIsEditing(false); // Exit editing mode after successful save
   };
-  
+
   return (
     <>
       {/* Admin Edit Button - only show when not editing */}
       {!isEditing && (
         <div className="mb-6 flex justify-end">
-          <BlogPostEditButton 
-            postId={contentfulId} 
+          <BlogPostEditButton
+            postId={contentfulId}
             isEditing={isEditing}
             onToggleEdit={toggleEditing}
           />
         </div>
       )}
-      
+
       {/* Editor (only for admins) */}
       {isEditing ? (
         <div className="mb-16 border-b pb-8">
-          <ContentfulEditor 
+          <ContentfulEditor
             contentfulId={contentfulId}
             initialContent={{
               title,
@@ -144,128 +215,7 @@ export default function BlogPostClient({
             style={{ fontFamily: 'var(--font-jetbrains-mono)' }}
           >
             {content ? (
-              <>
-                {documentToReactComponents(content, {
-                  renderNode: {
-                    [BLOCKS.EMBEDDED_ASSET]: (node) => {
-                      try {
-                        const { file, title: assetTitle, description } = node.data.target.fields;
-                        const url = file?.['en-US']?.url || file?.url;
-
-                        if (!url) return null;
-
-                        const fullUrl = url.startsWith('//') ? `https:${url}` : url;
-                        const isVideo = /\.(mp4|m4v|webm|ogg|mov)(\?.*)?$/i.test(fullUrl);
-
-                        if (isVideo) {
-                          return <VideoEmbed url={fullUrl} title={assetTitle?.['en-US'] || assetTitle || 'Video'} />;
-                        }
-
-                        const isGif = /\.(gif)(\?.*)?$/i.test(fullUrl);
-                        const alt = description?.['en-US'] || assetTitle?.['en-US'] || description || assetTitle || '';
-
-                        if (isGif) {
-                          return (
-                            // eslint-disable-next-line @next/next/no-img-element
-                            <img
-                              src={fullUrl}
-                              alt={alt}
-                              className="my-4 w-full h-auto"
-                              style={{
-                                maxWidth: '100%',
-                                height: 'auto',
-                              }}
-                            />
-                          );
-                        }
-
-                        return (
-                          <Image
-                            src={fullUrl}
-                            width={1200}
-                            height={0}
-                            sizes="(max-width: 768px) 100vw, 800px"
-                            style={{
-                              width: '100%',
-                              height: 'auto',
-                            }}
-                            alt={alt}
-                            className="my-4"
-                          />
-                        );
-                      } catch {
-                        return null;
-                      }
-                    },
-                    [BLOCKS.TABLE]: (node, children) => {
-                      return (
-                        <div className="overflow-x-auto my-6">
-                          <table className="min-w-full border-collapse border border-gray-300">
-                            <tbody>{children}</tbody>
-                          </table>
-                        </div>
-                      );
-                    },
-                    [BLOCKS.TABLE_ROW]: (node, children) => {
-                      return <tr className="border-b border-gray-300">{children}</tr>;
-                    },
-                    [BLOCKS.TABLE_CELL]: (node, children) => {
-                      return (
-                        <td className="border border-gray-300 px-4 py-2">
-                          {children}
-                        </td>
-                      );
-                    },
-                    [BLOCKS.TABLE_HEADER_CELL]: (node, children) => {
-                      return (
-                        <th className="border border-gray-300 px-4 py-2 bg-gray-100 font-semibold text-left">
-                          {children}
-                        </th>
-                      );
-                    },
-                    [INLINES.HYPERLINK]: (node, children) => {
-                      const url = node.data.uri;
-                      return (
-                        <a href={url} className="text-[rgb(18,18,22)] underline decoration-1 underline-offset-2 decoration-[#C8C8C8] transition-colors hover:decoration-[rgb(18,18,22)]">
-                          {children}
-                        </a>
-                      );
-                    },
-                    [BLOCKS.EMBEDDED_ENTRY]: (node) => {
-                      // Prevent unhandled embedded entries from crashing the page
-                      return null;
-                    },
-                    [INLINES.EMBEDDED_ENTRY]: (node) => {
-                      return null;
-                    },
-                    [INLINES.ENTRY_HYPERLINK]: (node, children) => {
-                      return <span>{children}</span>;
-                    },
-                    [INLINES.ASSET_HYPERLINK]: (node, children) => {
-                      // Handle asset hyperlinks gracefully
-                      try {
-                        const url = node.data?.target?.fields?.file?.url;
-                        if (url) {
-                          const fullUrl = url.startsWith('//') ? `https:${url}` : url;
-                          return (
-                            <a href={fullUrl} className="text-[rgb(18,18,22)] underline decoration-1 underline-offset-2 decoration-[#C8C8C8] transition-colors hover:decoration-[rgb(18,18,22)]">
-                              {children}
-                            </a>
-                          );
-                        }
-                      } catch {}
-                      return <span>{children}</span>;
-                    },
-                  },
-                  renderMark: {
-                    [MARKS.CODE]: (text) => (
-                      <code className="bg-[#EAEAEA] rounded px-1" style={{ fontFamily: 'var(--font-jetbrains-mono)' }}>
-                        {text}
-                      </code>
-                    ),
-                  },
-                })}
-              </>
+              <div dangerouslySetInnerHTML={{ __html: contentHtml }} />
             ) : (
               <div className="text-gray-600">No content available</div>
             )}
@@ -274,4 +224,4 @@ export default function BlogPostClient({
       )}
     </>
   );
-} 
+}
