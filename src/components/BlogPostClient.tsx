@@ -34,7 +34,7 @@ function richTextToHtml(content: any): string {
   if (!content) return '';
   return documentToHtmlString(content, {
     renderMark: {
-      [MARKS.CODE]: (text) => `<code class="bg-[#EAEAEA] rounded px-1">${text}</code>`,
+      [MARKS.CODE]: (text) => `<code class="bg-[#EAEAEA] rounded px-1" style="font-family:var(--font-jetbrains-mono)">${text}</code>`,
     },
     renderNode: {
       [BLOCKS.EMBEDDED_ASSET]: (node: any) => {
@@ -211,8 +211,8 @@ export default function BlogPostClient({
             {formattedDate}
           </div>
           <div
-            className="prose prose-neutral max-w-none text-[rgb(45,45,52)]"
-            style={{ fontFamily: 'var(--font-jetbrains-mono)' }}
+            className="prose prose-neutral prose-lg max-w-none text-[rgb(45,45,52)]"
+            style={{ fontFamily: 'var(--font-inter)' }}
           >
             {content ? (
               <div dangerouslySetInnerHTML={{ __html: contentHtml }} />

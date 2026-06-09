@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { IBM_Plex_Sans, JetBrains_Mono } from "next/font/google";
+import { IBM_Plex_Sans, JetBrains_Mono, Inter } from "next/font/google";
 import localFont from 'next/font/local';
 import "./globals.css";
 import { Analytics } from "@vercel/analytics/react"
@@ -8,10 +8,16 @@ import AdminPanel from '@/components/AdminPanel';
 import SiteLogo from '@/components/SiteLogo';
 import { Toaster } from "@/components/ui/toaster";
 
-const ibmPlexSans = IBM_Plex_Sans({ 
+const ibmPlexSans = IBM_Plex_Sans({
   subsets: ["latin"],
   weight: ['400', '500', '600', '700'],
   variable: '--font-ibm-plex-sans'
+});
+
+const inter = Inter({
+  subsets: ["latin"],
+  weight: ['400', '500', '600', '700'],
+  variable: '--font-inter',
 });
 
 const segoeUI = localFont({
@@ -66,7 +72,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${ibmPlexSans.className} ${ibmPlexSans.variable} ${segoeUI.variable} ${sfMono.variable} ${jetbrainsMono.variable} bg-[#F2F2F2]`}>
+      <body className={`${ibmPlexSans.className} ${ibmPlexSans.variable} ${segoeUI.variable} ${sfMono.variable} ${jetbrainsMono.variable} ${inter.variable} bg-[#F2F2F2]`}>
         <AuthProvider>
           <SiteLogo />
           <AdminPanel />
