@@ -80,7 +80,7 @@ export default function HomeContent({ articles }: HomeContentProps) {
               Life is about creating value for people who share your values. For me that&apos;s other builders and entrepreneurs. Time abroad has also made me realise how much I like European values. But for those values to stay relevant, Europe has to change. Technology is the greatest force for change, and young technologists are our sharpest edge. Yet too many leave technical universities convinced they can&apos;t just do whatever they want, or copying foreign playbooks while overlooking the unique opportunities only possible here.
             </p>
             <p>
-              I build <a href="https://dream-machines.eu/" className="underline decoration-1 underline-offset-4 decoration-[#C0C0C0] transition-colors hover:decoration-[rgb(90,90,98)]" target="_blank" rel="noopener noreferrer">AI models for robotic arms</a> that let small manufacturers match the output of companies ten times their size, talk about the journey along the way, and create spaces for technical builders to meet.
+              So I build <a href="https://dream-machines.eu/" className="underline decoration-1 underline-offset-4 decoration-[#C0C0C0] transition-colors hover:decoration-[rgb(90,90,98)]" target="_blank" rel="noopener noreferrer">AI that learns manual work</a> by watching people do it, starting where it matters most: small European manufacturers who want to match the output of companies ten times their size. Along the way I write about the journey, messy parts included, and create spaces for technical builders to meet.
             </p>
           </div>
           <div className="mt-12">
