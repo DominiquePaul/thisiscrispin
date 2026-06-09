@@ -1,7 +1,34 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
+
+const TYPED_WORDS = ["Dominique Paul", "thisiscrispin"];
+
+function useTypewriter(words: string[]) {
+  const [display, setDisplay] = useState(words[0]);
+  const [wordIndex, setWordIndex] = useState(0);
+  const [deleting, setDeleting] = useState(false);
+
+  useEffect(() => {
+    const current = words[wordIndex];
+    let timeout: ReturnType<typeof setTimeout>;
+
+    if (!deleting && display === current) {
+      timeout = setTimeout(() => setDeleting(true), 2200);
+    } else if (deleting && display === "") {
+      setDeleting(false);
+      setWordIndex((i) => (i + 1) % words.length);
+    } else {
+      const next = deleting ? current.slice(0, display.length - 1) : current.slice(0, display.length + 1);
+      timeout = setTimeout(() => setDisplay(next), deleting ? 55 : 95);
+    }
+
+    return () => clearTimeout(timeout);
+  }, [display, deleting, wordIndex, words]);
+
+  return display;
+}
 import FeedbackForm from '@/components/FeedbackForm';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 
@@ -54,6 +81,7 @@ function MinimalList({
 export default function HomeContent({ articles }: HomeContentProps) {
 
   const [isFeedbackOpen, setIsFeedbackOpen] = useState(false);
+  const typed = useTypewriter(TYPED_WORDS);
 
   const visible = articles.filter((a) => !a.tags.includes("hideOnThisiscrispin"));
   const tools = visible.filter((a) => a.tags.includes("devProjects"));
@@ -64,10 +92,16 @@ export default function HomeContent({ articles }: HomeContentProps) {
       <section className="flex-grow-0 pt-[30vh] px-[5%] sm:px-[10%] 2xl:px-[20%]">
         <div className="max-w-3xl">
           <h1
-            className="text-[rgb(30,30,36)] text-4xl sm:text-6xl mb-8 tracking-[-0.03em] leading-[1]"
+            className="flex items-center text-[rgb(30,30,36)] text-4xl sm:text-6xl mb-8 tracking-[-0.03em] leading-[1]"
             style={{ fontFamily: 'var(--font-jetbrains-mono)' }}
+            aria-label="Dominique Paul"
           >
-            Dominique Paul
+            <span aria-hidden="true">{typed}</span>
+            <span
+              aria-hidden="true"
+              className="type-caret ml-1 inline-block w-[0.07em] bg-[rgb(30,30,36)]"
+              style={{ height: '0.82em' }}
+            />
           </h1>
           <div
             className="max-w-3xl text-base leading-relaxed text-[rgb(90,90,98)] space-y-4"
