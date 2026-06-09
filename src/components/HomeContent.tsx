@@ -15,7 +15,7 @@ function useTypewriter(words: string[]) {
     let timeout: ReturnType<typeof setTimeout>;
 
     if (!deleting && display === current) {
-      timeout = setTimeout(() => setDeleting(true), 5000);
+      timeout = setTimeout(() => setDeleting(true), 7000);
     } else if (deleting && display === "") {
       setDeleting(false);
       setWordIndex((i) => (i + 1) % words.length);
