@@ -77,10 +77,10 @@ export default function HomeContent({ articles }: HomeContentProps) {
               I&apos;m a hacker, extrovert, nerd, and europatriot. My path has been non-linear: economics, then maths &amp; statistics at ETH Zurich, computational genomics, a NeurIPS paper on scaling laws, half a year clearing shipping containers in Sierra Leone, and freelance ML engineering to fund my own company.
             </p>
             <p>
-              Life is about creating value for people who share your values. For me, that&apos;s builders and entrepreneurs. Time abroad also taught me how much I value Europe. But for European values to stay relevant, Europe has to change, particularly how society thinks about AI. Young technologists are our sharpest edge. Yet too many leave technical universities convinced they can&apos;t just build whatever they want.
+              Life is about creating value for people who share your values. For me, that&apos;s builders and entrepreneurs. It took leaving Europe to see how much what we have here is worth. But for European values to stay relevant, Europe has to change, particularly how society thinks about AI. Young technologists are our sharpest edge. Yet too many leave technical universities convinced they can&apos;t just build whatever they want.
             </p>
             <p>
-              So I build <a href="https://dream-machines.eu/" className="underline decoration-1 underline-offset-4 decoration-[#C0C0C0] transition-colors hover:decoration-[rgb(90,90,98)]" target="_blank" rel="noopener noreferrer">AI that learns manual work</a> by watching people do it, starting where it matters most: small European manufacturers who want to match the output of companies ten times their size. Along the way I write about the journey, messy parts included, and create spaces for technical builders to meet.
+              So I build <a href="https://dream-machines.eu/" className="underline decoration-1 underline-offset-4 decoration-[#C0C0C0] transition-colors hover:decoration-[rgb(90,90,98)]" target="_blank" rel="noopener noreferrer">AI that learns manual work</a> by watching people do it, starting where Europe&apos;s strength lives and where robotic AI will change the most: small manufacturers who want to match the output of companies ten times their size. Along the way I write about the journey, messy parts included, and create spaces for technical builders to meet.
             </p>
           </div>
           <div className="mt-12">
