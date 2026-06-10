@@ -213,10 +213,10 @@ export default function DashboardClient() {
                           {Number(s.total_views).toLocaleString()}
                         </td>
                         <td className="py-3 text-right text-[#9A9A9A]">
-                          {Number(s.views_7d).toLocaleString()}
+                          {Number(s.views_7d) > 0 ? Number(s.views_7d).toLocaleString() : <span className="text-[#D8D8D8]">—</span>}
                         </td>
                         <td className="py-3 text-right text-[#9A9A9A]">
-                          {Number(s.views_30d).toLocaleString()}
+                          {Number(s.views_30d) > 0 ? Number(s.views_30d).toLocaleString() : <span className="text-[#D8D8D8]">—</span>}
                         </td>
                       </tr>
                     ))}
