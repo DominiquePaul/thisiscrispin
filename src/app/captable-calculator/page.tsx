@@ -402,11 +402,15 @@ interface RoundCardProps {
   onUpdate: (updated: Round) => void;
   onRemove: () => void;
   isOnly: boolean;
+  canBeSafe: boolean;
 }
 
-function RoundCard({ round, onUpdate, onRemove, isOnly }: RoundCardProps) {
+function RoundCard({ round, onUpdate, onRemove, isOnly, canBeSafe }: RoundCardProps) {
   const isSafe = round.type === "safe";
   const accentColor = isSafe ? "#C4C4C4" : "#1E1E24";
+  // A priced round can only revert to a SAFE if no earlier round is priced
+  // (SAFEs must precede the first priced round — they convert at it).
+  const toggleDisabled = !isSafe && !canBeSafe;
 
   return (
     <div
@@ -477,7 +481,9 @@ function RoundCard({ round, onUpdate, onRemove, isOnly }: RoundCardProps) {
           {isSafe ? "SAFE" : "PRICED"}
         </span>
         <button
-          onClick={() => onUpdate({ ...round, type: isSafe ? "priced" : "safe" })}
+          onClick={() => !toggleDisabled && onUpdate({ ...round, type: isSafe ? "priced" : "safe" })}
+          disabled={toggleDisabled}
+          title={toggleDisabled ? "A SAFE can't follow a priced round" : undefined}
           style={{
             background: "var(--input-bg)",
             border: "1px solid var(--border)",
@@ -485,7 +491,8 @@ function RoundCard({ round, onUpdate, onRemove, isOnly }: RoundCardProps) {
             color: "var(--text-dim)",
             fontSize: 11,
             padding: "4px 8px",
-            cursor: "pointer",
+            cursor: toggleDisabled ? "not-allowed" : "pointer",
+            opacity: toggleDisabled ? 0.4 : 1,
             fontFamily: "var(--mono)",
           }}
         >
@@ -1062,6 +1069,16 @@ export default function CapTable() {
     (index: number, updated: Round) => {
       const next = [...rounds];
       next[index] = updated;
+      // Enforce: a SAFE can't follow a priced round. If this change makes an
+      // earlier round priced, auto-convert any later SAFEs to priced.
+      let pricedSeen = false;
+      for (let i = 0; i < next.length; i++) {
+        if (next[i].type === "priced") {
+          pricedSeen = true;
+        } else if (pricedSeen) {
+          next[i] = { ...next[i], type: "priced" };
+        }
+      }
       setRounds(next);
     },
     [rounds]
@@ -1269,6 +1286,7 @@ export default function CapTable() {
                 onUpdate={(updated) => updateRound(i, updated)}
                 onRemove={() => removeRound(i)}
                 isOnly={rounds.length === 1}
+                canBeSafe={!rounds.slice(0, i).some((r) => r.type === "priced")}
               />
             ))}
             <button
