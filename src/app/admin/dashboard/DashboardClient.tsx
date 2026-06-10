@@ -237,7 +237,7 @@ function Legend({ slugs, titles, colors }: { slugs?: string[]; titles: Record<st
   if (!slugs?.length) return null;
   return (
     <div className="flex flex-wrap gap-x-5 gap-y-2 mt-5">
-      {safeSlugs.map(s => (
+      {(slugs ?? []).map(s => (
         <div key={s} className="flex items-center gap-1.5 text-[10px] text-[#9A9A9A]">
           <span style={{ width: 8, height: 8, borderRadius: 2, background: colors[s], display: 'inline-block', flexShrink: 0 }} />
           <span>{titles[s] ?? s}</span>
