@@ -441,6 +441,11 @@ const TABS = [
 export default function PiModelsPage() {
   const [tab, setTab] = React.useState<"overview" | "pi" | "wam">("overview");
   const [piView, setPiView] = React.useState<"comparison" | "params">("comparison");
+
+  // Track page view
+  React.useEffect(() => {
+    fetch('/api/views/pi-models', { method: 'POST' }).catch(() => {});
+  }, []);
   return (
     <>
       <style>{`

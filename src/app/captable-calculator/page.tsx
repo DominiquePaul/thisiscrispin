@@ -1002,6 +1002,11 @@ export default function CapTable() {
   const [openSnapshots, setOpenSnapshots] = useState<Set<number>>(new Set());
   const [showExplainer, setShowExplainer] = useState(false);
 
+  // Track page view
+  useEffect(() => {
+    fetch('/api/views/captable-calculator', { method: 'POST' }).catch(() => {});
+  }, []);
+
   // Load state from URL on mount
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);

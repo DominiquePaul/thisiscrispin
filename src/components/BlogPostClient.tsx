@@ -214,13 +214,10 @@ export default function BlogPostClient({
             {title}
           </h1>
           <div
-            className="flex items-center gap-6 text-[#9A9A9A] mb-12 text-xs uppercase tracking-[0.2em]"
+            className="text-[#9A9A9A] mb-12 text-xs uppercase tracking-[0.2em]"
             style={{ fontFamily: 'var(--font-jetbrains-mono)' }}
           >
-            <span>{formattedDate}</span>
-            {views !== null && (
-              <span>{views.toLocaleString()} {views === 1 ? 'view' : 'views'}</span>
-            )}
+            {formattedDate}
           </div>
           <div
             className="prose prose-neutral prose-base max-w-none text-[rgb(45,45,52)]"
@@ -232,6 +229,14 @@ export default function BlogPostClient({
               <div className="text-gray-600">No content available</div>
             )}
           </div>
+          {views !== null && (
+            <div
+              className="mt-16 text-[#C8C8C8] text-xs"
+              style={{ fontFamily: 'var(--font-jetbrains-mono)' }}
+            >
+              {views.toLocaleString()} {views === 1 ? 'view' : 'views'}
+            </div>
+          )}
         </article>
       )}
     </>
