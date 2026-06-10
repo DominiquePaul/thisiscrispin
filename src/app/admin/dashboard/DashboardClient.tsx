@@ -23,8 +23,8 @@ interface StatsData {
 }
 
 // Fill in missing days in a date range so the chart has no gaps
-function fillDailyGaps(data: DailyView[], allTime = false): DailyView[] {
-  if (!data.length) return data;
+function fillDailyGaps(data: DailyView[] | undefined, allTime = false): DailyView[] {
+  if (!data || !data.length) return [];
   const end = new Date();
   const start = allTime
     ? new Date(data[0].day)
@@ -39,7 +39,7 @@ function fillDailyGaps(data: DailyView[], allTime = false): DailyView[] {
   return result;
 }
 
-function BarChart({ data, allTime }: { data: DailyView[]; allTime?: boolean }) {
+function BarChart({ data, allTime }: { data?: DailyView[]; allTime?: boolean }) {
   const filled = fillDailyGaps(data, allTime);
   const max = Math.max(...filled.map(d => d.views), 1);
   const H = 80;
