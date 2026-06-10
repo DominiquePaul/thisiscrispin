@@ -524,6 +524,13 @@ export default function PiModelsPage() {
           border-right: 1px solid var(--border-strong);
         }
 
+        /* Lift a header cell above the sticky corner cell while its tooltip is open,
+           so the tooltip isn't painted under the top-left cell. */
+        .pm-table-wrapper thead th:hover,
+        .pm-table-wrapper thead th:focus-within {
+          z-index: 11;
+        }
+
         .pm-table-wrapper thead th:first-child { border-top-left-radius: 10px; }
         .pm-table-wrapper thead th:last-child  { border-top-right-radius: 10px; }
 
