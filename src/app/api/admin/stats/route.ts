@@ -28,24 +28,52 @@ export async function GET(req: NextRequest) {
   if (daily30Result.error) console.error('Daily 30 error:', daily30Result.error);
   if (dailyAllResult.error) console.error('Daily all error:', dailyAllResult.error);
 
-  // Build slug → title map from Contentful articles + static pages
-  // Index by both slug AND contentfulId to handle old tracking data
+  // Build two maps:
+  //   titleMap:         key → human title
+  //   canonicalSlugMap: key → canonical URL slug
+  // Both keyed by contentfulId AND slug so old tracking data is handled.
   const titleMap: Record<string, string> = {};
+  const canonicalSlugMap: Record<string, string> = {};
   for (const a of articles) {
     titleMap[a.slug] = a.title;
-    titleMap[a.id] = a.title;
+    titleMap[a.id]   = a.title;
+    canonicalSlugMap[a.slug] = a.slug;
+    canonicalSlugMap[a.id]   = a.slug; // contentfulId → URL slug
   }
-  for (const p of STATIC_PAGES) titleMap[p.slug] = p.title;
+  for (const p of STATIC_PAGES) {
+    titleMap[p.slug] = p.title;
+    canonicalSlugMap[p.slug] = p.slug;
+  }
 
-  const stats = (statsResult.data ?? []).map((row: {
+  // Merge rows that share the same canonical slug (old contentfulId + new slug key)
+  const merged: Record<string, {
     slug: string;
+    title: string;
     total_views: number;
     views_7d: number;
     views_30d: number;
-  }) => ({
-    ...row,
-    title: titleMap[row.slug] ?? row.slug,
-  }));
+  }> = {};
+
+  for (const row of (statsResult.data ?? []) as {
+    slug: string; total_views: number; views_7d: number; views_30d: number;
+  }[]) {
+    const canonical = canonicalSlugMap[row.slug] ?? row.slug;
+    if (merged[canonical]) {
+      merged[canonical].total_views += Number(row.total_views);
+      merged[canonical].views_7d    += Number(row.views_7d);
+      merged[canonical].views_30d   += Number(row.views_30d);
+    } else {
+      merged[canonical] = {
+        slug:         canonical,
+        title:        titleMap[row.slug] ?? row.slug,
+        total_views:  Number(row.total_views),
+        views_7d:     Number(row.views_7d),
+        views_30d:    Number(row.views_30d),
+      };
+    }
+  }
+
+  const stats = Object.values(merged).sort((a, b) => b.total_views - a.total_views);
 
   return NextResponse.json({
     stats,
