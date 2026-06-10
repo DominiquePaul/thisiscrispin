@@ -12,10 +12,13 @@ const resend = new Resend(process.env.RESEND_API_KEY!);
 const TO_EMAIL = 'dominique.c.a.paul@gmail.com';
 
 function pct(current: number, prev: number): string {
-  if (prev === 0) return current > 0 ? ' <span style="color:#10b981;font-size:11px">new</span>' : '';
-  const p = Math.round(((current - prev) / prev) * 100);
-  const color = p >= 0 ? '#10b981' : '#f87171';
-  return ` <span style="color:${color};font-size:11px">${p >= 0 ? '+' : ''}${p}%</span>`;
+  const c = Number(current); const p = Number(prev);
+  if (!Number.isFinite(c) || !Number.isFinite(p)) return '';
+  if (p === 0) return c > 0 ? ' <span style="color:#10b981;font-size:11px">new</span>' : '';
+  const pct = Math.round(((c - p) / p) * 100);
+  if (!Number.isFinite(pct)) return '';
+  const color = pct >= 0 ? '#10b981' : '#f87171';
+  return ` <span style="color:${color};font-size:11px">${pct >= 0 ? '+' : ''}${pct}%</span>`;
 }
 
 // Build an inline SVG bar chart safe for email (no interaction)

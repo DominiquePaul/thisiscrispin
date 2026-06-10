@@ -36,9 +36,13 @@ const TF_GROUP_OPTIONS: Record<Timeframe, Grouping[]> = {
 // ─── helpers ──────────────────────────────────────────────────────────────────
 
 function pctChange(cur: number, prev: number): string | null {
-  if (prev === 0) return cur > 0 ? 'new' : null;
-  const p = Math.round(((cur - prev) / prev) * 100);
-  return p >= 0 ? `+${p}%` : `${p}%`;
+  const c = Number(cur);
+  const p = Number(prev);
+  if (!Number.isFinite(c) || !Number.isFinite(p)) return null;
+  if (p === 0) return c > 0 ? 'new' : null;
+  const pct = Math.round(((c - p) / p) * 100);
+  if (!Number.isFinite(pct)) return null;
+  return pct >= 0 ? `+${pct}%` : `${pct}%`;
 }
 
 function Delta({ current, prev }: { current: number; prev: number }) {
