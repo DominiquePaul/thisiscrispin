@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { IBM_Plex_Sans, JetBrains_Mono, DM_Sans } from "next/font/google";
+import { IBM_Plex_Sans, JetBrains_Mono, Source_Serif_4 } from "next/font/google";
 import localFont from 'next/font/local';
 import "./globals.css";
 import { Analytics } from "@vercel/analytics/react"
@@ -14,10 +14,10 @@ const ibmPlexSans = IBM_Plex_Sans({
   variable: '--font-ibm-plex-sans'
 });
 
-const dmSans = DM_Sans({
+const sourceSerif4 = Source_Serif_4({
   subsets: ["latin"],
-  weight: ['400', '500', '600', '700'],
-  variable: '--font-dm-sans',
+  weight: ['400', '600', '700'],
+  variable: '--font-source-serif-4',
 });
 
 const segoeUI = localFont({
@@ -72,7 +72,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${ibmPlexSans.className} ${ibmPlexSans.variable} ${segoeUI.variable} ${sfMono.variable} ${jetbrainsMono.variable} ${dmSans.variable} bg-[#F2F2F2]`}>
+      <body className={`${ibmPlexSans.className} ${ibmPlexSans.variable} ${segoeUI.variable} ${sfMono.variable} ${jetbrainsMono.variable} ${sourceSerif4.variable} bg-[#F2F2F2]`}>
         <AuthProvider>
           <SiteLogo />
           <AdminPanel />
