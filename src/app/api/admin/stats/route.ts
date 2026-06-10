@@ -14,10 +14,11 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const [statsResult, daily30Result, dailyAllResult, articles] = await Promise.all([
+  const [statsResult, daily30Result, dailyAllResult, prev7dResult, articles] = await Promise.all([
     supabase.rpc('get_view_stats'),
     supabase.rpc('get_daily_views', { days_back: 30 }),
     supabase.rpc('get_daily_views', { days_back: 0 }),
+    supabase.rpc('get_period_totals', { days_start: 14, days_end: 7 }),
     getArticles().catch(() => []),
   ]);
 
@@ -25,8 +26,9 @@ export async function GET(req: NextRequest) {
     console.error('Stats error:', statsResult.error);
     return NextResponse.json({ error: 'Failed to fetch stats' }, { status: 500 });
   }
-  if (daily30Result.error) console.error('Daily 30 error:', daily30Result.error);
+  if (daily30Result.error)  console.error('Daily 30 error:', daily30Result.error);
   if (dailyAllResult.error) console.error('Daily all error:', dailyAllResult.error);
+  if (prev7dResult.error)   console.error('Prev 7d error:', prev7dResult.error);
 
   // Build two maps:
   //   titleMap:         key → human title
@@ -52,23 +54,26 @@ export async function GET(req: NextRequest) {
     total_views: number;
     views_7d: number;
     views_30d: number;
+    views_prev_7d: number;
   }> = {};
 
   for (const row of (statsResult.data ?? []) as {
-    slug: string; total_views: number; views_7d: number; views_30d: number;
+    slug: string; total_views: number; views_7d: number; views_30d: number; views_prev_7d: number;
   }[]) {
     const canonical = canonicalSlugMap[row.slug] ?? row.slug;
     if (merged[canonical]) {
-      merged[canonical].total_views += Number(row.total_views);
-      merged[canonical].views_7d    += Number(row.views_7d);
-      merged[canonical].views_30d   += Number(row.views_30d);
+      merged[canonical].total_views   += Number(row.total_views);
+      merged[canonical].views_7d      += Number(row.views_7d);
+      merged[canonical].views_30d     += Number(row.views_30d);
+      merged[canonical].views_prev_7d += Number(row.views_prev_7d);
     } else {
       merged[canonical] = {
-        slug:         canonical,
-        title:        titleMap[row.slug] ?? row.slug,
-        total_views:  Number(row.total_views),
-        views_7d:     Number(row.views_7d),
-        views_30d:    Number(row.views_30d),
+        slug:           canonical,
+        title:          titleMap[row.slug] ?? row.slug,
+        total_views:    Number(row.total_views),
+        views_7d:       Number(row.views_7d),
+        views_30d:      Number(row.views_30d),
+        views_prev_7d:  Number(row.views_prev_7d),
       };
     }
   }
@@ -77,7 +82,8 @@ export async function GET(req: NextRequest) {
 
   return NextResponse.json({
     stats,
-    daily30: daily30Result.data ?? [],
-    dailyAll: dailyAllResult.data ?? [],
+    daily30:   daily30Result.data ?? [],
+    dailyAll:  dailyAllResult.data ?? [],
+    prev7dTotal: Number(prev7dResult.data ?? 0),
   });
 }

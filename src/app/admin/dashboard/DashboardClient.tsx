@@ -9,6 +9,7 @@ interface Stat {
   total_views: number;
   views_7d: number;
   views_30d: number;
+  views_prev_7d: number;
 }
 
 interface DailyView {
@@ -20,6 +21,25 @@ interface StatsData {
   stats: Stat[];
   daily30: DailyView[];
   dailyAll: DailyView[];
+  prev7dTotal: number;
+}
+
+function pctChange(current: number, prev: number): string | null {
+  if (prev === 0) return current > 0 ? 'new' : null;
+  const pct = Math.round(((current - prev) / prev) * 100);
+  return pct >= 0 ? `+${pct}%` : `${pct}%`;
+}
+
+function Delta({ current, prev }: { current: number; prev: number }) {
+  const label = pctChange(current, prev);
+  if (label === null) return null;
+  const isNew = label === 'new';
+  const isPos = isNew || label.startsWith('+');
+  return (
+    <span className={`ml-2 text-[11px] ${isPos ? 'text-emerald-500' : 'text-red-400'}`}>
+      {isNew ? 'new' : label}
+    </span>
+  );
 }
 
 // Fill in missing days in a date range so the chart has no gaps
@@ -40,6 +60,7 @@ function fillDailyGaps(data: DailyView[] | undefined, allTime = false): DailyVie
 }
 
 function BarChart({ data, allTime }: { data?: DailyView[]; allTime?: boolean }) {
+  const [tooltip, setTooltip] = useState<{ x: number; y: number; day: string; views: number } | null>(null);
   const filled = fillDailyGaps(data, allTime);
 
   if (!filled.length) {
@@ -56,16 +77,17 @@ function BarChart({ data, allTime }: { data?: DailyView[]; allTime?: boolean }) 
   const max = Math.max(...filled.map(d => d.views), 1);
   const H = 80;
   const W = 100;
-  const gap = 0.8;
+  const gap = 0.6;
   const barW = (W - gap * (filled.length - 1)) / filled.length;
 
   return (
-    <div className="w-full">
+    <div className="w-full relative">
       <svg
         viewBox={`0 0 ${W} ${H}`}
         preserveAspectRatio="none"
         className="w-full"
         style={{ height: H * 2 }}
+        onMouseLeave={() => setTooltip(null)}
       >
         {filled.map((d, i) => {
           const h = Math.max(1, (d.views / max) * H);
@@ -79,10 +101,28 @@ function BarChart({ data, allTime }: { data?: DailyView[]; allTime?: boolean }) 
               height={h}
               fill="rgb(18,18,22)"
               opacity={d.views === 0 ? 0.06 : 0.12 + (d.views / max) * 0.72}
+              style={{ cursor: d.views > 0 ? 'default' : 'default' }}
+              onMouseEnter={(e) => {
+                const rect = (e.target as SVGRectElement).closest('svg')!.getBoundingClientRect();
+                setTooltip({
+                  x: e.clientX - rect.left,
+                  y: e.clientY - rect.top,
+                  day: d.day,
+                  views: d.views,
+                });
+              }}
             />
           );
         })}
       </svg>
+      {tooltip && (
+        <div
+          className="pointer-events-none absolute z-10 bg-[rgb(18,18,22)] text-white text-[10px] px-2 py-1 rounded-sm"
+          style={{ left: tooltip.x + 8, top: tooltip.y - 28 }}
+        >
+          {tooltip.day} · {tooltip.views} {tooltip.views === 1 ? 'view' : 'views'}
+        </div>
+      )}
       <div className="flex justify-between text-[10px] text-[#C8C8C8] mt-1">
         <span>{filled[0]?.day}</span>
         <span>{filled[filled.length - 1]?.day}</span>
@@ -112,10 +152,14 @@ export default function DashboardClient() {
   }, []);
 
   const totalViews = data?.stats.reduce((s, r) => s + Number(r.total_views), 0) ?? 0;
-  const views7d = data?.stats.reduce((s, r) => s + Number(r.views_7d), 0) ?? 0;
-  const today = new Date().toISOString().split('T')[0];
-  const viewsToday = data?.daily30.find(d => d.day === today)?.views ?? 0;
-  const chartData = period === '30d' ? (data?.daily30 ?? []) : (data?.dailyAll ?? []);
+  const views7d    = data?.stats.reduce((s, r) => s + Number(r.views_7d), 0) ?? 0;
+  const prev7d     = data?.prev7dTotal ?? 0;
+  const today      = new Date().toISOString().split('T')[0];
+  const viewsToday = Number(data?.daily30.find(d => d.day === today)?.views ?? 0);
+  // yesterday for today's delta
+  const yesterday  = (() => { const d = new Date(); d.setDate(d.getDate() - 1); return d.toISOString().split('T')[0]; })();
+  const viewsYesterday = Number(data?.daily30.find(d => d.day === yesterday)?.views ?? 0);
+  const chartData  = period === '30d' ? (data?.daily30 ?? []) : (data?.dailyAll ?? []);
 
   const sorted = data
     ? [...data.stats].sort((a, b) => Number(b[sort]) - Number(a[sort]))
@@ -143,27 +187,31 @@ export default function DashboardClient() {
           </Link>
         </div>
 
-        {loading && (
-          <p className="text-[#9A9A9A] text-sm">Loading…</p>
-        )}
-        {error && (
-          <p className="text-red-500 text-sm">{error}</p>
-        )}
+        {loading && <p className="text-[#9A9A9A] text-sm">Loading…</p>}
+        {error   && <p className="text-red-500 text-sm">{error}</p>}
 
         {data && (
           <>
-            {/* Summary numbers */}
+            {/* Summary numbers with week-over-week delta */}
             <div className="flex gap-12 mb-16">
-              {[
-                { label: 'All time', value: totalViews },
-                { label: 'Last 7 days', value: views7d },
-                { label: 'Today', value: Number(viewsToday) },
-              ].map(({ label, value }) => (
-                <div key={label}>
-                  <div className="text-[#9A9A9A] text-[10px] uppercase tracking-[0.2em] mb-1">{label}</div>
-                  <div className="text-3xl tracking-[-0.03em] text-[rgb(18,18,22)]">{value.toLocaleString()}</div>
+              <div>
+                <div className="text-[#9A9A9A] text-[10px] uppercase tracking-[0.2em] mb-1">All time</div>
+                <div className="text-3xl tracking-[-0.03em] text-[rgb(18,18,22)]">{totalViews.toLocaleString()}</div>
+              </div>
+              <div>
+                <div className="text-[#9A9A9A] text-[10px] uppercase tracking-[0.2em] mb-1">Last 7 days</div>
+                <div className="flex items-baseline">
+                  <span className="text-3xl tracking-[-0.03em] text-[rgb(18,18,22)]">{views7d.toLocaleString()}</span>
+                  <Delta current={views7d} prev={prev7d} />
                 </div>
-              ))}
+              </div>
+              <div>
+                <div className="text-[#9A9A9A] text-[10px] uppercase tracking-[0.2em] mb-1">Today</div>
+                <div className="flex items-baseline">
+                  <span className="text-3xl tracking-[-0.03em] text-[rgb(18,18,22)]">{viewsToday.toLocaleString()}</span>
+                  <Delta current={viewsToday} prev={viewsYesterday} />
+                </div>
+              </div>
             </div>
 
             {/* Chart with period toggle */}
@@ -196,16 +244,13 @@ export default function DashboardClient() {
                     <tr className="text-[10px] uppercase tracking-[0.15em]">
                       <th className="text-left pb-3 font-normal text-[#C8C8C8]">Page</th>
                       <SortHeader col="total_views" label="All time" />
-                      <SortHeader col="views_7d" label="7d" />
-                      <SortHeader col="views_30d" label="30d" />
+                      <SortHeader col="views_7d"    label="7d" />
+                      <SortHeader col="views_30d"   label="30d" />
                     </tr>
                   </thead>
                   <tbody>
                     {sorted.map((s, i) => (
-                      <tr
-                        key={s.slug}
-                        className={`border-t ${i === 0 ? 'border-[#E8E8E8]' : 'border-[#F0F0F0]'}`}
-                      >
+                      <tr key={s.slug} className={`border-t ${i === 0 ? 'border-[#E8E8E8]' : 'border-[#F0F0F0]'}`}>
                         <td className="py-3 pr-6 text-[rgb(18,18,22)] truncate max-w-[220px]" title={s.title}>
                           {s.title}
                         </td>
@@ -213,7 +258,9 @@ export default function DashboardClient() {
                           {Number(s.total_views).toLocaleString()}
                         </td>
                         <td className="py-3 text-right text-[#9A9A9A]">
-                          {Number(s.views_7d) > 0 ? Number(s.views_7d).toLocaleString() : <span className="text-[#D8D8D8]">—</span>}
+                          {Number(s.views_7d) > 0
+                            ? <span>{Number(s.views_7d).toLocaleString()}<Delta current={Number(s.views_7d)} prev={Number(s.views_prev_7d)} /></span>
+                            : <span className="text-[#D8D8D8]">—</span>}
                         </td>
                         <td className="py-3 text-right text-[#9A9A9A]">
                           {Number(s.views_30d) > 0 ? Number(s.views_30d).toLocaleString() : <span className="text-[#D8D8D8]">—</span>}
