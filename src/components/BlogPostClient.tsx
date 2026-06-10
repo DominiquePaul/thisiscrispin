@@ -223,7 +223,7 @@ export default function BlogPostClient({
           </div>
           <div
             className="prose prose-neutral prose-base max-w-none text-[rgb(45,45,52)]"
-            style={{ fontFamily: 'var(--font-geist)', lineHeight: 1.6 }}
+            style={{ fontFamily: 'var(--font-dm-sans)', lineHeight: 1.6 }}
           >
             {content ? (
               <div dangerouslySetInnerHTML={{ __html: contentHtml }} />
