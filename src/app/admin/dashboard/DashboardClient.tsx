@@ -117,9 +117,10 @@ function fillBuckets(buckets: BucketData[], timeframe: Timeframe, grouping: Grou
 function StackedBarChart({
   buckets, slugs, titles, colors,
 }: {
-  buckets: BucketData[]; slugs: string[];
+  buckets: BucketData[]; slugs?: string[];
   titles: Record<string, string>; colors: Record<string, string>;
 }) {
+  const safeSlugs = slugs ?? [];
   const containerRef = useRef<HTMLDivElement>(null);
   const [tooltip, setTooltip] = useState<{ x: number; y: number; bucket: BucketData } | null>(null);
 
@@ -154,7 +155,7 @@ function StackedBarChart({
         {buckets.map((b, i) => {
           const x = i * (barW + gap);
           let yOff = H;
-          const segs = slugs
+          const segs = safeSlugs
             .filter(s => (b.pages[s] ?? 0) > 0)
             .map(s => {
               const h = Math.max(0.4, (b.pages[s] / maxTotal) * H);
@@ -197,7 +198,7 @@ function StackedBarChart({
           <div style={{ marginBottom: 6, opacity: 0.5, fontSize: 9, textTransform: 'uppercase', letterSpacing: '0.15em' }}>
             {tooltip.bucket.label} · {tooltip.bucket.total} views
           </div>
-          {slugs
+          {safeSlugs
             .filter(s => (tooltip.bucket.pages[s] ?? 0) > 0)
             .sort((a, z) => (tooltip.bucket.pages[z] ?? 0) - (tooltip.bucket.pages[a] ?? 0))
             .map(s => (
@@ -232,11 +233,11 @@ function StackedBarChart({
 
 // ─── Legend ───────────────────────────────────────────────────────────────────
 
-function Legend({ slugs, titles, colors }: { slugs: string[]; titles: Record<string, string>; colors: Record<string, string> }) {
-  if (!slugs.length) return null;
+function Legend({ slugs, titles, colors }: { slugs?: string[]; titles: Record<string, string>; colors: Record<string, string> }) {
+  if (!slugs?.length) return null;
   return (
     <div className="flex flex-wrap gap-x-5 gap-y-2 mt-5">
-      {slugs.map(s => (
+      {safeSlugs.map(s => (
         <div key={s} className="flex items-center gap-1.5 text-[10px] text-[#9A9A9A]">
           <span style={{ width: 8, height: 8, borderRadius: 2, background: colors[s], display: 'inline-block', flexShrink: 0 }} />
           <span>{titles[s] ?? s}</span>
