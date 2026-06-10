@@ -7,6 +7,11 @@ const nextConfig = {
           destination: '/captable-calculator',
           permanent: true,
         },
+        {
+          source: '/pi-models',
+          destination: '/robotic-ai-model-specs',
+          permanent: true,
+        },
       ];
     },
     images: {

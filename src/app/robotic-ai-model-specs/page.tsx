@@ -444,7 +444,7 @@ export default function PiModelsPage() {
 
   // Track page view
   React.useEffect(() => {
-    fetch('/api/views/pi-models', { method: 'POST' }).catch(() => {});
+    fetch('/api/views/robotic-ai-model-specs', { method: 'POST' }).catch(() => {});
   }, []);
   return (
     <>
@@ -723,19 +723,6 @@ export default function PiModelsPage() {
         .pm-type-vla       { background: var(--accent-bg); color: var(--accent); }
         .pm-type-world     { background: #F7EEE2; color: #9A6A2E; }
 
-        .pm-type-dot {
-          display: inline-block;
-          width: 9px;
-          height: 9px;
-          border-radius: 50%;
-          vertical-align: middle;
-        }
-        .pm-type-dot.pm-type-chunk     { background: #2F7A63; }
-        .pm-type-dot.pm-type-diffusion { background: #6B4A98; }
-        .pm-type-dot.pm-type-vla       { background: var(--accent); }
-        .pm-type-dot.pm-type-world     { background: #9A6A2E; }
-        .pm-type-dot.pm-type-wam       { background: #A8443C; }
-
         .pm-type-note {
           display: block;
           font-family: 'JetBrains Mono', monospace;
@@ -951,7 +938,7 @@ export default function PiModelsPage() {
                     <th key={m.key}>
                       <span className="pm-model-name">{m.display}</span>
                       <span className="pm-info" tabIndex={0} aria-label={`${TYPE_META[m.type].label}. ${TYPE_META[m.type].blurb}`}>
-                        <span className={`pm-type-dot pm-type-${m.type}`} aria-hidden="true" />
+                        <span className="pm-info-icon">i</span>
                         <span className="pm-info-tip">
                           <strong>{TYPE_META[m.type].label}</strong>{m.typeNote ? ` · ${m.typeNote}` : ""}
                           <br />
@@ -1125,7 +1112,7 @@ export default function PiModelsPage() {
                     <th key={m.key}>
                       <span className="pm-model-name">{m.display}</span>
                       <span className="pm-info" tabIndex={0} aria-label={`${TYPE_META[m.type].label}. ${TYPE_META[m.type].blurb}`}>
-                        <span className={`pm-type-dot pm-type-${m.type}`} aria-hidden="true" />
+                        <span className="pm-info-icon">i</span>
                         <span className="pm-info-tip">
                           <strong>{TYPE_META[m.type].label}</strong>
                           <br />

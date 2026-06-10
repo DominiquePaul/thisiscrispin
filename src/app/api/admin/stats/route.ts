@@ -2,7 +2,7 @@ import { createClient } from '@supabase/supabase-js';
 import { NextRequest, NextResponse } from 'next/server';
 import { isAuthenticated } from '@/lib/auth-helpers';
 import { getArticles } from '@/lib/contentful';
-import { STATIC_PAGES } from '@/lib/static-pages';
+import { STATIC_PAGES, SLUG_ALIASES } from '@/lib/static-pages';
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -45,6 +45,11 @@ export async function GET(req: NextRequest) {
   for (const p of STATIC_PAGES) {
     titleMap[p.slug] = p.title;
     canonicalSlugMap[p.slug] = p.slug;
+  }
+  // Map legacy slugs onto their renamed canonical slug + carry the title over.
+  for (const [legacy, canonical] of Object.entries(SLUG_ALIASES)) {
+    canonicalSlugMap[legacy] = canonical;
+    if (titleMap[canonical]) titleMap[legacy] = titleMap[canonical];
   }
 
   // Merge rows that share the same canonical slug (old contentfulId + new slug key)

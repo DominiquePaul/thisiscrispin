@@ -9,11 +9,19 @@ import type { Article } from "./types";
  * Dates are pulled from the page's first commit so they sort naturally in
  * the timeline; bump them if you want a page to surface higher.
  */
+/**
+ * Legacy view-tracking slugs → current canonical slug. Lets historical
+ * `view_events` survive a page rename so the dashboard keeps counting them.
+ */
+export const SLUG_ALIASES: Record<string, string> = {
+  "pi-models": "robotic-ai-model-specs",
+};
+
 export const STATIC_PAGES: Article[] = [
   {
     id: "static-pi-models",
-    slug: "pi-models",
-    href: "/pi-models",
+    slug: "robotic-ai-model-specs",
+    href: "/robotic-ai-model-specs",
     title: "Robot Learning Architecture Overview",
     coverImage: "/images/policy-architectures-cover.png",
     excerpt:
