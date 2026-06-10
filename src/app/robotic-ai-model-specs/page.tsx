@@ -330,7 +330,7 @@ const OVERVIEW_MODELS: OverviewModel[] = [
       actionRep: "CVAE (transformer enc-dec), L1 + KL", chunk: "k = 100", language: "No",
       crossEmbod: "No", controlHz: "50 Hz", inference: "single forward pass; temporal ensembling (+3.3%)",
       data: "~50 demos / task", generalization: "single task, single robot",
-      contribution: <strong>Introduced action chunking</strong>,
+      contribution: "Introduced action chunking",
     },
   },
   {
@@ -340,7 +340,7 @@ const OVERVIEW_MODELS: OverviewModel[] = [
       actionRep: "DDPM diffusion (1D U-Net / transformer), ε-pred", chunk: "Tp=16 predict, Ta=8 exec (To=2)", language: "No",
       crossEmbod: "No", controlHz: "~10 Hz", inference: "DDIM 10 steps (DDPM 100 train)",
       data: "136–250 demos / task", generalization: "single task; models multimodal demos",
-      contribution: <strong>Introduced the diffusion action head</strong>,
+      contribution: "Introduced the diffusion action head",
     },
   },
   {
@@ -406,7 +406,7 @@ const WAM_MODELS: OverviewModel[] = [
       inference: <>Partial denoising of video to τ<sub>v</sub>=1, then decode actions from latents</>,
       data: "LIBERO 50 demos/task · real bimanual 512 + 480 eps · 10× sample-efficiency vs VLA",
       generalization: "77% from 1 episode/task (2% of action data); converges ~2× faster than VLA",
-      contribution: <><strong>Video-Action Model</strong>: video backbone supplies dynamics; decoder only solves control</>,
+      contribution: <>Video-Action Model: video backbone supplies dynamics; decoder only solves control</>,
       platform: "Bimanual Franka Panda + 16-DoF dexterous hands",
     },
   },
@@ -424,11 +424,14 @@ const WAM_MODELS: OverviewModel[] = [
       inference: "16 denoising steps; Flash variant 4→1 step (~350→~150 ms)",
       data: "~500 h teleop on AgiBot G1 across 22 environments + DROID",
       generalization: ">2× task progress vs SOTA VLAs; zero-shot new tasks & environments",
-      contribution: <><strong>World Action Model</strong>: dream the future in video pixels, then act, a strong zero-shot policy</>,
+      contribution: <>World Action Model: dream the future in video pixels, then act, a strong zero-shot policy</>,
       platform: "AgiBot G1, DROID Franka, YAM",
     },
   },
 ];
+
+// Every model shown on the Overview pane (π lineage + world-action models).
+const ALL_OVERVIEW_MODELS: OverviewModel[] = [...OVERVIEW_MODELS, ...WAM_MODELS];
 
 /* ── navigation ───────────────────────────────────────────────────── */
 const TABS = [
@@ -941,7 +944,7 @@ export default function PiModelsPage() {
               <thead>
                 <tr>
                   <th className="pm-row-header" />
-                  {OVERVIEW_MODELS.map((m) => (
+                  {ALL_OVERVIEW_MODELS.map((m) => (
                     <th key={m.key}>
                       <span className="pm-model-name">{m.display}</span>
                       <span className="pm-info" tabIndex={0} aria-label={`${TYPE_META[m.type].label}. ${TYPE_META[m.type].blurb}`}>
@@ -960,7 +963,7 @@ export default function PiModelsPage() {
                 {OVERVIEW_FIELDS.map((f) => (
                   <tr key={f.key}>
                     <td className="pm-row-label">{f.label}</td>
-                    {OVERVIEW_MODELS.map((m) => (
+                    {ALL_OVERVIEW_MODELS.map((m) => (
                       <td key={m.key} className="pm-params-cell">{m.specs[f.key]}</td>
                     ))}
                   </tr>
