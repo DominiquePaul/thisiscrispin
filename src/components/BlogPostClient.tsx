@@ -103,6 +103,7 @@ export default function BlogPostClient({
   excerpt: initialExcerpt
 }: BlogPostClientProps) {
   const [isEditing, setIsEditing] = useState(false);
+  const [views, setViews] = useState<number | null>(null);
   const [title, setTitle] = useState(initialTitle);
   const [content, setContent] = useState<any>(initialContent);
   const [tags, setTags] = useState(initialTags);
@@ -117,6 +118,14 @@ export default function BlogPostClient({
   });
 
   const contentHtml = useMemo(() => richTextToHtml(content), [content]);
+
+  // Increment view count once on mount
+  useEffect(() => {
+    fetch(`/api/views/${contentfulId}`, { method: 'POST' })
+      .then((r) => r.json())
+      .then((d) => { if (typeof d.views === 'number') setViews(d.views); })
+      .catch(() => {});
+  }, [contentfulId]);
 
   // Update state when props change (in case content is reloaded)
   useEffect(() => {
@@ -205,10 +214,13 @@ export default function BlogPostClient({
             {title}
           </h1>
           <div
-            className="text-[#9A9A9A] mb-12 text-xs uppercase tracking-[0.2em]"
+            className="flex items-center gap-6 text-[#9A9A9A] mb-12 text-xs uppercase tracking-[0.2em]"
             style={{ fontFamily: 'var(--font-jetbrains-mono)' }}
           >
-            {formattedDate}
+            <span>{formattedDate}</span>
+            {views !== null && (
+              <span>{views.toLocaleString()} {views === 1 ? 'view' : 'views'}</span>
+            )}
           </div>
           <div
             className="prose prose-neutral prose-base max-w-none text-[rgb(45,45,52)]"
