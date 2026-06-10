@@ -248,15 +248,19 @@ function computeCapTable(rounds: Round[], founderShares: number, initialEsopPct:
       const roundShares = Math.floor(round.amount / ppsThisRound);
       totalShares = totalPreRound + roundShares;
 
-      const nonEsopShareholders = shareholders.filter((s) => s.type !== "esop");
+      const founderShareholders   = shareholders.filter((s) => s.type === "founder");
+      const investorShareholders  = shareholders.filter((s) => s.type === "investor");
       const newShareholders: typeof shareholders = [
-        ...nonEsopShareholders,
+        // founders and ESOP always grouped together at the front
+        ...founderShareholders,
+        ...(cumulativeEsopShares > 0
+          ? [{ name: "ESOP Pool", shares: cumulativeEsopShares, invested: 0, type: "esop" as const }]
+          : []),
+        // investors in chronological order
+        ...investorShareholders,
         ...convertedSafes,
         { name: `${round.name} Investor`, shares: roundShares, invested: round.amount, type: "investor" },
       ];
-      if (cumulativeEsopShares > 0) {
-        newShareholders.push({ name: "ESOP Pool", shares: cumulativeEsopShares, invested: 0, type: "esop" });
-      }
       shareholders = newShareholders;
       pendingSafes = [];
 
@@ -532,8 +536,8 @@ function RoundCard({ round, onUpdate, onRemove, isOnly }: RoundCardProps) {
   );
 }
 
-const FOUNDER_COLOR = "#10B981"; // emerald — founders (start of bar)
-const ESOP_COLOR    = "#F59E0B"; // amber  — ESOP pool (end of bar, clearly distinct)
+const FOUNDER_COLOR = "#10B981"; // emerald — founders
+const ESOP_COLOR    = "#14B8A6"; // teal   — ESOP pool (adjacent to founders)
 
 // Investors share a single indigo hue spread dark -> light as a gradient, so
 // they clearly belong to one group while staying individually distinguishable.
