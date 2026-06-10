@@ -29,8 +29,12 @@ export async function GET(req: NextRequest) {
   if (dailyAllResult.error) console.error('Daily all error:', dailyAllResult.error);
 
   // Build slug → title map from Contentful articles + static pages
+  // Index by both slug AND contentfulId to handle old tracking data
   const titleMap: Record<string, string> = {};
-  for (const a of articles) titleMap[a.slug] = a.title;
+  for (const a of articles) {
+    titleMap[a.slug] = a.title;
+    titleMap[a.id] = a.title;
+  }
   for (const p of STATIC_PAGES) titleMap[p.slug] = p.title;
 
   const stats = (statsResult.data ?? []).map((row: {

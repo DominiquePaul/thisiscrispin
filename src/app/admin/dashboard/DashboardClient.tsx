@@ -41,6 +41,18 @@ function fillDailyGaps(data: DailyView[] | undefined, allTime = false): DailyVie
 
 function BarChart({ data, allTime }: { data?: DailyView[]; allTime?: boolean }) {
   const filled = fillDailyGaps(data, allTime);
+
+  if (!filled.length) {
+    return (
+      <div
+        className="flex items-center justify-center text-[#C8C8C8] text-[10px] uppercase tracking-[0.2em]"
+        style={{ height: 160 }}
+      >
+        Data will appear here as views accumulate
+      </div>
+    );
+  }
+
   const max = Math.max(...filled.map(d => d.views), 1);
   const H = 80;
   const W = 100;
