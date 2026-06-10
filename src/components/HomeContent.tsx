@@ -6,7 +6,7 @@ import Link from "next/link";
 const TYPED_WORDS = ["Dominique Paul", "thisiscrispin"];
 
 function useTypewriter(words: string[]) {
-  const [display, setDisplay] = useState(words[0]);
+  const [display, setDisplay] = useState("");
   const [wordIndex, setWordIndex] = useState(0);
   const [deleting, setDeleting] = useState(false);
 
