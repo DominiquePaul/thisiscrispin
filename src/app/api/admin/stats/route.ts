@@ -14,9 +14,10 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const [statsResult, dailyResult, articles] = await Promise.all([
+  const [statsResult, daily30Result, dailyAllResult, articles] = await Promise.all([
     supabase.rpc('get_view_stats'),
     supabase.rpc('get_daily_views', { days_back: 30 }),
+    supabase.rpc('get_daily_views', { days_back: 0 }),
     getArticles().catch(() => []),
   ]);
 
@@ -24,6 +25,8 @@ export async function GET(req: NextRequest) {
     console.error('Stats error:', statsResult.error);
     return NextResponse.json({ error: 'Failed to fetch stats' }, { status: 500 });
   }
+  if (daily30Result.error) console.error('Daily 30 error:', daily30Result.error);
+  if (dailyAllResult.error) console.error('Daily all error:', dailyAllResult.error);
 
   // Build slug → title map from Contentful articles + static pages
   const titleMap: Record<string, string> = {};
@@ -42,6 +45,7 @@ export async function GET(req: NextRequest) {
 
   return NextResponse.json({
     stats,
-    daily: dailyResult.data ?? [],
+    daily30: daily30Result.data ?? [],
+    dailyAll: dailyAllResult.data ?? [],
   });
 }
