@@ -423,72 +423,74 @@ function RoundCard({ round, onUpdate, onRemove, isOnly }: RoundCardProps) {
         flex: "1 1 280px",
       }}
     >
+      {/* Row 1: round name + delete */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <input
-            value={round.name}
-            onChange={(e) => onUpdate({ ...round, name: e.target.value })}
+        <input
+          value={round.name}
+          onChange={(e) => onUpdate({ ...round, name: e.target.value })}
+          style={{
+            background: "transparent",
+            border: "none",
+            outline: "none",
+            color: "var(--text)",
+            fontSize: 18,
+            fontWeight: 700,
+            fontFamily: "var(--sans)",
+            width: 0,
+            flex: 1,
+          }}
+        />
+        {!isOnly && (
+          <button
+            onClick={onRemove}
             style={{
               background: "transparent",
-              border: "none",
-              outline: "none",
-              color: "var(--text)",
-              fontSize: 18,
-              fontWeight: 700,
-              fontFamily: "var(--sans)",
-              width: 120,
-            }}
-          />
-          <span
-            style={{
-              fontSize: 10,
-              fontWeight: 700,
-              textTransform: "uppercase",
-              letterSpacing: "0.1em",
-              color: isSafe ? "#6E6E6E" : "#FFFFFF",
-              background: isSafe ? "#ECECEC" : "#1E1E24",
-              padding: "3px 8px",
-              borderRadius: 4,
-              fontFamily: "var(--mono)",
-            }}
-          >
-            {isSafe ? "SAFE" : "PRICED"}
-          </span>
-        </div>
-        <div style={{ display: "flex", gap: 6 }}>
-          <button
-            onClick={() => onUpdate({ ...round, type: isSafe ? "priced" : "safe" })}
-            style={{
-              background: "var(--input-bg)",
               border: "1px solid var(--border)",
               borderRadius: 5,
               color: "var(--text-dim)",
-              fontSize: 11,
-              padding: "4px 8px",
+              fontSize: 14,
+              padding: "2px 8px",
               cursor: "pointer",
-              fontFamily: "var(--mono)",
+              lineHeight: 1,
+              flexShrink: 0,
             }}
           >
-            &rarr; {isSafe ? "Priced" : "SAFE"}
+            &times;
           </button>
-          {!isOnly && (
-            <button
-              onClick={onRemove}
-              style={{
-                background: "transparent",
-                border: "1px solid var(--border)",
-                borderRadius: 5,
-                color: "var(--text-dim)",
-                fontSize: 14,
-                padding: "2px 8px",
-                cursor: "pointer",
-                lineHeight: 1,
-              }}
-            >
-              &times;
-            </button>
-          )}
-        </div>
+        )}
+      </div>
+      {/* Row 2: type badge + toggle */}
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: -6 }}>
+        <span
+          style={{
+            fontSize: 10,
+            fontWeight: 700,
+            textTransform: "uppercase",
+            letterSpacing: "0.1em",
+            color: isSafe ? "#6E6E6E" : "#FFFFFF",
+            background: isSafe ? "#ECECEC" : "#1E1E24",
+            padding: "3px 8px",
+            borderRadius: 4,
+            fontFamily: "var(--mono)",
+          }}
+        >
+          {isSafe ? "SAFE" : "PRICED"}
+        </span>
+        <button
+          onClick={() => onUpdate({ ...round, type: isSafe ? "priced" : "safe" })}
+          style={{
+            background: "var(--input-bg)",
+            border: "1px solid var(--border)",
+            borderRadius: 5,
+            color: "var(--text-dim)",
+            fontSize: 11,
+            padding: "4px 8px",
+            cursor: "pointer",
+            fontFamily: "var(--mono)",
+          }}
+        >
+          &rarr; {isSafe ? "Priced" : "SAFE"}
+        </button>
       </div>
       <FormattedInput
         label="Amount Raised"
