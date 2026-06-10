@@ -84,6 +84,7 @@ function richTextToHtml(content: any): string {
 
 interface BlogPostClientProps {
   contentfulId: string;
+  slug: string;
   title: string;
   // Contentful Rich Text document
   content: any;
@@ -95,6 +96,7 @@ interface BlogPostClientProps {
 
 export default function BlogPostClient({
   contentfulId,
+  slug,
   title: initialTitle,
   content: initialContent,
   tags: initialTags,
@@ -121,11 +123,11 @@ export default function BlogPostClient({
 
   // Increment view count once on mount
   useEffect(() => {
-    fetch(`/api/views/${contentfulId}`, { method: 'POST' })
+    fetch(`/api/views/${slug}`, { method: 'POST' })
       .then((r) => r.json())
       .then((d) => { if (typeof d.views === 'number') setViews(d.views); })
       .catch(() => {});
-  }, [contentfulId]);
+  }, [slug]);
 
   // Update state when props change (in case content is reloaded)
   useEffect(() => {

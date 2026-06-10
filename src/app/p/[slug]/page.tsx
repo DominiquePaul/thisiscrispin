@@ -45,5 +45,5 @@ export default async function ArticlePage({ params }: { params: Promise<{ slug: 
     );
   }
 
-  return <BlogPost contentfulId={article.id} />;
+  return <BlogPost contentfulId={article.id} slug={slug} />;
 }

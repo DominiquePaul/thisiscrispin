@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from 'react';
+import Link from 'next/link';
 import KeySequenceDetector from './KeySequenceDetector';
 import AdminLoginModal from './AdminLoginModal';
 import { useAuth } from '@/lib/AuthContext';
@@ -42,7 +43,13 @@ export default function AdminPanel() {
           <div className="bg-green-100 border border-green-300 rounded-md px-3 py-1 text-sm flex items-center">
             <span className="w-2 h-2 bg-green-500 rounded-full mr-2"></span>
             <span>Admin Mode</span>
-            <button 
+            <Link
+              href="/admin/dashboard"
+              className="ml-3 text-blue-600 hover:text-blue-800"
+            >
+              Stats
+            </Link>
+            <button
               onClick={handleLogout}
               className="ml-2 text-red-600 hover:text-red-800"
             >

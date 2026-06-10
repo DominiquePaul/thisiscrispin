@@ -15,7 +15,7 @@ const plexMono = IBM_Plex_Mono({
   display: 'swap',
 });
 
-const BlogPost: React.FC<{contentfulId: string}> = async ({ contentfulId }) => {
+const BlogPost: React.FC<{contentfulId: string; slug: string}> = async ({ contentfulId, slug }) => {
   try {
     const space = process.env.CONTENTFUL_PUBLIC_SPACE_ID;
     const accessToken = process.env.CONTENTFUL_ACCESS_TOKEN;
@@ -46,10 +46,11 @@ const BlogPost: React.FC<{contentfulId: string}> = async ({ contentfulId }) => {
       <div className="min-h-screen pt-20">
         <div className="max-w-2xl mx-auto px-4 py-8">
           {/* Client component for edit functionality */}
-          <BlogPostClient 
-            contentfulId={contentfulId} 
-            title={title} 
-            content={content} 
+          <BlogPostClient
+            contentfulId={contentfulId}
+            slug={slug}
+            title={title}
+            content={content}
             tags={tags}
             createdAt={createdAt}
             coverImage={coverImage}
