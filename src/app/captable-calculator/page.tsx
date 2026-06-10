@@ -538,8 +538,8 @@ function RoundCard({ round, onUpdate, onRemove, isOnly }: RoundCardProps) {
   );
 }
 
-const FOUNDER_COLOR = "#10B981"; // emerald — founders
-const ESOP_COLOR    = "#14B8A6"; // teal   — ESOP pool (adjacent to founders)
+const FOUNDER_COLOR = "#059669"; // emerald-600 — founders (deeper)
+const ESOP_COLOR    = "#6EE7B7"; // emerald-300 — ESOP pool (lighter, same family)
 
 // Investors share a single indigo hue spread dark -> light as a gradient, so
 // they clearly belong to one group while staying individually distinguishable.
