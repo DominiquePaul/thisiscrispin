@@ -211,8 +211,8 @@ export default function BlogPostClient({
             {formattedDate}
           </div>
           <div
-            className="prose prose-neutral prose-lg max-w-none text-[rgb(45,45,52)]"
-            style={{ fontFamily: 'var(--font-geist)' }}
+            className="prose prose-neutral prose-sm max-w-none text-[rgb(45,45,52)]"
+            style={{ fontFamily: 'var(--font-geist)', lineHeight: 'normal' }}
           >
             {content ? (
               <div dangerouslySetInnerHTML={{ __html: contentHtml }} />
