@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { IBM_Plex_Sans, JetBrains_Mono, Inter } from "next/font/google";
+import { IBM_Plex_Sans, JetBrains_Mono, Geist } from "next/font/google";
 import localFont from 'next/font/local';
 import "./globals.css";
 import { Analytics } from "@vercel/analytics/react"
@@ -14,10 +14,10 @@ const ibmPlexSans = IBM_Plex_Sans({
   variable: '--font-ibm-plex-sans'
 });
 
-const inter = Inter({
+const geist = Geist({
   subsets: ["latin"],
   weight: ['400', '500', '600', '700'],
-  variable: '--font-inter',
+  variable: '--font-geist',
 });
 
 const segoeUI = localFont({
@@ -72,7 +72,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${ibmPlexSans.className} ${ibmPlexSans.variable} ${segoeUI.variable} ${sfMono.variable} ${jetbrainsMono.variable} ${inter.variable} bg-[#F2F2F2]`}>
+      <body className={`${ibmPlexSans.className} ${ibmPlexSans.variable} ${segoeUI.variable} ${sfMono.variable} ${jetbrainsMono.variable} ${geist.variable} bg-[#F2F2F2]`}>
         <AuthProvider>
           <SiteLogo />
           <AdminPanel />
