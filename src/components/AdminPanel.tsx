@@ -39,23 +39,27 @@ export default function AdminPanel() {
       />
       
       {isAuthenticated && (
-        <div className="fixed top-4 right-4 z-50">
-          <div className="bg-green-100 border border-green-300 rounded-md px-3 py-1 text-sm flex items-center">
-            <span className="w-2 h-2 bg-green-500 rounded-full mr-2"></span>
-            <span>Admin Mode</span>
-            <Link
-              href="/admin/dashboard"
-              className="ml-3 text-blue-600 hover:text-blue-800"
-            >
-              Stats
-            </Link>
-            <button
-              onClick={handleLogout}
-              className="ml-2 text-red-600 hover:text-red-800"
-            >
-              Logout
-            </button>
-          </div>
+        <div
+          className="fixed top-4 right-4 z-50 flex items-center gap-3 text-sm"
+          style={{ fontFamily: 'var(--font-jetbrains-mono)' }}
+        >
+          <span
+            className="w-1.5 h-1.5 rounded-full bg-emerald-400/70"
+            title="Admin mode"
+            aria-label="Admin mode"
+          />
+          <Link
+            href="/admin/dashboard"
+            className="text-[#9A9A9A] transition-colors duration-200 hover:text-[rgb(18,18,22)]"
+          >
+            Dashboard
+          </Link>
+          <button
+            onClick={handleLogout}
+            className="text-[#C8C8C8] transition-colors duration-200 hover:text-[rgb(18,18,22)]"
+          >
+            Logout
+          </button>
         </div>
       )}
     </>

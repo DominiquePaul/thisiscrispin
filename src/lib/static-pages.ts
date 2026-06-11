@@ -17,6 +17,18 @@ export const SLUG_ALIASES: Record<string, string> = {
   "pi-models": "robotic-ai-model-specs",
 };
 
+/**
+ * Pages tracked for views but NOT surfaced in the homepage feed — the homepage
+ * itself plus standalone routes. Maps the tracking slug to a human title so the
+ * stats dashboard labels them nicely instead of showing the raw slug.
+ */
+export const EXTRA_PAGE_TITLES: Record<string, string> = {
+  home: "Home",
+  shots: "Photography",
+  "robot-arms": "Robot Arms",
+  "blog-index": "Blog index",
+};
+
 export const STATIC_PAGES: Article[] = [
   {
     id: "static-pi-models",

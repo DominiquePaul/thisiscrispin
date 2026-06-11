@@ -2,7 +2,7 @@ import { createClient } from '@supabase/supabase-js';
 import { NextRequest, NextResponse } from 'next/server';
 import { Resend } from 'resend';
 import { getArticles } from '@/lib/contentful';
-import { STATIC_PAGES, SLUG_ALIASES } from '@/lib/static-pages';
+import { STATIC_PAGES, SLUG_ALIASES, EXTRA_PAGE_TITLES } from '@/lib/static-pages';
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -65,6 +65,9 @@ export async function GET(req: NextRequest) {
   }
   for (const p of STATIC_PAGES) {
     titleMap[p.slug] = p.title; canonicalMap[p.slug] = p.slug;
+  }
+  for (const [slug, title] of Object.entries(EXTRA_PAGE_TITLES)) {
+    titleMap[slug] = title; canonicalMap[slug] = slug;
   }
   for (const [legacy, canonical] of Object.entries(SLUG_ALIASES)) {
     canonicalMap[legacy] = canonical;

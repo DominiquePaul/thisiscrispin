@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useMemo } from "react";
+import PageViewTracker from "@/components/PageViewTracker";
 
 /* ── types ────────────────────────────────────────────────────────── */
 type Tier = "industrial" | "research" | "hobby";
@@ -283,6 +284,7 @@ export default function RobotArmsPage() {
 
   return (
     <>
+      <PageViewTracker slug="robot-arms" />
       <style>{`
         .ra-root {
           --bg: #FAFAF8;

@@ -4,6 +4,7 @@ import React, { Suspense, useState, useEffect, useCallback, useMemo, useRef } fr
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Bebas_Neue, Raleway, Archivo_Black, Questrial, Playfair_Display } from 'next/font/google'
 import Image from "next/image";
+import PageViewTracker from "@/components/PageViewTracker";
 
 const bebasNeue = Bebas_Neue({
     weight: '400',
@@ -532,6 +533,7 @@ function ImageCarousel() {
 export default function ShotsPage() {
   return (
     <Suspense fallback={<div>Loading...</div>}>
+      <PageViewTracker slug="shots" />
       <ImageCarousel />
     </Suspense>
   );
