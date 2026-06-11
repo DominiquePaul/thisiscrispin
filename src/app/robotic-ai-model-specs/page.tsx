@@ -302,6 +302,7 @@ const OVERVIEW_FIELDS: { key: string; label: string }[] = [
   { key: "origin",         label: "Year · origin" },
   { key: "params",         label: "Params" },
   { key: "backbone",       label: "Perception backbone" },
+  { key: "imageInput",     label: "Image input size" },
   { key: "actionRep",      label: "Action representation" },
   { key: "chunk",          label: "Action chunk (H)" },
   { key: "language",       label: "Language-conditioned" },
@@ -327,6 +328,7 @@ const OVERVIEW_MODELS: OverviewModel[] = [
     key: "act", display: <>ACT</>, family: "ALOHA", type: "chunk",
     specs: {
       origin: "2023 · Stanford (ALOHA)", params: "~80M", backbone: "ResNet-18 × 4 cams",
+      imageInput: "480×640 (H×W) × 4 cams",
       actionRep: "CVAE (transformer enc-dec), L1 + KL", chunk: "k = 100", language: "No",
       crossEmbod: "No", controlHz: "50 Hz", inference: "single forward pass; temporal ensembling (+3.3%)",
       data: "~50 demos / task", generalization: "single task, single robot",
@@ -337,6 +339,7 @@ const OVERVIEW_MODELS: OverviewModel[] = [
     key: "dp", display: <>Diffusion Policy</>, family: "Diffusion Policy", type: "diffusion",
     specs: {
       origin: "2023 · Columbia / TRI / MIT", params: "~67M (CNN variant)", backbone: "ResNet-18 (spatial-softmax, GroupNorm)",
+      imageInput: "96×96 sim (crop 84×84) · 320×240 real (crop 288×216)",
       actionRep: "DDPM diffusion (1D U-Net / transformer), ε-pred", chunk: "Tp=16 predict, Ta=8 exec (To=2)", language: "No",
       crossEmbod: "No", controlHz: "~10 Hz", inference: "DDIM 10 steps (DDPM 100 train)",
       data: "136–250 demos / task", generalization: "single task; models multimodal demos",
@@ -347,6 +350,7 @@ const OVERVIEW_MODELS: OverviewModel[] = [
     key: "pi0", display: <>π<sub>0</sub></>, family: "π family", type: "vla",
     specs: {
       origin: "2024 · Physical Intelligence", params: "3.3B", backbone: "PaliGemma (SigLIP 400M + Gemma 2B)",
+      imageInput: "224×224 (SigLIP)",
       actionRep: "Conditional flow matching", chunk: "H = 50", language: "Yes",
       crossEmbod: "Yes", controlHz: "up to 50 Hz", inference: "10 flow steps; open-loop (ensembling hurt)",
       data: "~10,000 h, 903M steps, 7 robots", generalization: "fine-tune to new tasks",
@@ -357,6 +361,7 @@ const OVERVIEW_MODELS: OverviewModel[] = [
     key: "pi05", display: <>π<sub>0.5</sub></>, family: "π family", type: "vla",
     specs: {
       origin: "2025 · PI", params: "~3.3B", backbone: "PaliGemma (SigLIP 400M + Gemma 2B)",
+      imageInput: "224×224 (SigLIP)",
       actionRep: "Hybrid FAST (AR) + flow matching", chunk: "H = 50", language: "Yes",
       crossEmbod: "Yes", controlHz: "50 Hz", inference: "10 flow steps",
       data: "+ ~400 h mobile, ~100 homes", generalization: "open-world new homes",
@@ -367,6 +372,7 @@ const OVERVIEW_MODELS: OverviewModel[] = [
     key: "pi06", display: <>π<sub>0.6</sub> / π*<sub>0.6</sub></>, family: "π family", type: "vla", typeNote: "+ RL (π*)",
     specs: {
       origin: "2025 · PI", params: "~5.3B (4B + 860M)", backbone: "SigLIP 400M + Gemma 3 4B",
+      imageInput: "448×448, up to 4 images",
       actionRep: "KI: FAST in VLM + flow in expert", chunk: "H = 50", language: "Yes",
       crossEmbod: "Yes", controlHz: "50 Hz", inference: "5 flow steps; 63 ms / chunk",
       data: "π0.5 + RL rollouts + interventions", generalization: "specialist-level out-of-box",
@@ -377,6 +383,7 @@ const OVERVIEW_MODELS: OverviewModel[] = [
     key: "pi07", display: <>π<sub>0.7</sub></>, family: "π family", type: "world",
     specs: {
       origin: "2026 · PI", params: "~5B + 14B world model", backbone: "Gemma 3 4B + SigLIP + MEM",
+      imageInput: "448×448 (WM VAE inputs 512×384), up to 4 cams + 3 subgoals",
       actionRep: "KI + flow; world-model subgoals", chunk: "H = 50", language: "Yes",
       crossEmbod: "Yes (zero-shot)", controlHz: "50 Hz", inference: "5 flow steps; 38–127 ms",
       data: "+ egocentric human video + autonomous", generalization: "compositional, new embodiments",
@@ -398,6 +405,7 @@ const WAM_MODELS: OverviewModel[] = [
       origin: "Dec 2025 · mimic robotics / ETH / Microsoft / UC Berkeley",
       params: "2B video backbone + flow-matching action decoder",
       backbone: "NVIDIA Cosmos-Predict2 (2B latent DiT)",
+      imageInput: "480×640 (resized for Cosmos-Predict2)",
       actionRep: <>Flow-matching <strong>inverse-dynamics</strong> decoder on video latents (partial denoise to τ<sub>v</sub>)</>,
       chunk: NS,
       language: "Yes (T5 instruction encoder)",
@@ -416,6 +424,7 @@ const WAM_MODELS: OverviewModel[] = [
       origin: "Feb 2026 · NVIDIA",
       params: "14B",
       backbone: "Wan2.1-I2V-14B (autoregressive video diffusion)",
+      imageInput: "832×480 (W×H, Wan 480P backbone)",
       actionRep: <>Jointly denoises <strong>video + action chunks</strong>; implicit IDM → normalized joint positions</>,
       chunk: "H=48 @ 30 Hz (1.6 s, AgiBot) · H=24 @ 15 Hz (DROID)",
       language: "Yes (frozen text encoder)",
