@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 import { NextRequest, NextResponse } from 'next/server';
+import { isAuthenticated } from '@/lib/auth-helpers';
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -40,6 +41,17 @@ export async function POST(
   { params }: { params: Promise<{ slug: string }> }
 ) {
   const { slug } = await params;
+
+  // Don't count the site owner's own visits. Return the current total so the
+  // post still shows the real number, just without incrementing it.
+  if (isAuthenticated(req)) {
+    const { data } = await supabase
+      .from('post_views')
+      .select('view_count')
+      .eq('slug', slug)
+      .single();
+    return NextResponse.json({ views: data?.view_count ?? 0 });
+  }
 
   // --- extract metadata from request headers ---
   const country  = req.headers.get('x-vercel-ip-country') ?? null;

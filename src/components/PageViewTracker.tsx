@@ -9,7 +9,11 @@ import { useEffect } from "react";
  */
 export default function PageViewTracker({ slug }: { slug: string }) {
   useEffect(() => {
-    fetch(`/api/views/${slug}`, { method: "POST" }).catch(() => {});
+    fetch(`/api/views/${slug}`, { method: "POST" })
+      .then((r) => {
+        if (!r.ok) console.warn(`View tracking failed for "${slug}": ${r.status}`);
+      })
+      .catch((e) => console.warn(`View tracking request failed for "${slug}":`, e));
   }, [slug]);
   return null;
 }

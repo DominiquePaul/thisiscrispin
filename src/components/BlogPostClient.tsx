@@ -124,9 +124,15 @@ export default function BlogPostClient({
   // Increment view count once on mount
   useEffect(() => {
     fetch(`/api/views/${slug}`, { method: 'POST' })
-      .then((r) => r.json())
-      .then((d) => { if (typeof d.views === 'number') setViews(d.views); })
-      .catch(() => {});
+      .then(async (r) => {
+        const d = await r.json().catch(() => ({}));
+        if (!r.ok) {
+          console.warn(`View tracking failed for "${slug}":`, d?.error ?? r.status);
+          return;
+        }
+        if (typeof d.views === 'number') setViews(d.views);
+      })
+      .catch((e) => console.warn(`View tracking request failed for "${slug}":`, e));
   }, [slug]);
 
   // Update state when props change (in case content is reloaded)
