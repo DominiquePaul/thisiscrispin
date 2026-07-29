@@ -92,7 +92,7 @@ export default function HomeContent({ articles }: HomeContentProps) {
       <section className="flex-grow-0 pt-[30vh] px-[5%] sm:px-[10%] 2xl:px-[20%]">
         <div className="max-w-3xl">
           <h1
-            className="flex items-center text-[rgb(30,30,36)] text-4xl sm:text-6xl mb-8 tracking-[-0.03em] leading-[1]"
+            className="flex items-center min-h-[1em] text-[rgb(30,30,36)] text-4xl sm:text-6xl mb-8 tracking-[-0.03em] leading-[1]"
             style={{ fontFamily: 'var(--font-jetbrains-mono)' }}
             aria-label="Dominique Paul"
           >
