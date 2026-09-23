@@ -36,66 +36,61 @@ export default function TipsForApplyingForJobsPage() {
             style={{ fontFamily: "var(--font-dm-sans)", lineHeight: 1.6 }}
           >
             <p>
-              I&apos;ve read over 100 applications by now, and after a while the
-              same patterns keep showing up. Instead of writing everyone
-              individual feedback, I wrote down what I noticed once. These are
-              my observations, not rules. Other people hiring will disagree
-              with some of them. I mainly wanted something I can link to in
-              emails, and there was no reason not to make it public.
+              I&apos;ve read over 100 applications and noticed patterns. Rather
+              than write individual feedback, I wrote them down once.
+              Observations, not rules.
             </p>
             <p>
-              One thing sits underneath all of it. Unless your application comes
-              through an intro, the person reading it won&apos;t spend much time
-              on it. They&apos;re looking for one good reason to talk to you.
-              Make that reason easy to find.
+              Unless you come through an intro, nobody spends long on your
+              application. They&apos;re looking for one good reason to talk to
+              you. Make it easy to find.
             </p>
 
-            <h2>1. A CV that&apos;s easy to read</h2>
-            <p>
-              Use a clean, professional format. Keep it short. If you have more
-              to say, put a longer version on your website and link to it, but
-              send the short one.
-            </p>
-            <p>
-              Put your grades on it.{" "}
-              <a href={CV_TEMPLATE_URL} className={LINK_CLASS}>
-                This template
-              </a>{" "}
-              is a good example of how. When I don&apos;t see grades on a CV, I
-              assume they&apos;re bad, or at least that the applicant thinks
-              they are. That&apos;s probably unfair sometimes. It&apos;s still
-              what happens.
-            </p>
+            <h2>1. CV</h2>
+            <ul>
+              <li>Clean, professional, easy to read.</li>
+              <li>
+                Send the short version. Link to a longer one on your website if
+                you need to.
+              </li>
+              <li>
+                Put your grades on it.{" "}
+                <a href={CV_TEMPLATE_URL} className={LINK_CLASS}>
+                  This template
+                </a>{" "}
+                does it well.
+              </li>
+              <li>
+                No grades and I assume they&apos;re bad, or that you think they
+                are.
+              </li>
+            </ul>
 
-            <h2>2. Let the job find you</h2>
-            <p>
-              Ideally you aren&apos;t planning for a job at all. The job finds
-              you. I scout LinkedIn for good people all the time, and most
-              profiles give me very little to go on.
-            </p>
-            <p>
-              Put your grades on your LinkedIn too. Add one or two projects
-              you&apos;re really proud of, and two work experiences with a line
-              on what you actually did there.
-            </p>
+            <h2>2. LinkedIn</h2>
+            <ul>
+              <li>Ideally the job finds you. I scout LinkedIn for people constantly.</li>
+              <li>Add your grades.</li>
+              <li>Add one or two projects you&apos;re really proud of.</li>
+              <li>Add two work experiences and what you actually did there.</li>
+            </ul>
 
-            <h2>3. Have a personal website</h2>
-            <p>
-              It doesn&apos;t need much. Mine shows a few good projects and not
-              much else. A few blog posts are a big plus. In my experience,
-              interesting people have interesting things to say, and a website
-              where you&apos;ve written some of them down is a good signal.
-            </p>
-            <p>
-              One really good project beats many small ones. Nobody has time to
-              read five anyway. They&apos;re still looking for one reason to
-              speak to you.
-            </p>
+            <h2>3. Personal website</h2>
+            <ul>
+              <li>Keep it small. A few good projects is enough.</li>
+              <li>
+                A few blog posts are a big plus. Interesting people have
+                interesting things to say.
+              </li>
+              <li>
+                One really good project beats five small ones. Nobody reads
+                five.
+              </li>
+            </ul>
 
             <hr />
             <p>
-              If I sent you here from an email, that&apos;s why. It was either
-              this or writing the same three paragraphs a hundred times.
+              If I sent you here from an email, it was this or writing the same
+              three paragraphs a hundred times.
             </p>
           </div>
         </article>
