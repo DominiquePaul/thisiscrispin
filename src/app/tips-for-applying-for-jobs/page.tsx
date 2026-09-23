@@ -46,46 +46,44 @@ export default function TipsForApplyingForJobsPage() {
               you. Make it easy to find.
             </p>
 
-            <h2>1. CV</h2>
-            <ul>
-              <li>Clean, professional, easy to read.</li>
+            <ol>
               <li>
-                Send the short version. Link to a longer one on your website if
-                you need to.
+                <strong>Use a clean CV.</strong> Professional and easy to scan.
               </li>
               <li>
-                Put your grades on it.{" "}
+                <strong>Send the short version.</strong> Link to a longer one on
+                your website if you need to.
+              </li>
+              <li>
+                <strong>Put your grades on it.</strong> No grades and I assume
+                they&apos;re bad.{" "}
                 <a href={CV_TEMPLATE_URL} className={LINK_CLASS}>
                   This template
                 </a>{" "}
                 does it well.
               </li>
               <li>
-                No grades and I assume they&apos;re bad, or that you think they
-                are.
+                <strong>Let the job find you.</strong> I scout LinkedIn for good
+                people constantly.
               </li>
-            </ul>
-
-            <h2>2. LinkedIn</h2>
-            <ul>
-              <li>Ideally the job finds you. I scout LinkedIn for people constantly.</li>
-              <li>Add your grades.</li>
-              <li>Add one or two projects you&apos;re really proud of.</li>
-              <li>Add two work experiences and what you actually did there.</li>
-            </ul>
-
-            <h2>3. Personal website</h2>
-            <ul>
-              <li>Keep it small. A few good projects is enough.</li>
               <li>
-                A few blog posts are a big plus. Interesting people have
+                <strong>Fill in your LinkedIn.</strong> Grades, one or two
+                projects you&apos;re proud of, and two work experiences with what
+                you actually did.
+              </li>
+              <li>
+                <strong>Have a personal website.</strong> A few good projects is
+                enough.
+              </li>
+              <li>
+                <strong>Write a few blog posts.</strong> Interesting people have
                 interesting things to say.
               </li>
               <li>
-                One really good project beats five small ones. Nobody reads
-                five.
+                <strong>One great project beats five small ones.</strong> Nobody
+                reads five.
               </li>
-            </ul>
+            </ol>
 
             <hr />
             <p>
