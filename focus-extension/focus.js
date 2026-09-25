@@ -211,20 +211,24 @@
     }
     liFallback = false;
 
-    // The share box is the largest ancestor that is still compact.
+    // The share box is the largest ancestor that is still compact. Wrappers
+    // can be zero-sized (display: contents), so measure the column against
+    // the largest one that actually has a size.
     let box = trigger;
+    let sized = trigger;
     while (
       box.parentElement &&
       box.parentElement !== main &&
       box.parentElement.getBoundingClientRect().height <= COMPOSER_MAX_HEIGHT
     ) {
       box = box.parentElement;
+      const r = box.getBoundingClientRect();
+      if (r.width > 0 && r.height > 0) sized = box;
     }
 
     // Hide what's stacked in the share box's column (the posts) but keep
-    // what's laid out beside it (the sidebars). Measure against the share
-    // box itself: wrapper elements can be zero-sized (display: contents).
-    const col = box.getBoundingClientRect();
+    // what's laid out beside it (the sidebars).
+    const col = sized.getBoundingClientRect();
     const markStacked = (el) => {
       if (el.hasAttribute("data-ff-hide") || el.contains(box)) return;
       const r = el.getBoundingClientRect();
