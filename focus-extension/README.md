@@ -28,4 +28,4 @@ After editing the code, click the reload icon on the extension card and refresh 
 
 ## When a site changes its markup
 
-X and LinkedIn change their DOM regularly. If something reappears, inspect it and add its selector to `focus.css`. The X rules rely on `data-testid` attributes, which are fairly stable. The LinkedIn rules use several fallbacks because LinkedIn's class names change more often. To change the wait time, edit `UNLOCK_SECONDS` in `focus.js`.
+X and LinkedIn change their DOM regularly. If something reappears, inspect it and add its selector to `focus.css`. The X rules rely on `data-testid` attributes, which are fairly stable. LinkedIn randomizes its class names, so `focus.js` finds the "Start a post" box by its text and hides everything around it. If it can't find that box (e.g. an unsupported interface language), the whole feed column stays hidden and the card shows a **Write a post** button instead. Add your language's wording to `COMPOSER_TEXT` in `focus.js` if needed. To change the wait time, edit `UNLOCK_SECONDS` in `focus.js`.

@@ -45,10 +45,23 @@ html[data-ff-site="li"][data-ff-page="feed"]:not([data-ff-unlocked]) #feed-news-
   display: none !important;
 }
 
+/* Class-name-independent fallback (focus.js): everything in <main> except
+   the "Start a post" box gets data-ff-hide. Until that has run, <main> is
+   kept invisible so the feed never flashes. */
+html[data-ff-site="li"][data-ff-page="feed"]:not([data-ff-unlocked]) [data-ff-hide],
+html[data-ff-site="li"][data-ff-page="feed"]:not([data-ff-unlocked]) aside {
+  display: none !important;
+}
+html[data-ff-site="li"][data-ff-page="feed"]:not([data-ff-unlocked]):not([data-ff-li-ready]) main,
+html[data-ff-site="li"][data-ff-page="feed"]:not([data-ff-unlocked]):not([data-ff-li-ready]) [role="main"] {
+  visibility: hidden !important;
+}
+
 /* ---------- LinkedIn: notifications (messages stay visible) ---------- */
 
 html[data-ff-site="li"] nav li:has(a[href*="/notifications/"]),
-html[data-ff-site="li"] nav a[href*="/notifications/"],
+html[data-ff-site="li"] a[href*="/notifications"],
+html[data-ff-site="li"] [data-ff-hide-notif],
 /* Red badges on every nav item except Messaging (e.g. My Network, Jobs). */
 html[data-ff-site="li"] nav li:not(:has(a[href*="/messaging/"])) .notification-badge {
   display: none !important;
