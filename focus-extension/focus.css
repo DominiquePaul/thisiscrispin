@@ -38,18 +38,14 @@ html[data-ff-site="li"][data-ff-page="feed"]:not([data-ff-unlocked]) .feed-share
 html[data-ff-site="li"][data-ff-page="feed"]:not([data-ff-unlocked]) [data-id^="urn:li:activity"],
 html[data-ff-site="li"][data-ff-page="feed"]:not([data-ff-unlocked]) [data-urn^="urn:li:activity"],
 html[data-ff-site="li"][data-ff-page="feed"]:not([data-ff-unlocked]) [data-view-name="feed-full-update"],
-html[data-ff-site="li"][data-ff-page="feed"]:not([data-ff-unlocked]) .feed-sort-toggle-dsa__wrapper,
-/* Right rail: LinkedIn News, games, promoted. */
-html[data-ff-site="li"][data-ff-page="feed"]:not([data-ff-unlocked]) aside.scaffold-layout__aside,
-html[data-ff-site="li"][data-ff-page="feed"]:not([data-ff-unlocked]) #feed-news-module {
+html[data-ff-site="li"][data-ff-page="feed"]:not([data-ff-unlocked]) .feed-sort-toggle-dsa__wrapper {
   display: none !important;
 }
 
-/* Class-name-independent fallback (focus.js): everything in <main> except
-   the "Start a post" box gets data-ff-hide. Until that has run, <main> is
-   kept invisible so the feed never flashes. */
-html[data-ff-site="li"][data-ff-page="feed"]:not([data-ff-unlocked]) [data-ff-hide],
-html[data-ff-site="li"][data-ff-page="feed"]:not([data-ff-unlocked]) aside {
+/* Class-name-independent fallback (focus.js): everything stacked above or
+   below the "Start a post" box gets data-ff-hide; the side columns stay.
+   Until that has run, <main> is kept invisible so the feed never flashes. */
+html[data-ff-site="li"][data-ff-page="feed"]:not([data-ff-unlocked]) [data-ff-hide] {
   display: none !important;
 }
 html[data-ff-site="li"][data-ff-page="feed"]:not([data-ff-unlocked]):not([data-ff-li-ready]) main,
