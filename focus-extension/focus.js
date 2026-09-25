@@ -221,39 +221,58 @@
       box = box.parentElement;
     }
 
-    // Hide siblings stacked in the same column as the share box (the posts),
-    // but keep ones laid out beside it (the left and right sidebars).
+    // Hide what's stacked in the share box's column (the posts) but keep
+    // what's laid out beside it (the sidebars). Measure against the share
+    // box itself: wrapper elements can be zero-sized (display: contents).
+    const col = box.getBoundingClientRect();
+    const markStacked = (el) => {
+      if (el.hasAttribute("data-ff-hide") || el.contains(box)) return;
+      const r = el.getBoundingClientRect();
+      if (r.width === 0 && r.height === 0) {
+        for (const child of el.children) markStacked(child);
+        return;
+      }
+      const beside = r.right <= col.left + 1 || r.left >= col.right - 1;
+      if (!beside) el.setAttribute("data-ff-hide", "");
+    };
     for (let node = box; node && node !== main; node = node.parentElement) {
-      const col = node.getBoundingClientRect();
       for (const sibling of node.parentElement.children) {
-        if (sibling === node || sibling.hasAttribute("data-ff-hide")) continue;
-        const r = sibling.getBoundingClientRect();
-        if (r.width === 0) continue; // not laid out yet; re-checked next tick
-        const beside = r.right <= col.left + 1 || r.left >= col.right - 1;
-        if (!beside) sibling.setAttribute("data-ff-hide", "");
+        if (sibling !== node) markStacked(sibling);
       }
     }
     root.setAttribute("data-ff-li-ready", "");
+
+    // Safety net: probe the page below the share box. Anything visible there
+    // is feed content, so hide its outermost ancestor that doesn't contain
+    // the share box.
+    const x = col.left + col.width / 2;
+    for (let y = col.bottom + 24; y < window.innerHeight; y += 80) {
+      let hit = document.elementFromPoint(x, y);
+      if (!hit || !main.contains(hit) || hit === main || hit.contains(box)) continue;
+      while (hit.parentElement && hit.parentElement !== main && !hit.parentElement.contains(box)) {
+        hit = hit.parentElement;
+      }
+      hit.setAttribute("data-ff-hide", "");
+    }
   }
 
-  // The notifications bell, wherever LinkedIn's nav puts it. Hide its whole
-  // nav item (icon, label and badge) unless that item also holds Messaging.
-  // Anchored at the start: other nav items (Home, My Network) have labels
-  // like "My Network, 3 new notifications" and must stay.
-  const NOTIF_LABEL = /^(notifications?|benachrichtigungen|mitteilungen|notificaciones|notifiche)\b/i;
+  // The notifications bell (and invitation/request counters), wherever
+  // LinkedIn's header puts them. Matched by link, label or visible text;
+  // Messaging and Home always stay.
+  const NOTIF_WORDS =
+    /notification|request|invitation|benachrichtigung|mitteilung|anfrage|einladung|notificaci|notifiche|demande/i;
 
   function hideLinkedInNotifications() {
-    const links = document.querySelectorAll(
-      'a[href*="/notifications"], a[aria-label], button[aria-label]'
+    const items = document.querySelectorAll(
+      'a[href*="/notifications"], header a, header button, nav a, nav button'
     );
-    for (const el of links) {
+    for (const el of items) {
       if (el.hasAttribute("data-ff-hide-notif")) continue;
       const href = el.getAttribute("href") || "";
-      const label = el.getAttribute("aria-label") || "";
-      const isNotif =
-        href.includes("/notifications") ||
-        (NOTIF_LABEL.test(label) && el.closest("header, nav") && !href.includes("messaging"));
-      if (!isNotif || href.includes("messaging")) continue;
+      if (href.includes("messaging") || /\/feed\/?$/.test(href)) continue;
+      const text = `${el.getAttribute("aria-label") || ""} ${el.textContent || ""}`;
+      if (/messag|nachricht/i.test(text)) continue;
+      if (!href.includes("/notifications") && !NOTIF_WORDS.test(text)) continue;
       const item = el.closest("li");
       const target = item && !item.querySelector('a[href*="messaging"]') ? item : el;
       target.setAttribute("data-ff-hide-notif", "");
