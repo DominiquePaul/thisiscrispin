@@ -1,0 +1,130 @@
+/*
+ * Focus Feed styles. focus.js sets these attributes on <html>:
+ *   data-ff-site      "x" | "li"
+ *   data-ff-page      "feed" | "notifications" | "other"
+ *   data-ff-unlocked  present once the 15-second unlock has completed
+ * Everything is hidden with CSS (injected at document_start) so the feed
+ * never flashes on screen before the script runs.
+ */
+
+/* ---------- X / Twitter: feed ---------- */
+
+/* Home & Explore timelines. The "What's happening?" composer sits outside
+   this section, so posting still works. */
+html[data-ff-site="x"][data-ff-page="feed"]:not([data-ff-unlocked])
+  [data-testid="primaryColumn"] section[role="region"],
+/* Right sidebar trends / who-to-follow (search box stays). */
+html[data-ff-site="x"]:not([data-ff-unlocked]) [data-testid="sidebarColumn"] section,
+html[data-ff-site="x"]:not([data-ff-unlocked]) [data-testid="sidebarColumn"] aside,
+html[data-ff-site="x"]:not([data-ff-unlocked]) a[data-testid="AppTabBar_Explore_Link"] {
+  display: none !important;
+}
+
+/* ---------- X / Twitter: notifications (messages stay visible) ---------- */
+
+html[data-ff-site="x"] a[data-testid="AppTabBar_Notifications_Link"] {
+  display: none !important;
+}
+html[data-ff-site="x"][data-ff-page="notifications"] [data-testid="primaryColumn"] {
+  visibility: hidden !important;
+}
+
+/* ---------- LinkedIn: feed ---------- */
+
+/* Posts in the home feed. The "Start a post" share box is not matched. */
+html[data-ff-site="li"][data-ff-page="feed"]:not([data-ff-unlocked]) .scaffold-finite-scroll__content,
+html[data-ff-site="li"][data-ff-page="feed"]:not([data-ff-unlocked]) [data-finite-scroll-hotkey-context="FEED"],
+html[data-ff-site="li"][data-ff-page="feed"]:not([data-ff-unlocked]) .feed-shared-update-v2,
+html[data-ff-site="li"][data-ff-page="feed"]:not([data-ff-unlocked]) [data-id^="urn:li:activity"],
+html[data-ff-site="li"][data-ff-page="feed"]:not([data-ff-unlocked]) [data-urn^="urn:li:activity"],
+html[data-ff-site="li"][data-ff-page="feed"]:not([data-ff-unlocked]) [data-view-name="feed-full-update"],
+html[data-ff-site="li"][data-ff-page="feed"]:not([data-ff-unlocked]) .feed-sort-toggle-dsa__wrapper,
+/* Right rail: LinkedIn News, games, promoted. */
+html[data-ff-site="li"][data-ff-page="feed"]:not([data-ff-unlocked]) aside.scaffold-layout__aside,
+html[data-ff-site="li"][data-ff-page="feed"]:not([data-ff-unlocked]) #feed-news-module {
+  display: none !important;
+}
+
+/* ---------- LinkedIn: notifications (messages stay visible) ---------- */
+
+html[data-ff-site="li"] nav li:has(a[href*="/notifications/"]),
+html[data-ff-site="li"] nav a[href*="/notifications/"],
+/* Red badges on every nav item except Messaging (e.g. My Network, Jobs). */
+html[data-ff-site="li"] nav li:not(:has(a[href*="/messaging/"])) .notification-badge {
+  display: none !important;
+}
+html[data-ff-site="li"][data-ff-page="notifications"] main,
+html[data-ff-site="li"][data-ff-page="notifications"] .scaffold-layout__main {
+  visibility: hidden !important;
+}
+
+/* ---------- The Focus Feed card ---------- */
+
+#ff-card {
+  --ff-bg: #ffffff;
+  --ff-fg: #0f1419;
+  --ff-muted: #536471;
+  --ff-border: rgba(15, 20, 25, 0.12);
+  --ff-accent: #0f1419;
+  --ff-accent-fg: #ffffff;
+  --ff-track: rgba(15, 20, 25, 0.1);
+
+  position: fixed;
+  left: 50%;
+  bottom: 24px;
+  transform: translateX(-50%);
+  z-index: 2147483647;
+  width: min(360px, calc(100vw - 32px));
+  box-sizing: border-box;
+  padding: 16px 18px;
+  border-radius: 14px;
+  border: 1px solid var(--ff-border);
+  background: var(--ff-bg);
+  color: var(--ff-fg);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+  font: 14px/1.4 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  text-align: left;
+}
+@media (prefers-color-scheme: dark) {
+  #ff-card {
+    --ff-bg: #16181c;
+    --ff-fg: #e7e9ea;
+    --ff-muted: #8b98a5;
+    --ff-border: rgba(255, 255, 255, 0.14);
+    --ff-accent: #e7e9ea;
+    --ff-accent-fg: #0f1419;
+    --ff-track: rgba(255, 255, 255, 0.14);
+  }
+}
+#ff-card[hidden] { display: none !important; }
+#ff-card.ff-compact { width: auto; padding: 8px 12px; bottom: 16px; }
+#ff-card .ff-title { font-weight: 700; margin: 0 0 4px; }
+#ff-card .ff-text { color: var(--ff-muted); margin: 0 0 12px; }
+#ff-card .ff-bar {
+  height: 4px;
+  border-radius: 2px;
+  background: var(--ff-track);
+  overflow: hidden;
+  margin: 0 0 12px;
+}
+#ff-card .ff-bar > div {
+  height: 100%;
+  width: 0;
+  background: var(--ff-accent);
+  transition: width 0.25s linear;
+}
+#ff-card button {
+  all: unset;
+  cursor: pointer;
+  padding: 6px 14px;
+  border-radius: 999px;
+  font-weight: 600;
+  background: var(--ff-accent);
+  color: var(--ff-accent-fg);
+}
+#ff-card button.ff-ghost {
+  background: transparent;
+  color: var(--ff-muted);
+  border: 1px solid var(--ff-border);
+}
+#ff-card button:focus-visible { outline: 2px solid #1d9bf0; outline-offset: 2px; }

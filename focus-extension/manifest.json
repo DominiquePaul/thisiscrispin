@@ -1,0 +1,20 @@
+{
+  "manifest_version": 3,
+  "name": "Focus Feed",
+  "version": "1.0.0",
+  "description": "Hides the X and LinkedIn feeds and notifications (messages stay). Posting still works. Unlock the feed by staying on the page for 15 seconds.",
+  "content_scripts": [
+    {
+      "matches": [
+        "*://x.com/*",
+        "*://*.x.com/*",
+        "*://twitter.com/*",
+        "*://*.twitter.com/*",
+        "*://*.linkedin.com/*"
+      ],
+      "css": ["focus.css"],
+      "js": ["focus.js"],
+      "run_at": "document_start"
+    }
+  ]
+}
