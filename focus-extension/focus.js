@@ -221,11 +221,16 @@
       box = box.parentElement;
     }
 
+    // Hide siblings stacked in the same column as the share box (the posts),
+    // but keep ones laid out beside it (the left and right sidebars).
     for (let node = box; node && node !== main; node = node.parentElement) {
+      const col = node.getBoundingClientRect();
       for (const sibling of node.parentElement.children) {
-        if (sibling !== node && !sibling.hasAttribute("data-ff-hide")) {
-          sibling.setAttribute("data-ff-hide", "");
-        }
+        if (sibling === node || sibling.hasAttribute("data-ff-hide")) continue;
+        const r = sibling.getBoundingClientRect();
+        if (r.width === 0) continue; // not laid out yet; re-checked next tick
+        const beside = r.right <= col.left + 1 || r.left >= col.right - 1;
+        if (!beside) sibling.setAttribute("data-ff-hide", "");
       }
     }
     root.setAttribute("data-ff-li-ready", "");
@@ -233,7 +238,9 @@
 
   // The notifications bell, wherever LinkedIn's nav puts it. Hide its whole
   // nav item (icon, label and badge) unless that item also holds Messaging.
-  const NOTIF_LABEL = /notification|benachrichtigung|mitteilung|notificaci|notifica/i;
+  // Anchored at the start: other nav items (Home, My Network) have labels
+  // like "My Network, 3 new notifications" and must stay.
+  const NOTIF_LABEL = /^(notifications?|benachrichtigungen|mitteilungen|notificaciones|notifiche)\b/i;
 
   function hideLinkedInNotifications() {
     const links = document.querySelectorAll(
