@@ -32,7 +32,7 @@ interface ConvertedSafe {
   type: "investor";
   capTriggered: boolean;
   discountTriggered: boolean;
-  capOwnership: number;
+  conversionOwnership: number; // share of post-conversion capitalization
 }
 
 interface Snapshot {
@@ -47,6 +47,7 @@ interface Snapshot {
   pendingSafes?: Round[];
   convertedSafes?: ConvertedSafe[];
   totalShares: number;
+  sharesBeforeRound?: number; // outstanding shares before this priced round's issuance
   esopPct?: number;
   esopShares?: number;
 }
@@ -153,75 +154,8 @@ function computeCapTable(rounds: Round[], founderShares: number, initialEsopPct:
     } else {
       applyInitialEsop();
       const preMoney = round.preMoneyVal;
-      const ppsAtPreMoney = preMoney / totalShares;
-
-      // --- SAFE Conversion (simultaneous for all pending SAFEs) ---
-      // For post-money SAFEs, each gets exactly amount/cap ownership.
-      // With multiple SAFEs, solve simultaneously:
-      //   T_after = T_before / (1 - sum(p_i))  where p_i = amount_i / cap_i
-      //   safeShares_i = T_after * p_i
-      let newSharesFromSafes = 0;
-      const convertedSafes: ConvertedSafe[] = [];
-
-      // First pass: determine each SAFE's ownership fraction from its cap
-      const safeOwnershipFromCap: number[] = [];
-      for (const safe of pendingSafes) {
-        safeOwnershipFromCap.push(safe.valCap > 0 ? safe.amount / safe.valCap : 0);
-      }
-      const totalSafeOwnership = safeOwnershipFromCap.reduce((a, b) => a + b, 0);
-
-      // T_after for simultaneous conversion (used for cap-based shares)
-      const tAfterSafe = totalSafeOwnership < 1 ? totalShares / (1 - totalSafeOwnership) : totalShares;
-
-      for (let si = 0; si < pendingSafes.length; si++) {
-        const safe = pendingSafes[si];
-        const capOwnership = safeOwnershipFromCap[si];
-
-        // Cap-based shares: simultaneous conversion so each SAFE gets exact ownership
-        const capShares = safe.valCap > 0 ? Math.floor(tAfterSafe * capOwnership) : 0;
-
-        // Discount-based shares (uses pre-SAFE PPS as reference price)
-        const discountPrice = safe.discount > 0 ? ppsAtPreMoney * (1 - safe.discount / 100) : Infinity;
-        const discountShares = safe.discount > 0 ? Math.floor(safe.amount / discountPrice) : 0;
-
-        let safeShares: number;
-        let capTriggered = false;
-        let discountTriggered = false;
-
-        if (safe.valCap > 0 && safe.discount > 0) {
-          // Investor-favorable: whichever gives MORE shares
-          if (capShares >= discountShares) {
-            safeShares = capShares;
-            capTriggered = true;
-          } else {
-            safeShares = discountShares;
-            discountTriggered = true;
-          }
-        } else if (safe.valCap > 0) {
-          safeShares = capShares;
-          capTriggered = true;
-        } else if (safe.discount > 0) {
-          safeShares = discountShares;
-          discountTriggered = true;
-        } else {
-          safeShares = Math.floor(safe.amount / ppsAtPreMoney);
-        }
-
-        const effectivePrice = safeShares > 0 ? safe.amount / safeShares : ppsAtPreMoney;
-        newSharesFromSafes += safeShares;
-        convertedSafes.push({
-          name: `${safe.name} Investor`,
-          shares: safeShares,
-          invested: safe.amount,
-          effectivePrice,
-          type: "investor",
-          capTriggered,
-          discountTriggered,
-          capOwnership,
-        });
-      }
-
-      const totalSharesAfterSafe = totalShares + newSharesFromSafes;
+      const sharesBeforeRound = totalShares;
+      const nonEsopBefore = totalShares - cumulativeEsopShares;
 
       // --- ESOP: target-based, carved out of pre-money ---
       // The ESOP must be calculated BEFORE the round PPS so the investor
@@ -229,17 +163,67 @@ function computeCapTable(rounds: Round[], founderShares: number, initialEsopPct:
       // is a % of post-money, solved simultaneously:
       //   T = F * preMoney / (preMoney*(1-p) - p*amount)
       // where F = non-ESOP shares, p = ESOP target fraction
-      let esopShares = 0;
-      if (round.esopPct > 0) {
+      const esopTopUpFor = (safeShares: number): number => {
+        if (round.esopPct <= 0) return 0;
         const p = round.esopPct / 100;
-        const F = totalSharesAfterSafe - cumulativeEsopShares; // non-ESOP shares
+        const F = nonEsopBefore + safeShares; // non-ESOP shares
         const denominator = preMoney * (1 - p) - p * round.amount;
-        if (denominator > 0) {
-          const T = F * preMoney / denominator; // total pre-round shares needed
-          const targetTotalEsop = Math.floor(T - F);
-          esopShares = Math.max(0, targetTotalEsop - cumulativeEsopShares);
-        }
+        if (denominator <= 0) return 0;
+        const T = F * preMoney / denominator; // total pre-round shares needed
+        return Math.max(0, Math.floor(T - F) - cumulativeEsopShares);
+      };
+      const ppsFor = (safeShares: number): number =>
+        preMoney / (totalShares + safeShares + esopTopUpFor(safeShares));
+
+      // --- SAFE Conversion (simultaneous for all pending SAFEs) ---
+      // Post-money SAFEs: a capped SAFE gets exactly amount/cap of the
+      // post-conversion capitalization (existing shares + all converting
+      // SAFEs, excluding the new pool top-up and new money):
+      //   T_after = (T_before + D) / (1 - sum(p_i))   p_i = amount_i / cap_i
+      // where D = shares of SAFEs converting at the discount / round price.
+      // Discount and uncapped SAFEs convert off the actual round price, which
+      // itself depends on how many shares the SAFEs take, so we iterate to the
+      // fixed point. Each SAFE takes whichever of cap / discount gives more shares.
+      const capOwnership = pendingSafes.map((s) => (s.valCap > 0 ? s.amount / s.valCap : 0));
+      const priceShares = (safe: Round, pps: number) =>
+        safe.amount / (pps * (1 - Math.min(safe.discount, 99) / 100));
+      let useCap = pendingSafes.map((s) => s.valCap > 0);
+      let pps = preMoney / totalShares;
+      let rawShares: number[] = pendingSafes.map(() => 0);
+      let tAfterSafe = totalShares;
+      for (let iter = 0; iter < 100 && pendingSafes.length > 0; iter++) {
+        const nonCap = pendingSafes.map((s, si) => (useCap[si] ? 0 : priceShares(s, pps)));
+        const sumP = capOwnership.reduce((a, c, si) => a + (useCap[si] ? c : 0), 0);
+        const D = nonCap.reduce((a, b) => a + b, 0);
+        tAfterSafe = sumP < 1 ? (totalShares + D) / (1 - sumP) : totalShares + D;
+        rawShares = pendingSafes.map((_, si) => (useCap[si] ? capOwnership[si] * tAfterSafe : nonCap[si]));
+        const nextUseCap = pendingSafes.map(
+          (s, si) => s.valCap > 0 && (s.discount <= 0 || capOwnership[si] * tAfterSafe >= priceShares(s, pps))
+        );
+        const nextPps = ppsFor(rawShares.reduce((a, b) => a + b, 0));
+        const settled = nextUseCap.every((u, si) => u === useCap[si]) && Math.abs(nextPps - pps) <= pps * 1e-12;
+        useCap = nextUseCap;
+        pps = nextPps;
+        if (settled) break;
       }
+
+      const convertedSafes: ConvertedSafe[] = pendingSafes.map((safe, si) => {
+        const safeShares = Math.floor(rawShares[si]);
+        return {
+          name: `${safe.name} Investor`,
+          shares: safeShares,
+          invested: safe.amount,
+          effectivePrice: safeShares > 0 ? safe.amount / safeShares : pps,
+          type: "investor",
+          capTriggered: useCap[si],
+          discountTriggered: !useCap[si] && safe.discount > 0,
+          conversionOwnership: tAfterSafe > 0 ? safeShares / tAfterSafe : 0,
+        };
+      });
+      const newSharesFromSafes = convertedSafes.reduce((a, c) => a + c.shares, 0);
+      const totalSharesAfterSafe = totalShares + newSharesFromSafes;
+
+      const esopShares = esopTopUpFor(newSharesFromSafes);
       cumulativeEsopShares += esopShares;
 
       // PPS includes ESOP shares (ESOP is carved out of pre-money)
@@ -283,6 +267,7 @@ function computeCapTable(rounds: Round[], founderShares: number, initialEsopPct:
         })),
         convertedSafes,
         totalShares,
+        sharesBeforeRound,
       };
       snapshots.push(snap);
     }
@@ -630,7 +615,137 @@ function Legend({ shareholders }: { shareholders: Shareholder[] }) {
   );
 }
 
-function SnapshotCard({ snapshot, isOpen, onToggle }: { snapshot: Snapshot; isOpen: boolean; onToggle: () => void }) {
+function EmployeeStake({ snapshot, history }: { snapshot: Snapshot; history: Snapshot[] }) {
+  // Joining points: before each priced round up to this one, or right after it.
+  const joinOptions = [
+    ...history.map((h, j) => ({
+      label: j === 0 ? `Before ${h.roundName}` : `Between ${history[j - 1].roundName} and ${h.roundName}`,
+      baseShares: h.sharesBeforeRound ?? 0,
+      valuationAtJoin: j === 0 ? null : history[j - 1].postMoney,
+      firstDilutingRound: j,
+    })),
+    {
+      label: `After ${snapshot.roundName}`,
+      baseShares: snapshot.totalShares,
+      valuationAtJoin: snapshot.postMoney,
+      firstDilutingRound: history.length,
+    },
+  ];
+  const [joinIdx, setJoinIdx] = useState(0);
+  const [grantInput, setGrantInput] = useState("0.5");
+  const join = joinOptions[Math.min(joinIdx, joinOptions.length - 1)];
+  const grantPct = Math.max(0, Number(grantInput.replace(",", ".")) || 0);
+  const grantShares = (grantPct / 100) * join.baseShares;
+
+  const rows = [
+    { label: "At grant", ownership: grantPct / 100, value: join.valuationAtJoin != null ? (grantPct / 100) * join.valuationAtJoin : null },
+    ...history.slice(join.firstDilutingRound).map((h) => ({
+      label: `After ${h.roundName}`,
+      ownership: grantShares / h.totalShares,
+      value: (grantShares / h.totalShares) * (h.postMoney || 0),
+    })),
+  ];
+  const now = grantShares / snapshot.totalShares;
+  const nowValue = now * (snapshot.postMoney || 0);
+  const retained = grantPct > 0 ? now / (grantPct / 100) : 1;
+
+  const labelStyle: React.CSSProperties = {
+    fontSize: 11,
+    fontWeight: 600,
+    color: "var(--text-dim)",
+    letterSpacing: "0.05em",
+    textTransform: "uppercase",
+    fontFamily: "var(--mono)",
+  };
+  const fieldStyle: React.CSSProperties = {
+    background: "var(--input-bg)",
+    borderRadius: 6,
+    border: "1px solid var(--border)",
+    padding: "6px 10px",
+    color: "var(--text)",
+    fontSize: 14,
+    fontFamily: "var(--mono)",
+    fontWeight: 500,
+    outline: "none",
+    width: "100%",
+    boxSizing: "border-box",
+  };
+
+  return (
+    <div style={{ marginTop: 20, background: "var(--input-bg)", borderRadius: 8, padding: 16 }}>
+      <div style={{ ...labelStyle, fontSize: 12, color: "var(--text)", marginBottom: 4 }}>Employee stake check</div>
+      <div style={{ fontSize: 12, color: "var(--text-dim)", fontFamily: "var(--mono)", marginBottom: 14 }}>
+        What an equity grant is worth after {snapshot.roundName}, depending on when you joined.
+      </div>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 12, marginBottom: 14 }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+          <label style={labelStyle}>Joined</label>
+          <select value={joinIdx} onChange={(e) => setJoinIdx(Number(e.target.value))} style={{ ...fieldStyle, background: "var(--card-bg)" }}>
+            {joinOptions.map((o, i) => (
+              <option key={i} value={i}>
+                {o.label}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+          <label style={labelStyle}>Grant (% of company when you joined)</label>
+          <div style={{ ...fieldStyle, background: "var(--card-bg)", display: "flex", alignItems: "center" }}>
+            <input
+              type="text"
+              inputMode="decimal"
+              value={grantInput}
+              onChange={(e) => setGrantInput(e.target.value)}
+              style={{ background: "transparent", border: "none", outline: "none", color: "var(--text)", font: "inherit", width: "100%" }}
+            />
+            <span style={{ color: "var(--text-dim)", fontSize: 12, marginLeft: 4 }}>%</span>
+          </div>
+        </div>
+      </div>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(130px, 1fr))", gap: 12, marginBottom: 14 }}>
+        {[
+          { label: "Your Stake Now", value: formatPct(now) },
+          { label: "Implied Value", value: formatCurrency(nowValue) },
+          { label: "Stake Retained", value: formatPct(retained) },
+        ].map((m) => (
+          <div key={m.label} style={{ background: "var(--card-bg)", borderRadius: 8, padding: "10px 14px" }}>
+            <div style={{ ...labelStyle, fontSize: 10, marginBottom: 4 }}>{m.label}</div>
+            <div style={{ fontSize: 16, fontWeight: 700, color: "var(--text)", fontFamily: "var(--mono)" }}>{m.value}</div>
+          </div>
+        ))}
+      </div>
+      <div style={{ overflowX: "auto" }}>
+        <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12, fontFamily: "var(--mono)" }}>
+          <thead>
+            <tr style={{ borderBottom: "1px solid var(--border)" }}>
+              {["Stage", "Your Ownership", "Implied Value"].map((h) => (
+                <th key={h} style={{ ...labelStyle, fontSize: 10, textAlign: "left", padding: "6px 6px" }}>
+                  {h}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((r) => (
+              <tr key={r.label} style={{ borderBottom: "1px solid var(--border)" }}>
+                <td style={{ padding: "6px", color: "var(--text)", fontWeight: 600 }}>{r.label}</td>
+                <td style={{ padding: "6px", color: "var(--text)" }}>{formatPct(r.ownership)}</td>
+                <td style={{ padding: "6px", color: "var(--text)" }}>{r.value != null ? formatCurrency(r.value) : "—"}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <div style={{ fontSize: 11, color: "var(--text-dim)", fontFamily: "var(--mono)", marginTop: 10, lineHeight: 1.5 }}>
+        Grants come out of the ESOP pool, so they don&apos;t add shares; every later round dilutes them like everyone
+        else. Value is paper value at the round&apos;s post-money, before strike price, taxes, vesting and liquidation
+        preferences.
+      </div>
+    </div>
+  );
+}
+
+function SnapshotCard({ snapshot, history, isOpen, onToggle }: { snapshot: Snapshot; history: Snapshot[]; isOpen: boolean; onToggle: () => void }) {
   const isPriced = snapshot.roundType === "priced";
   const founders = snapshot.shareholders.find((s) => s.type === "founder");
   const esop = snapshot.shareholders.find((s) => s.type === "esop");
@@ -756,7 +871,7 @@ function SnapshotCard({ snapshot, isOpen, onToggle }: { snapshot: Snapshot; isOp
           </div>
           {snapshot.convertedSafes.map((cs, i) => (
             <div key={i} style={{ fontSize: 12, color: "var(--text)", fontFamily: "var(--mono)", marginBottom: 4 }}>
-              {cs.name}: {cs.capOwnership != null ? formatPct(cs.capOwnership) : ""} at conversion @{" "}
+              {cs.name}: {formatPct(cs.conversionOwnership)} at conversion @{" "}
               €{cs.effectivePrice.toFixed(4)}/sh
               {cs.capTriggered && <span style={{ color: "#f59e0b", marginLeft: 6 }}>(cap triggered)</span>}
               {cs.discountTriggered && <span style={{ color: "#f59e0b", marginLeft: 6 }}>(discount triggered)</span>}
@@ -825,6 +940,7 @@ function SnapshotCard({ snapshot, isOpen, onToggle }: { snapshot: Snapshot; isOp
               </tbody>
             </table>
           </div>
+          <EmployeeStake snapshot={snapshot} history={history} />
         </>
       )}
       </div>}
@@ -1196,13 +1312,16 @@ export default function CapTable() {
                   A cap table simulator for founders. Add SAFEs and priced rounds, set valuations and ESOP pools, and watch how ownership dilutes round by round.
                 </p>
                 <p style={{ margin: "0 0 8px" }}>
-                  <span style={{ fontWeight: 600 }}>SAFEs</span> are post-money: the investor&apos;s ownership = amount&nbsp;/&nbsp;cap. Multiple SAFEs convert simultaneously at the next priced round, each getting their exact stated percentage.
+                  <span style={{ fontWeight: 600 }}>SAFEs</span> are post-money: the investor&apos;s ownership = amount&nbsp;/&nbsp;cap. Multiple SAFEs convert simultaneously at the next priced round, each getting their exact stated percentage. A discount applies to the actual round price, and each SAFE converts at whichever of cap or discount gives it more shares.
                 </p>
                 <p style={{ margin: "0 0 8px" }}>
                   <span style={{ fontWeight: 600 }}>ESOP pools</span> are target-based and carved out of pre-money. &quot;15% ESOP&quot; means the total pool is set to 15% of post-money &mdash; existing pool shares count toward the target. The cost is borne by existing shareholders, not the new investor.
                 </p>
                 <p style={{ margin: "0 0 8px" }}>
                   Each priced round investor gets exactly amount&nbsp;/&nbsp;(pre-money&nbsp;+&nbsp;amount) ownership, with a 1.00x entry multiple.
+                </p>
+                <p style={{ margin: "0 0 8px" }}>
+                  Each snapshot has an <span style={{ fontWeight: 600 }}>employee stake check</span>: enter a grant as a % of the company and when you joined, and see what it&apos;s diluted to and worth after that round.
                 </p>
                 <p style={{ margin: 0 }}>
                   Use <span style={{ fontWeight: 600 }}>Copy Link</span> to share a specific scenario.
@@ -1349,7 +1468,13 @@ export default function CapTable() {
             )}
           </div>
           {snapshots.map((snap, i) => (
-            <SnapshotCard key={i} snapshot={snap} isOpen={openSnapshots.has(i)} onToggle={() => toggleSnapshot(i)} />
+            <SnapshotCard
+              key={i}
+              snapshot={snap}
+              history={snapshots.slice(0, i + 1).filter((s) => s.roundType === "priced")}
+              isOpen={openSnapshots.has(i)}
+              onToggle={() => toggleSnapshot(i)}
+            />
           ))}
           {snapshots.length === 0 && (
             <div
