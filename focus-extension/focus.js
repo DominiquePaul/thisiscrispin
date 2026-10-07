@@ -1,6 +1,7 @@
 // Focus Feed: hides the X and LinkedIn feeds + notifications while leaving
-// posting and messages alone. The feed can be unlocked for the current tab
-// by keeping the page open and focused for UNLOCK_SECONDS.
+// posting and messages alone. The feed is unlocked by keeping the page open
+// and focused for UNLOCK_SECONDS, and then stays unlocked (across reloads
+// and tabs) until the floating "Hide feed" button is pressed.
 (() => {
   "use strict";
 
@@ -24,8 +25,9 @@
     return "other";
   }
 
-  // "locked" -> "counting" -> "unlocked". Unlocking lasts until the tab is
-  // reloaded or "Hide feed again" is clicked.
+  // "locked" -> "counting" -> "unlocked". The unlocked state is saved per
+  // site, so it survives reloads and applies to every tab until "Hide feed"
+  // is pressed.
   let state = "locked";
   let countdownStart = 0;
   let resetNotice = false;
@@ -81,7 +83,7 @@
     } else if (state === "unlocked") {
       key = "unlocked";
       compact = true;
-      html = `<button type="button" class="ff-ghost" data-action="relock">Hide feed again</button>`;
+      html = `<button type="button" data-action="relock">Hide feed</button>`;
     } else if (state === "counting") {
       const remaining = Math.max(0, UNLOCK_SECONDS - (Date.now() - countdownStart) / 1000);
       const pct = 100 - (remaining / UNLOCK_SECONDS) * 100;
@@ -98,7 +100,9 @@
         <p class="ff-text">${
           resetNotice
             ? "You left the page, so the timer reset."
-            : "You can still post. Want the feed anyway? Wait " + UNLOCK_SECONDS + " seconds."
+            : "You can still post. Want the feed anyway? Wait " +
+              UNLOCK_SECONDS +
+              " seconds and it stays on until you hide it again."
         }</p>
         <button type="button" data-action="start">Show feed</button>${
           liFallback
@@ -146,17 +150,48 @@
     render();
   }
 
-  function unlock() {
+  function unlock(save = true) {
     state = "unlocked";
     root.setAttribute("data-ff-unlocked", "");
+    if (save) saveUnlocked(true);
     render();
   }
 
-  function relock() {
+  function relock(save = true) {
     state = "locked";
     resetNotice = false;
     root.removeAttribute("data-ff-unlocked");
+    if (save) saveUnlocked(false);
     render();
+  }
+
+  // ---------- persistence ----------
+  // chrome.storage is shared by all tabs (and by x.com / twitter.com), so
+  // unlocking or hiding in one tab applies everywhere on that site.
+
+  const STORE_KEY = `unlocked-${site}`;
+  const store = globalThis.chrome?.storage?.local;
+
+  function saveUnlocked(value) {
+    try {
+      store?.set({ [STORE_KEY]: value });
+    } catch {
+      // Extension was reloaded; this page's copy of the script is stale.
+    }
+  }
+
+  function applySaved(value) {
+    if (value && state !== "unlocked") unlock(false);
+    else if (!value && state === "unlocked") relock(false);
+  }
+
+  try {
+    store?.get(STORE_KEY, (items) => applySaved(!!items?.[STORE_KEY]));
+    globalThis.chrome.storage.onChanged.addListener((changes, area) => {
+      if (area === "local" && STORE_KEY in changes) applySaved(!!changes[STORE_KEY].newValue);
+    });
+  } catch {
+    // No storage access: the unlock then lasts until the page is reloaded.
   }
 
   const leftPage = () => cancelCountdown(true);
@@ -211,7 +246,9 @@
     }
     liFallback = false;
 
-    // The share box is the largest ancestor that is still compact.
+    // The share box is the largest ancestor that is still compact. Hide
+    // every sibling on the path from it up to <main>: the posts, the
+    // "New posts" pill and both sidebars.
     let box = trigger;
     while (
       box.parentElement &&
@@ -221,61 +258,73 @@
       box = box.parentElement;
     }
 
-    // Hide what's stacked in the share box's column (the posts) but keep
-    // what's laid out beside it (the sidebars). Measure against the share
-    // box itself: wrapper elements can be zero-sized (display: contents).
-    const col = box.getBoundingClientRect();
-    const markStacked = (el) => {
-      if (el.hasAttribute("data-ff-hide") || el.contains(box)) return;
-      const r = el.getBoundingClientRect();
-      if (r.width === 0 && r.height === 0) {
-        for (const child of el.children) markStacked(child);
-        return;
-      }
-      const beside = r.right <= col.left + 1 || r.left >= col.right - 1;
-      if (!beside) el.setAttribute("data-ff-hide", "");
-    };
     for (let node = box; node && node !== main; node = node.parentElement) {
       for (const sibling of node.parentElement.children) {
-        if (sibling !== node) markStacked(sibling);
+        if (sibling !== node && !sibling.hasAttribute("data-ff-hide")) {
+          sibling.setAttribute("data-ff-hide", "");
+        }
       }
     }
     root.setAttribute("data-ff-li-ready", "");
-
-    // Safety net: probe the page below the share box. Anything visible there
-    // is feed content, so hide its outermost ancestor that doesn't contain
-    // the share box.
-    const x = col.left + col.width / 2;
-    for (let y = col.bottom + 24; y < window.innerHeight; y += 80) {
-      let hit = document.elementFromPoint(x, y);
-      if (!hit || !main.contains(hit) || hit === main || hit.contains(box)) continue;
-      while (hit.parentElement && hit.parentElement !== main && !hit.parentElement.contains(box)) {
-        hit = hit.parentElement;
-      }
-      hit.setAttribute("data-ff-hide", "");
-    }
   }
 
-  // The notifications bell (and invitation/request counters), wherever
-  // LinkedIn's header puts them. Matched by link, label or visible text;
-  // Messaging and Home always stay.
-  const NOTIF_WORDS =
-    /notification|request|invitation|benachrichtigung|mitteilung|anfrage|einladung|notificaci|notifiche|demande/i;
+  // The notifications bell and invitation/request entries, wherever
+  // LinkedIn's top bar puts them (the feed and messaging pages render
+  // different headers). Nav labels read like "Jobs, 0 new notifications",
+  // so only match labels that *start* with a notification word.
+  const NOTIF_LABEL =
+    /^\s*(notification|request|invitation|benachrichtigung|mitteilung|anfrage|einladung|notificaci|notifiche|notifica|demande)/i;
+  const NOTIF_HREF = /\/notifications|\/invitation-manager|\/invitations?\b/;
+  const TOP_BAR_PX = 120;
+
+  const inTopBar = (el) => {
+    const r = el.getBoundingClientRect();
+    return r.bottom > 0 && r.top < TOP_BAR_PX;
+  };
+  const isMessaging = (el) => {
+    const item = el.closest("li") || el;
+    return !!(
+      el.closest('[href*="messaging"]') ||
+      item.querySelector('[href*="messaging"]') ||
+      /messag|nachricht/i.test(el.getAttribute("aria-label") || "")
+    );
+  };
+  const hideNotif = (el) => {
+    const item = el.closest("li");
+    const target = item && !item.querySelector('[href*="messaging"]') ? item : el;
+    target.setAttribute("data-ff-hide-notif", "");
+  };
 
   function hideLinkedInNotifications() {
-    const items = document.querySelectorAll(
-      'a[href*="/notifications"], header a, header button, nav a, nav button'
-    );
-    for (const el of items) {
+    // Links to the notifications or invitations pages, anywhere.
+    for (const el of document.querySelectorAll("a[href]")) {
       if (el.hasAttribute("data-ff-hide-notif")) continue;
-      const href = el.getAttribute("href") || "";
-      if (href.includes("messaging") || /\/feed\/?$/.test(href)) continue;
-      const text = `${el.getAttribute("aria-label") || ""} ${el.textContent || ""}`;
-      if (/messag|nachricht/i.test(text)) continue;
-      if (!href.includes("/notifications") && !NOTIF_WORDS.test(text)) continue;
-      const item = el.closest("li");
-      const target = item && !item.querySelector('a[href*="messaging"]') ? item : el;
-      target.setAttribute("data-ff-hide-notif", "");
+      if (NOTIF_HREF.test(el.getAttribute("href")) && !isMessaging(el)) hideNotif(el);
+    }
+
+    // Top-bar entries labelled "Notifications" (or with a bell icon) that
+    // aren't plain links, e.g. buttons or dropdowns.
+    const controls = document.querySelectorAll(
+      'header a, header button, nav a, nav button, [role="navigation"] a, [role="navigation"] button, svg[id^="bell"], [data-test-icon^="bell"]'
+    );
+    for (let el of controls) {
+      if (el.matches("svg, [data-test-icon]")) el = el.closest("a, button") || el;
+      if (el.hasAttribute("data-ff-hide-notif") || isMessaging(el) || !inTopBar(el)) continue;
+      const label = el.getAttribute("aria-label") || el.textContent || "";
+      if (el.querySelector('svg[id^="bell"], [data-test-icon^="bell"]') || el.matches('svg[id^="bell"]') || NOTIF_LABEL.test(label)) {
+        hideNotif(el);
+      }
+    }
+
+    // Unread-count badges ("11", "99+") on the remaining top-bar items,
+    // except Messaging.
+    for (const bar of document.querySelectorAll('header, nav, [role="navigation"], #global-nav')) {
+      if (!inTopBar(bar)) continue;
+      for (const el of bar.querySelectorAll("span, div, sup")) {
+        if (el.childElementCount || el.hasAttribute("data-ff-hide-notif")) continue;
+        if (!/^\d+\+?$/.test(el.textContent.trim()) || isMessaging(el)) continue;
+        el.setAttribute("data-ff-hide-notif", "");
+      }
     }
   }
 

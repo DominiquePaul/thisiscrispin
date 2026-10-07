@@ -2,7 +2,7 @@
  * Focus Feed styles. focus.js sets these attributes on <html>:
  *   data-ff-site      "x" | "li"
  *   data-ff-page      "feed" | "notifications" | "other"
- *   data-ff-unlocked  present once the 15-second unlock has completed
+ *   data-ff-unlocked  present while the feed is unlocked (saved across reloads)
  * Everything is hidden with CSS (injected at document_start) so the feed
  * never flashes on screen before the script runs.
  */
@@ -42,10 +42,11 @@ html[data-ff-site="li"][data-ff-page="feed"]:not([data-ff-unlocked]) .feed-sort-
   display: none !important;
 }
 
-/* Class-name-independent fallback (focus.js): everything stacked above or
-   below the "Start a post" box gets data-ff-hide; the side columns stay.
-   Until that has run, <main> is kept invisible so the feed never flashes. */
-html[data-ff-site="li"][data-ff-page="feed"]:not([data-ff-unlocked]) [data-ff-hide] {
+/* Class-name-independent fallback (focus.js): everything in <main> except
+   the "Start a post" box gets data-ff-hide, including both sidebars. Until
+   that has run, <main> is kept invisible so the feed never flashes. */
+html[data-ff-site="li"][data-ff-page="feed"]:not([data-ff-unlocked]) [data-ff-hide],
+html[data-ff-site="li"][data-ff-page="feed"]:not([data-ff-unlocked]) main aside {
   display: none !important;
 }
 html[data-ff-site="li"][data-ff-page="feed"]:not([data-ff-unlocked]):not([data-ff-li-ready]) main,
